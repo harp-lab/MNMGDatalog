@@ -35,81 +35,117 @@ using namespace std;
     (BLOCK_START(process_id + 1, total_process, n) - BLOCK_START(process_id, total_process, n))
 
 
-pair<int *, long int> get_split_relation(int rank, int *local_data, long int local_count,
-                                         int total_columns, int nprocs) {
-    int i, j;
-    // Array of vectors where we need to push to integers to proper rank based on hash
-    vector<int> rank_data[nprocs];
-    // Count the number of data to be sent to destination processor
-    int *send_count = (int *) calloc(nprocs, sizeof(int));
-    int *receive_count = (int *) calloc(nprocs, sizeof(int));
+__global__ void get_send_count(int *local_data, int local_data_row_count,
+                               int *send_count, int nprocs) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= local_data_row_count) return;
 
-    int *send_displacements = (int *) calloc(nprocs, sizeof(int));
-    for (i = 0; i < local_count; i += total_columns) {
-        int destination_rank = local_data[i] % nprocs;
-        send_count[destination_rank] += total_columns;
-        rank_data[destination_rank].push_back(local_data[i]);       // key
-        rank_data[destination_rank].push_back(local_data[i + 1]);   // value
+    int stride = blockDim.x * gridDim.x;
+
+    for (int i = index; i < local_data_row_count; i += stride) {
+        int key = local_data[i * 2];
+        int destination_rank = key % nprocs;
+        atomicAdd(&send_count[destination_rank], 2);
     }
-
-    // Calculate the displacements for each process for current process
-    long int total_send = send_count[0];
-    for (i = 1; i < nprocs; i++) {
-        send_displacements[i] = send_displacements[i - 1] + send_count[i - 1];
-        total_send += send_count[i];
-    }
-
-//    show_variable(send_count, nprocs, 1, rank, "send count");
-//    cout << "Rank: " << rank << ", Total send: " << total_send << endl;
-    // Create the send data buffer for each process from the array of vectors
-    int *send_data = (int *) calloc(total_send, sizeof(int));
-    for (i = 0; i < nprocs; i++) {
-        int pos = 0;
-        for (j = send_displacements[i]; j < send_displacements[i] + rank_data[i].size(); j++) {
-            send_data[j] = rank_data[i][pos++];
-        }
-    }
-//    show_variable(send_data, total_send, 1, rank, "send data");
-
-    // Send total number of items for each process from current process
-    // Send 1 integer to each process from send buffer
-    MPI_Alltoall(send_count, 1, MPI_INT, receive_count, 1, MPI_INT, MPI_COMM_WORLD);
-    show_variable(receive_count, nprocs, 1, rank, "receive count");
-
-    // Calculate the displacements for receive buffer
-    int *receive_displacements = (int *) calloc(nprocs, sizeof(int));
-    long int total_receive = receive_count[0];
-    for (i = 1; i < nprocs; i++) {
-        receive_displacements[i] = receive_displacements[i - 1] + receive_count[i - 1];
-        total_receive += receive_count[i];
-    }
-
-    // Set the receive data buffer for each processor
-    int *receive_data = (int *) calloc(total_receive, sizeof(int));
-    MPI_Alltoallv(send_data, send_count, send_displacements, MPI_INT,
-                  receive_data, receive_count, receive_displacements, MPI_INT,
-                  MPI_COMM_WORLD);
-    set <pair<int, int>> unique_rows;
-    for (i = 0; i < total_receive; i += total_columns) {
-        unique_rows.insert(make_pair(receive_data[i], receive_data[i + 1]));
-    }
-
-    long int total_unique_receive = unique_rows.size() * total_columns;
-    int *unique_receive_data = (int *) calloc(total_unique_receive, sizeof(int));
-    long int count = 0;
-    for (auto p: unique_rows) {
-        unique_receive_data[count++] = p.first;
-        unique_receive_data[count++] = p.second;
-    }
-
-    free(receive_data);
-    free(send_count);
-    free(send_displacements);
-    free(send_data);
-    free(receive_count);
-    free(receive_displacements);
-    return make_pair(unique_receive_data, total_unique_receive);
 }
+
+__global__ void get_rank_data(int *local_data, int local_data_row_count,
+                              int *send_count_offset, int nprocs, int *rank_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= local_data_row_count) return;
+
+    int stride = blockDim.x * gridDim.x;
+
+    for (int i = index; i < local_data_row_count; i += stride) {
+        int key = local_data[i * 2];
+        int value = local_data[(i * 2) + 1];
+        int destination_rank = key % nprocs;
+        int current_position = atomicAdd(&send_count_offset[destination_rank], 2);
+        rank_data[current_position] = key;
+        rank_data[current_position + 1] = value;
+    }
+}
+
+
+//
+//
+//void get_split_relation_gpu(int rank, int *local_data, long int local_count,
+//                                         int total_columns, int nprocs) {
+//    int i, j;
+//    // Array of vectors where we need to push to integers to proper rank based on hash
+////    vector<int> rank_data[nprocs];
+//    thrust::device_vector<int> rank_data(nprocs);
+//    // Count the number of data to be sent to destination processor
+//    thrust::device_vector<int> send_count(nprocs);
+//    thrust::device_vector<int> receive_count(nprocs);
+////    int *send_count = (int *) calloc(nprocs, sizeof(int));
+////    int *receive_count = (int *) calloc(nprocs, sizeof(int));
+//
+//    thrust::device_vector<int> send_displacements(nprocs);
+////    int *send_displacements = (int *) calloc(nprocs, sizeof(int));
+//    for (i = 0; i < local_count; i += total_columns) {
+//        int destination_rank = local_data[i] % nprocs;
+//        send_count[destination_rank] += total_columns;
+//        rank_data[destination_rank].push_back(local_data[i]);       // key
+//        rank_data[destination_rank].push_back(local_data[i + 1]);   // value
+//    }
+//
+//    // Calculate the displacements for each process for current process
+//    long int total_send = send_count[0];
+//    for (i = 1; i < nprocs; i++) {
+//        send_displacements[i] = send_displacements[i - 1] + send_count[i - 1];
+//        total_send += send_count[i];
+//    }
+//
+//    // Create the send data buffer for each process from the array of vectors
+//    thrust::device_vector<int> send_displacements(nprocs);
+//
+//    int *send_data = (int *) calloc(total_send, sizeof(int));
+//    for (i = 0; i < nprocs; i++) {
+//        int pos = 0;
+//        for (j = send_displacements[i]; j < send_displacements[i] + rank_data[i].size(); j++) {
+//            send_data[j] = rank_data[i][pos++];
+//        }
+//    }
+//
+//    // Send total number of items for each process from current process
+//    // Send 1 integer to each process from send buffer
+//    MPI_Alltoall(send_count, 1, MPI_INT, receive_count, 1, MPI_INT, MPI_COMM_WORLD);
+//
+//    // Calculate the displacements for receive buffer
+//    int *receive_displacements = (int *) calloc(nprocs, sizeof(int));
+//    long int total_receive = receive_count[0];
+//    for (i = 1; i < nprocs; i++) {
+//        receive_displacements[i] = receive_displacements[i - 1] + receive_count[i - 1];
+//        total_receive += receive_count[i];
+//    }
+//
+//    // Set the receive data buffer for each processor
+//    int *receive_data = (int *) calloc(total_receive, sizeof(int));
+//    MPI_Alltoallv(send_data, send_count, send_displacements, MPI_INT,
+//                  receive_data, receive_count, receive_displacements, MPI_INT,
+//                  MPI_COMM_WORLD);
+//    set <pair<int, int>> unique_rows;
+//    for (i = 0; i < total_receive; i += total_columns) {
+//        unique_rows.insert(make_pair(receive_data[i], receive_data[i + 1]));
+//    }
+//
+//    long int total_unique_receive = unique_rows.size() * total_columns;
+//    int *unique_receive_data = (int *) calloc(total_unique_receive, sizeof(int));
+//    long int count = 0;
+//    for (auto p: unique_rows) {
+//        unique_receive_data[count++] = p.first;
+//        unique_receive_data[count++] = p.second;
+//    }
+//
+//    free(receive_data);
+//    free(send_count);
+//    free(send_displacements);
+//    free(send_data);
+//    free(receive_count);
+//    free(receive_displacements);
+//    return make_pair(unique_receive_data, total_unique_receive);
+//}
 
 int *get_reverse_relation(int *relation, long int relation_size, int total_columns) {
     int *reverse_relation = (int *) malloc(relation_size * sizeof(int));
@@ -147,8 +183,10 @@ int main(int argc, char **argv) {
     int device_id;
     int number_of_sm;
     cudaGetDevice(&device_id);
-
     cudaDeviceGetAttribute(&number_of_sm, cudaDevAttrMultiProcessorCount, device_id);
+    int block_size, grid_size;
+    block_size = 512;
+    grid_size = 32 * number_of_sm;
     setlocale(LC_ALL, "");
     double elapsed_time = -MPI_Wtime();
     double max_time = 0.0;
@@ -191,12 +229,70 @@ int main(int argc, char **argv) {
     MPI_File_close(&mpi_file_buffer);
 
     int *local_data_reverse = get_reverse_relation(local_data, local_count, total_columns);
-    pair<int *, long int> input_relation_data = get_split_relation(rank, local_data, local_count,
-                                                                   total_columns, nprocs);
-    int *input_relation = input_relation_data.first;
-    long int input_relation_size = input_relation_data.second;
+
+    int *local_data_device;
+    checkCuda(cudaMalloc((void **) &local_data_device, row_size * total_columns * sizeof(int)));
+    cudaMemcpy(local_data_device, local_data, row_size * total_columns * sizeof(int),
+               cudaMemcpyHostToDevice);
+
+//    int *host_graph = (int *) malloc(row_size * total_columns * sizeof(int));
+//    cudaMemcpy(host_graph, device_graph, row_size * total_columns * sizeof(int),
+//               cudaMemcpyDeviceToHost);
+
+    int *send_count;
+    checkCuda(cudaMalloc((void **) &send_count, nprocs * sizeof(int)));
+    int *send_displacements;
+    checkCuda(cudaMalloc((void **) &send_displacements, nprocs * sizeof(int)));
+    int *send_displacements_temp;
+    checkCuda(cudaMalloc((void **) &send_displacements_temp, nprocs * sizeof(int)));
+    get_send_count<<<grid_size, block_size>>>(local_data_device, row_size, send_count, nprocs);
+    // calculate offset
+    thrust::exclusive_scan(thrust::device, send_count, send_count + nprocs, send_displacements);
+    cudaMemcpy(send_displacements_temp, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToDevice);
+    int *send_data;
+    checkCuda(cudaMalloc((void **) &send_data, row_size * total_columns * sizeof(int)));
+    get_rank_data<<<grid_size, block_size>>>(local_data_device, row_size, send_displacements_temp, nprocs, send_data);
+
+//    int total_send = thrust::reduce(thrust::device, send_count, send_count + nprocs, 0, thrust::plus<int>());
+
+//    cout << "Rank: " << rank << ", Total send: " << total_send << endl;
+
+//    show_device_variable(send_count, nprocs, 1, rank, "send count");
+
+//    show_device_variable(send_displacements, nprocs, 1, rank, "send displacements");
+//    show_device_variable(send_data, row_size*total_columns, 1, rank, "send data");
+    int *receive_count;
+    checkCuda(cudaMalloc((void **) &receive_count, nprocs * sizeof(int)));
+
+    MPI_Alltoall(send_count, 1, MPI_INT, receive_count, 1, MPI_INT, MPI_COMM_WORLD);
+//    show_device_variable(receive_count, nprocs, 1, rank, "receive count");
 
 
+//    int *rank_data_offset_host = (int *) malloc(nprocs * sizeof(int));
+//    cudaMemcpy(rank_data_offset_host, rank_data_offset, nprocs * sizeof(int),
+//               cudaMemcpyDeviceToHost);
+//    cout << "----------------" << endl;
+//    for (i = 0; i < nprocs; i++) {
+//        cout << "Rank: " << rank << ", Destination Rank: " << i << ", data_size: " << rank_data_offset_host[i] << endl;
+//    }
+//
+//    int *rank_data_host = (int *) malloc(row_size * total_columns * sizeof(int));
+//    cudaMemcpy(rank_data_host, rank_data, row_size * total_columns * sizeof(int),
+//               cudaMemcpyDeviceToHost);
+//    cout << "----------------" << endl;
+//    for (i = 0; i < row_size; i++) {
+//        cout << "Rank: " << rank << ", " << rank_data_host[i * 2] << " " << rank_data_host[(i * 2) + 1] << endl;
+//    }
+//    cout << "----------------" << endl;
+//    for (i = 0; i < row_size; i++) {
+//        cout << "(Original graph) Rank: " << rank << ", " << local_data[i * 2] << " " << local_data[(i * 2) + 1] << endl;
+//    }
+//    pair<int *, long int> input_relation_data = get_split_relation(rank, local_data, local_count,
+//                                                                   total_columns, nprocs);
+//    int *input_relation = input_relation_data.first;
+//    long int input_relation_size = input_relation_data.second;
+//
+//
 //    long int global_t_full_size, global_tc_size;
 //    pair<int *, long int> reverse_relation_data = get_split_relation(rank, local_data_reverse, local_count,
 //                                                                     total_columns, nprocs);
@@ -368,3 +464,5 @@ int main(int argc, char **argv) {
     MPI_Finalize();
     return 0;
 }
+
+// make runsemi DATA_FILE=data/data_10.bin NPROCS=8

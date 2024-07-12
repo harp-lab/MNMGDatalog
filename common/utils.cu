@@ -86,6 +86,17 @@ struct cmp {
     }
 };
 
+struct set_cmp {
+    __host__ __device__
+    bool operator()(const Entity &lhs, const Entity &rhs) {
+        if (lhs.key == rhs.key) {
+            // If keys are equal, compare values
+            return lhs.value < rhs.value;
+        }
+        return lhs.key < rhs.key;
+    }
+};
+
 __device__ int get_position(int key, int hash_table_row_size) {
     key ^= key >> 16;
     key *= 0x85ebca6b;
@@ -242,4 +253,39 @@ void update_reverse_relation(Entity *data, int data_rows, int *reverse_relation)
         reverse_relation[i * 2] = data[i].key;
         reverse_relation[(i * 2) + 1] = data[i].value;
     }
+}
+
+void show_variable(int *host_data, int data_size, int group, int rank, string message) {
+    cout << "Rank " << rank << ": " << message << " ----------------" << endl;
+    for (int i = 0; i < data_size / group; i++) {
+        for (int j = 0; j < group; j++) {
+            cout << host_data[(i*group) + j] << " ";
+        }
+        if(data_size <= 20) {
+            cout << ", ";
+        }
+        else {
+            cout << endl;
+        }
+    }
+    cout << endl;
+}
+
+void show_device_variable(int *device_data, int device_data_size, int group, int rank, string message) {
+    int *host_data = (int *) malloc(device_data_size * sizeof(int));
+    cudaMemcpy(host_data, device_data, device_data_size * sizeof(int), cudaMemcpyDeviceToHost);
+    cout << "Rank " << rank << ": " << message << " ----------------" << endl;
+    for (int i = 0; i < device_data_size / group; i++) {
+        for (int j = 0; j < group; j++) {
+            cout << host_data[(i*group) + j] << " ";
+        }
+        if(device_data_size <= 20) {
+            cout << ", ";
+        }
+        else {
+            cout << endl;
+        }
+    }
+    cout << endl;
+    free(host_data);
 }

@@ -2,6 +2,11 @@ TARGET = parallel_join
 SRC = $(TARGET).cu
 TARGET_MPI = mpi_tc
 SRC_MPI = $(TARGET_MPI).cpp
+TARGET_GPU_COMM = gpu_comm
+SRC_GPU_COMM = $(TARGET_GPU_COMM).cu
+TARGET_SEMI = tc_semi_naive
+SRC_SEMI = $(TARGET_SEMI).cu
+
 COMPILER_FLAGS = -w -lm
 MPICC?=mpiCC
 MPIRUN?=mpirun
@@ -16,11 +21,23 @@ build:
 test:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET).out $(DATA_FILE)
 
+buildsemi:
+	nvcc $(SRC_SEMI) -o $(TARGET_SEMI).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS)
+
+testsemi:
+	${MPIRUN} -np $(NPROCS) ./$(TARGET_SEMI).out $(DATA_FILE)
+
 buildmpi:
 	${MPICC} $(SRC_MPI) -o $(TARGET_MPI).out $(COMPILER_FLAGS)
 
 testmpi:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_MPI).out $(DATA_FILE)
+
+buildcomm:
+	nvcc $(SRC_GPU_COMM) -o $(TARGET_GPU_COMM).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS)
+
+testcomm:
+	${MPIRUN} -np $(NPROCS) ./$(TARGET_GPU_COMM).out $(DATA_FILE)
 
 buildpolaris:
 	CC $(SRC) -o $(TARGET).out $(COMPILER_FLAGS)
@@ -33,7 +50,11 @@ run: build test
 
 runmpi: buildmpi testmpi
 
+runcomm: buildcomm testcomm
+
 runpolaris: buildpolaris testpolaris
+
+runsemi: buildsemi testsemi
 
 clean:
 	rm -f $(TARGET).out

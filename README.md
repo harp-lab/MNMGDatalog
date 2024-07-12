@@ -79,6 +79,15 @@ python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_238
 | 23,874   | 7         | 58           | 481,121 | 4.9597   |
 | 23,874   | 8         | 58           | 481,121 | 5.1932   |
 
+
+#### Performance imporvement using semi-naive:
+```shell
+// naive
+make run DATA_FILE=data/data_23874.bin NPROCS=8
+// 7.3803, 5.5220, 4.7417, 4.5751, 4.5915
+make runsemi DATA_FILE=data/data_23874.bin NPROCS=8
+```
+
 ## Run in Polaris
 The job script [polaris-job.sh](polaris-job.sh) contains the multi node multi GPU configuration for Polaris.
 Change this file to change the number of nodes in `PBS -l select=10:system=polaris` (default 10).
@@ -153,9 +162,16 @@ Total time: 292.3941 seconds
 | 147,892 | 40 | 31 | 884,179,859 | 292.3941 |
 | 147,892 | 120 | 31 | 884,179,859 |  97.5625 |
 
+### CUDA Aware MPI
+```shell
+nvcc cam.cu -o cam -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm
+mpirun -np 2 ./cam
+```
+
 ### References
 - [Polaris User Guides](https://docs.alcf.anl.gov/polaris/getting-started/)
 - [Polaris CUDA MPI job example](https://github.com/argonne-lcf/GettingStarted/tree/master/Examples/Polaris/affinity_gpu)
 - [Stackoverflow answer for all gather vs all to all](https://stackoverflow.com/a/34113431/3129414)
 - [Blog on MPI](https://www.codeproject.com/Articles/896437/A-Gentle-Introduction-to-the-Message-Passing-Inter)
 - [MPI all to all](https://mpi.deino.net/mpi_functions/MPI_Alltoall.html)
+- [Thrust: The C++ Parallel Algorithms Library](https://nvidia.github.io/cccl/thrust/)
