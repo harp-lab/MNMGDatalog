@@ -35,118 +35,6 @@ using namespace std;
     (BLOCK_START(process_id + 1, total_process, n) - BLOCK_START(process_id, total_process, n))
 
 
-__global__ void get_send_count(int *local_data, int local_data_row_count,
-                               int *send_count, int nprocs) {
-    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (index >= local_data_row_count) return;
-
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = index; i < local_data_row_count; i += stride) {
-        int key = local_data[i * 2];
-        int destination_rank = key % nprocs;
-        atomicAdd(&send_count[destination_rank], 2);
-    }
-}
-
-__global__ void get_rank_data(int *local_data, int local_data_row_count,
-                              int *send_count_offset, int nprocs, int *rank_data) {
-    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (index >= local_data_row_count) return;
-
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = index; i < local_data_row_count; i += stride) {
-        int key = local_data[i * 2];
-        int value = local_data[(i * 2) + 1];
-        int destination_rank = key % nprocs;
-        int current_position = atomicAdd(&send_count_offset[destination_rank], 2);
-        rank_data[current_position] = key;
-        rank_data[current_position + 1] = value;
-    }
-}
-
-
-//
-//
-//void get_split_relation_gpu(int rank, int *local_data, long int local_count,
-//                                         int total_columns, int nprocs) {
-//    int i, j;
-//    // Array of vectors where we need to push to integers to proper rank based on hash
-////    vector<int> rank_data[nprocs];
-//    thrust::device_vector<int> rank_data(nprocs);
-//    // Count the number of data to be sent to destination processor
-//    thrust::device_vector<int> send_count(nprocs);
-//    thrust::device_vector<int> receive_count(nprocs);
-////    int *send_count = (int *) calloc(nprocs, sizeof(int));
-////    int *receive_count = (int *) calloc(nprocs, sizeof(int));
-//
-//    thrust::device_vector<int> send_displacements(nprocs);
-////    int *send_displacements = (int *) calloc(nprocs, sizeof(int));
-//    for (i = 0; i < local_count; i += total_columns) {
-//        int destination_rank = local_data[i] % nprocs;
-//        send_count[destination_rank] += total_columns;
-//        rank_data[destination_rank].push_back(local_data[i]);       // key
-//        rank_data[destination_rank].push_back(local_data[i + 1]);   // value
-//    }
-//
-//    // Calculate the displacements for each process for current process
-//    long int total_send = send_count[0];
-//    for (i = 1; i < nprocs; i++) {
-//        send_displacements[i] = send_displacements[i - 1] + send_count[i - 1];
-//        total_send += send_count[i];
-//    }
-//
-//    // Create the send data buffer for each process from the array of vectors
-//    thrust::device_vector<int> send_displacements(nprocs);
-//
-//    int *send_data = (int *) calloc(total_send, sizeof(int));
-//    for (i = 0; i < nprocs; i++) {
-//        int pos = 0;
-//        for (j = send_displacements[i]; j < send_displacements[i] + rank_data[i].size(); j++) {
-//            send_data[j] = rank_data[i][pos++];
-//        }
-//    }
-//
-//    // Send total number of items for each process from current process
-//    // Send 1 integer to each process from send buffer
-//    MPI_Alltoall(send_count, 1, MPI_INT, receive_count, 1, MPI_INT, MPI_COMM_WORLD);
-//
-//    // Calculate the displacements for receive buffer
-//    int *receive_displacements = (int *) calloc(nprocs, sizeof(int));
-//    long int total_receive = receive_count[0];
-//    for (i = 1; i < nprocs; i++) {
-//        receive_displacements[i] = receive_displacements[i - 1] + receive_count[i - 1];
-//        total_receive += receive_count[i];
-//    }
-//
-//    // Set the receive data buffer for each processor
-//    int *receive_data = (int *) calloc(total_receive, sizeof(int));
-//    MPI_Alltoallv(send_data, send_count, send_displacements, MPI_INT,
-//                  receive_data, receive_count, receive_displacements, MPI_INT,
-//                  MPI_COMM_WORLD);
-//    set <pair<int, int>> unique_rows;
-//    for (i = 0; i < total_receive; i += total_columns) {
-//        unique_rows.insert(make_pair(receive_data[i], receive_data[i + 1]));
-//    }
-//
-//    long int total_unique_receive = unique_rows.size() * total_columns;
-//    int *unique_receive_data = (int *) calloc(total_unique_receive, sizeof(int));
-//    long int count = 0;
-//    for (auto p: unique_rows) {
-//        unique_receive_data[count++] = p.first;
-//        unique_receive_data[count++] = p.second;
-//    }
-//
-//    free(receive_data);
-//    free(send_count);
-//    free(send_displacements);
-//    free(send_data);
-//    free(receive_count);
-//    free(receive_displacements);
-//    return make_pair(unique_receive_data, total_unique_receive);
-//}
-
 int *get_reverse_relation(int *relation, long int relation_size, int total_columns) {
     int *reverse_relation = (int *) malloc(relation_size * sizeof(int));
     for (int i = 0; i < relation_size; i += total_columns) {
@@ -157,25 +45,99 @@ int *get_reverse_relation(int *relation, long int relation_size, int total_colum
 }
 
 
-pair<int *, long int> update_t_full(int *t_full, long int t_full_size, int *facts, long int facts_size,
-                                    int total_columns) {
-    set <pair<int, int>> unique_rows;
-    for (int i = 0; i < t_full_size; i += total_columns) {
-        unique_rows.insert(make_pair(t_full[i], t_full[i + 1]));
-    }
-    for (int i = 0; i < facts_size; i += total_columns) {
-        unique_rows.insert(make_pair(facts[i], facts[i + 1]));
-    }
-    long int total_unique_rows = unique_rows.size() * total_columns;
-    int *unique_data = (int *) calloc(total_unique_rows, sizeof(int));
-    long int count = 0;
-    for (auto p: unique_rows) {
-        unique_data[count++] = p.first;
-        unique_data[count++] = p.second;
-    }
-    return make_pair(unique_data, count);
-}
+Entity *get_split_relation(int rank, Entity *local_data_device,
+                           int row_size, int total_columns, int nprocs,
+                           int grid_size, int block_size, int cuda_aware_mpi, int *size) {
+    int *send_count;
+    checkCuda(cudaMalloc((void **) &send_count, nprocs * sizeof(int)));
+    checkCuda(cudaMemset(send_count, 0, nprocs * sizeof(int)));
+    int *send_displacements;
+    checkCuda(cudaMalloc((void **) &send_displacements, nprocs * sizeof(int)));
+    checkCuda(cudaMemset(send_displacements, 0, nprocs * sizeof(int)));
+    int *send_displacements_temp;
+    checkCuda(cudaMalloc((void **) &send_displacements_temp, nprocs * sizeof(int)));
+    checkCuda(cudaMemset(send_displacements_temp, 0, nprocs * sizeof(int)));
 
+    get_send_count<<<grid_size, block_size>>>(local_data_device, row_size, send_count, nprocs);
+    thrust::exclusive_scan(thrust::device, send_count, send_count + nprocs, send_displacements);
+    cudaMemcpy(send_displacements_temp, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToDevice);
+    Entity *send_data;
+    checkCuda(cudaMalloc((void **) &send_data, row_size * sizeof(Entity)));
+    Entity negative_entity;
+    negative_entity.key = -1;
+    negative_entity.value = -1;
+    thrust::fill(thrust::device, send_data, send_data + row_size, negative_entity);
+
+    get_rank_data<<<grid_size, block_size>>>(local_data_device, row_size, send_displacements_temp, nprocs, send_data);
+    checkCuda(cudaDeviceSynchronize());
+    int *receive_count;
+    checkCuda(cudaMalloc((void **) &receive_count, nprocs * sizeof(int)));
+    checkCuda(cudaMemset(receive_count, 0, nprocs * sizeof(int)));
+
+    int *receive_displacements;
+    checkCuda(cudaMalloc((void **) &receive_displacements, nprocs * sizeof(int)));
+    checkCuda(cudaMemset(receive_displacements, 0, nprocs * sizeof(int)));
+
+    if (cuda_aware_mpi) {
+        MPI_Alltoall(send_count, 1, MPI_INT, receive_count, 1, MPI_INT, MPI_COMM_WORLD);
+    } else {
+        int *send_count_host = (int *) malloc(nprocs * sizeof(int));;
+        int *receive_count_host = (int *) malloc(nprocs * sizeof(int));;
+        cudaMemcpy(send_count_host, send_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+        MPI_Alltoall(send_count_host, 1, MPI_INT, receive_count_host, 1, MPI_INT, MPI_COMM_WORLD);
+        cudaMemcpy(receive_count, receive_count_host, nprocs * sizeof(int), cudaMemcpyHostToDevice);
+        checkCuda(cudaDeviceSynchronize());
+        free(send_count_host);
+        free(receive_count_host);
+    }
+    int total_receive = thrust::reduce(thrust::device, receive_count, receive_count + nprocs, 0, thrust::plus<int>());
+    thrust::exclusive_scan(thrust::device, receive_count, receive_count + nprocs, receive_displacements);
+    checkCuda(cudaDeviceSynchronize());
+    Entity *receive_data;
+    checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
+    thrust::fill(thrust::device, receive_data, receive_data + total_receive, negative_entity);
+    if (cuda_aware_mpi) {
+        MPI_Alltoallv(send_data, send_count, send_displacements, MPI_UINT64_T,
+                      receive_data, receive_count, receive_displacements, MPI_UINT64_T,
+                      MPI_COMM_WORLD);
+    } else {
+        int *send_count_host = (int *) malloc(nprocs * sizeof(int));;
+        int *receive_count_host = (int *) malloc(nprocs * sizeof(int));;
+        int *send_displacements_host = (int *) malloc(nprocs * sizeof(int));;
+        int *receive_displacements_host = (int *) malloc(nprocs * sizeof(int));;
+        Entity *send_data_host = (Entity *) malloc(row_size * sizeof(Entity));;
+        Entity *receive_data_host = (Entity *) malloc(total_receive * sizeof(Entity));;
+        cudaMemcpy(send_count_host, send_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(receive_count_host, receive_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(send_displacements_host, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(receive_displacements_host, receive_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(send_data_host, send_data, row_size * sizeof(Entity), cudaMemcpyDeviceToHost);
+        MPI_Alltoallv(send_data_host, send_count_host, send_displacements_host, MPI_UINT64_T,
+                      receive_data_host, receive_count_host, receive_displacements_host, MPI_UINT64_T,
+                      MPI_COMM_WORLD);
+        cudaMemcpy(receive_data, receive_data_host, total_receive * sizeof(Entity), cudaMemcpyHostToDevice);
+        checkCuda(cudaDeviceSynchronize());
+        free(send_count_host);
+        free(receive_count_host);
+        free(send_displacements_host);
+        free(receive_displacements_host);
+        free(send_data_host);
+        free(receive_data_host);
+    }
+    *size = total_receive;
+    Entity *result_data;
+    checkCuda(cudaMalloc((void **) &result_data, total_receive * sizeof(Entity)));
+    cudaMemcpy(result_data, receive_data, total_receive * sizeof(Entity), cudaMemcpyDeviceToDevice);
+    checkCuda(cudaDeviceSynchronize());
+    cudaFree(send_count);
+    cudaFree(receive_count);
+    cudaFree(send_displacements);
+    cudaFree(send_displacements_temp);
+    cudaFree(receive_displacements);
+    cudaFree(send_data);
+    cudaFree(receive_data);
+    return result_data;
+}
 
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
@@ -196,6 +158,7 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     // Should pass the input filename in command line argument
     const char *input_file;
+    int cuda_aware_mpi = 0;
     if (argc == 2) {
         input_file = argv[1];
     } else {
@@ -217,252 +180,196 @@ int main(int argc, char **argv) {
 
     // Reading specific portion from the file as char in parallel
     long int offset = row_start * total_columns * sizeof(int);
-    int *local_data = (int *) malloc(local_count * sizeof(int));
+    int *local_data_temp = (int *) malloc(local_count * sizeof(int));
     MPI_File mpi_file_buffer;
     if (MPI_File_open(MPI_COMM_WORLD, input_file, MPI_MODE_RDONLY,
                       MPI_INFO_NULL, &mpi_file_buffer) != MPI_SUCCESS) {
         printf("Error opening file %s", input_file);
         MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
-    MPI_File_read_at(mpi_file_buffer, offset, local_data, local_count,
-                     MPI_INT, MPI_STATUS_IGNORE);
+    MPI_File_read_at(mpi_file_buffer, offset, local_data_temp, local_count, MPI_INT, MPI_STATUS_IGNORE);
     MPI_File_close(&mpi_file_buffer);
 
-    int *local_data_reverse = get_reverse_relation(local_data, local_count, total_columns);
 
     int *local_data_device;
-    checkCuda(cudaMalloc((void **) &local_data_device, row_size * total_columns * sizeof(int)));
-    cudaMemcpy(local_data_device, local_data, row_size * total_columns * sizeof(int),
-               cudaMemcpyHostToDevice);
+    checkCuda(cudaMalloc((void **) &local_data_device, local_count * sizeof(int)));
+    cudaMemcpy(local_data_device, local_data_temp, local_count * sizeof(int), cudaMemcpyHostToDevice);
+    checkCuda(cudaDeviceSynchronize());
 
-//    int *host_graph = (int *) malloc(row_size * total_columns * sizeof(int));
-//    cudaMemcpy(host_graph, device_graph, row_size * total_columns * sizeof(int),
-//               cudaMemcpyDeviceToHost);
+    int *local_data_reverse_temp = get_reverse_relation(local_data_temp, local_count, total_columns);
+    int *local_data_reverse_device;
+    checkCuda(cudaMalloc((void **) &local_data_reverse_device, local_count * sizeof(int)));
+    cudaMemcpy(local_data_reverse_device, local_data_reverse_temp, local_count * sizeof(int), cudaMemcpyHostToDevice);
+    checkCuda(cudaDeviceSynchronize());
+    Entity *local_data;
+    checkCuda(cudaMalloc((void **) &local_data, row_size * sizeof(Entity)));
+    Entity *local_data_reverse;
+    checkCuda(cudaMalloc((void **) &local_data_reverse, row_size * sizeof(Entity)));
+    create_entity_ar<<<grid_size, block_size>>>(local_data, row_size, local_data_device);
+    create_entity_ar<<<grid_size, block_size>>>(local_data_reverse, row_size, local_data_reverse_device);
+    int input_relation_size = 0;
+    Entity *input_relation = get_split_relation(rank, local_data,
+                                                row_size, total_columns, nprocs,
+                                                grid_size, block_size, cuda_aware_mpi, &input_relation_size);
+    long int global_t_full_size, global_tc_size;
 
-    int *send_count;
-    checkCuda(cudaMalloc((void **) &send_count, nprocs * sizeof(int)));
-    int *send_displacements;
-    checkCuda(cudaMalloc((void **) &send_displacements, nprocs * sizeof(int)));
-    int *send_displacements_temp;
-    checkCuda(cudaMalloc((void **) &send_displacements_temp, nprocs * sizeof(int)));
-    get_send_count<<<grid_size, block_size>>>(local_data_device, row_size, send_count, nprocs);
-    // calculate offset
-    thrust::exclusive_scan(thrust::device, send_count, send_count + nprocs, send_displacements);
-    cudaMemcpy(send_displacements_temp, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToDevice);
-    int *send_data;
-    checkCuda(cudaMalloc((void **) &send_data, row_size * total_columns * sizeof(int)));
-    get_rank_data<<<grid_size, block_size>>>(local_data_device, row_size, send_displacements_temp, nprocs, send_data);
+    int reverse_relation_size = 0;
+    Entity *reverse_relation = get_split_relation(rank, local_data_reverse,
+                                                  row_size, total_columns, nprocs,
+                                                  grid_size, block_size, cuda_aware_mpi, &reverse_relation_size);
+    thrust::stable_sort(thrust::device, reverse_relation, reverse_relation + reverse_relation_size, set_cmp());
+    reverse_relation_size = (thrust::unique(thrust::device,
+                                            reverse_relation, reverse_relation + reverse_relation_size,
+                                            is_equal())) - reverse_relation;
 
-//    int total_send = thrust::reduce(thrust::device, send_count, send_count + nprocs, 0, thrust::plus<int>());
+    int t_delta_size = reverse_relation_size;
+    Entity *t_delta;
+    checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
+    cudaMemcpy(t_delta, reverse_relation, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
 
-//    cout << "Rank: " << rank << ", Total send: " << total_send << endl;
+    // T_FULL is reverse_relation with first column as key
+    Entity *t_full;
+    checkCuda(cudaMalloc((void **) &t_full, reverse_relation_size * sizeof(Entity)));
+    cudaMemcpy(t_full, reverse_relation, reverse_relation_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
 
-//    show_device_variable(send_count, nprocs, 1, rank, "send count");
+    long int t_full_size = reverse_relation_size;
+    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 
-//    show_device_variable(send_displacements, nprocs, 1, rank, "send displacements");
-//    show_device_variable(send_data, row_size*total_columns, 1, rank, "send data");
-    int *receive_count;
-    checkCuda(cudaMalloc((void **) &receive_count, nprocs * sizeof(int)));
+    Entity *hash_table, *result;
+    Entity *result_host;
+    Entity *hash_table_host;
+    double load_factor = 0.4;
+    long int hash_table_rows = (long int) input_relation_size / load_factor;
+    hash_table_rows = pow(2, ceil(log(hash_table_rows) / log(2)));
+    checkCuda(cudaMalloc((void **) &hash_table, hash_table_rows * sizeof(Entity)));
+    Entity negative_entity;
+    negative_entity.key = -1;
+    negative_entity.value = -1;
+    thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
+    build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, input_relation,
+                                                       input_relation_size);
+    checkCuda(cudaDeviceSynchronize());
+    long int iterations = 0;
 
-    MPI_Alltoall(send_count, 1, MPI_INT, receive_count, 1, MPI_INT, MPI_COMM_WORLD);
-//    show_device_variable(receive_count, nprocs, 1, rank, "receive count");
+
+    while (true) {
+        long int join_result_size;
+        int *join_offset;
+        Entity *join_result;
+        Entity *new_t_full;
+        checkCuda(cudaMalloc((void **) &join_offset, t_delta_size * sizeof(int)));
+        checkCuda(cudaMemset(join_offset, 0, t_delta_size * sizeof(int)));
+
+        get_join_result_size_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows,
+                                                               t_delta, t_delta_size, join_offset);
+        join_result_size = thrust::reduce(thrust::device, join_offset, join_offset + t_delta_size, 0);
+        thrust::exclusive_scan(thrust::device, join_offset, join_offset + t_delta_size, join_offset);
+        checkCuda(cudaMalloc((void **) &join_result, join_result_size * sizeof(Entity)));
+
+        get_join_result_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows,
+                                                          t_delta, t_delta_size, join_offset, join_result);
+        thrust::stable_sort(thrust::device, join_result, join_result + join_result_size, set_cmp());
+        join_result_size = (thrust::unique(thrust::device,
+                                           join_result, join_result + join_result_size,
+                                           is_equal())) - join_result;
+
+        // Scatter the new facts among relevant processes
+        Entity *t_delta_temp = get_split_relation(rank, join_result,
+                                                  join_result_size, total_columns, nprocs,
+                                                  grid_size, block_size, cuda_aware_mpi, &t_delta_size);
+        // Update the reverse relation which will be used in next iteration
+        thrust::stable_sort(thrust::device, t_delta_temp, t_delta_temp + t_delta_size, set_cmp());
+        t_delta_size = (thrust::unique(thrust::device,
+                                       t_delta_temp, t_delta_temp + t_delta_size,
+                                       is_equal())) - t_delta_temp;
+        cudaFree(t_delta);
+        checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
+        cudaMemcpy(t_delta, t_delta_temp, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+
+        long int new_t_full_size = t_delta_size + t_full_size;
+        checkCuda(cudaMalloc((void **) &new_t_full, new_t_full_size * sizeof(Entity)));
+        new_t_full_size = thrust::set_union(thrust::device,
+                                            t_full, t_full + t_full_size,
+                                            t_delta, t_delta + t_delta_size,
+                                            new_t_full, set_cmp()) - new_t_full;
+
+        Entity *new_t_delta;
+        checkCuda(cudaMalloc((void **) &new_t_delta, t_delta_size * sizeof(Entity)));
+        t_delta_size = thrust::set_difference(
+                thrust::device,
+                new_t_full, new_t_full + new_t_full_size,
+                t_full, t_full + t_full_size,
+                new_t_delta, set_cmp()) - new_t_delta;
+        cudaFree(t_delta);
+        checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
+        cudaFree(t_full);
+        checkCuda(cudaMalloc((void **) &t_full, new_t_full_size * sizeof(Entity)));
+        thrust::copy(thrust::device, new_t_full, new_t_full + new_t_full_size, t_full);
+        thrust::copy(thrust::device, new_t_delta, new_t_delta + t_delta_size, t_delta);
+        t_full_size = new_t_full_size;
+        cudaFree(join_offset);
+        cudaFree(join_result);
+        cudaFree(new_t_delta);
+        cudaFree(new_t_full);
+        cudaFree(t_delta_temp);
+        // Check if the global t full size has changed in this iteration
+        long int old_global_t_full_size = global_t_full_size;
+        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+        iterations++;
+        if (old_global_t_full_size == global_t_full_size) {
+            break;
+        }
+    }
+//     Reverse the t_full as we stored it in reverse order initially
+
+    int *t_full_ar;
+    checkCuda(cudaMalloc((void **) &t_full_ar, t_full_size * total_columns * sizeof(int)));
+    reverse_t_full<<<grid_size, block_size>>>(t_full_ar, t_full_size, t_full);
+    int *t_full_ar_host = (int *) malloc(t_full_size * total_columns * sizeof(int));
+    cudaMemcpy(t_full_ar_host, t_full_ar, t_full_size * total_columns * sizeof(int), cudaMemcpyDeviceToHost);
 
 
-//    int *rank_data_offset_host = (int *) malloc(nprocs * sizeof(int));
-//    cudaMemcpy(rank_data_offset_host, rank_data_offset, nprocs * sizeof(int),
-//               cudaMemcpyDeviceToHost);
-//    cout << "----------------" << endl;
-//    for (i = 0; i < nprocs; i++) {
-//        cout << "Rank: " << rank << ", Destination Rank: " << i << ", data_size: " << rank_data_offset_host[i] << endl;
-//    }
-//
-//    int *rank_data_host = (int *) malloc(row_size * total_columns * sizeof(int));
-//    cudaMemcpy(rank_data_host, rank_data, row_size * total_columns * sizeof(int),
-//               cudaMemcpyDeviceToHost);
-//    cout << "----------------" << endl;
-//    for (i = 0; i < row_size; i++) {
-//        cout << "Rank: " << rank << ", " << rank_data_host[i * 2] << " " << rank_data_host[(i * 2) + 1] << endl;
-//    }
-//    cout << "----------------" << endl;
-//    for (i = 0; i < row_size; i++) {
-//        cout << "(Original graph) Rank: " << rank << ", " << local_data[i * 2] << " " << local_data[(i * 2) + 1] << endl;
-//    }
-//    pair<int *, long int> input_relation_data = get_split_relation(rank, local_data, local_count,
-//                                                                   total_columns, nprocs);
-//    int *input_relation = input_relation_data.first;
-//    long int input_relation_size = input_relation_data.second;
-//
-//
-//    long int global_t_full_size, global_tc_size;
-//    pair<int *, long int> reverse_relation_data = get_split_relation(rank, local_data_reverse, local_count,
-//                                                                     total_columns, nprocs);
-//    int *reverse_relation = reverse_relation_data.first;
-//    long int reverse_relation_size = reverse_relation_data.second;
-//
-//    long int input_relation_rows = input_relation_size / total_columns;
-//    long int reverse_relation_rows = reverse_relation_size / total_columns;
-//
-//    // T_FULL is reverse_relation with first column as key
-//    int *t_full = (int *) malloc(reverse_relation_size * sizeof(int));
-//    // Copy the contents of the input_relation array to the new memory location
-//    memcpy(t_full, reverse_relation, reverse_relation_size * sizeof(int));
-//    long int t_full_size = reverse_relation_size;
-//
-//    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG, MPI_SUM,
-//                  MPI_COMM_WORLD);
-//
-//
-//    int relation_columns = 2;
-//    long int join_result_rows;
-//    int block_size, grid_size;
-//    int *relation, *t_delta_host;
-//    Entity *hash_table, *result;
-//    Entity *result_host;
-//    Entity *hash_table_host;
-//    double load_factor = 0.4;
-//    long int hash_table_rows = (long int) input_relation_rows / load_factor;
-//    hash_table_rows = pow(2, ceil(log(hash_table_rows) / log(2)));
-//    checkCuda(cudaMalloc((void **) &relation, input_relation_rows * relation_columns * sizeof(int)));
-//    checkCuda(cudaMalloc((void **) &hash_table, hash_table_rows * sizeof(Entity)));
-//    block_size = 512;
-//    grid_size = 32 * number_of_sm;
-//
-//    cudaMemcpy(relation, input_relation, input_relation_rows * relation_columns * sizeof(int),
-//               cudaMemcpyHostToDevice);
-//
-//    Entity negative_entity;
-//    negative_entity.key = -1;
-//    negative_entity.value = -1;
-//    thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
-//    build_hash_table<<<grid_size, block_size>>>
-//            (hash_table, hash_table_rows,
-//             relation, input_relation_rows,
-//             relation_columns);
-//    checkCuda(cudaDeviceSynchronize());
-//    long int iterations = 0;
-//
-//    int *t_delta;
-//    checkCuda(cudaMalloc((void **) &t_delta, reverse_relation_rows * relation_columns * sizeof(int)));
-//    cudaMemcpy(t_delta, reverse_relation, reverse_relation_rows * relation_columns * sizeof(int),
-//               cudaMemcpyHostToDevice);
-//
-//    while (true) {
-//
-//        long int projection_rows = 0;
-//        int *join_offset;
-//        Entity *join_result;
-//        Entity *join_result_host;
-//
-//        checkCuda(cudaMalloc((void **) &join_offset, reverse_relation_rows * sizeof(int)));
-//
-//        get_join_result_size<<<grid_size, block_size>>>(hash_table, hash_table_rows,
-//                                                        t_delta, reverse_relation_rows, join_offset);
-//        checkCuda(cudaDeviceSynchronize());
-//
-//        join_result_rows = thrust::reduce(thrust::device, join_offset, join_offset + reverse_relation_rows, 0);
-//        thrust::exclusive_scan(thrust::device, join_offset, join_offset + reverse_relation_rows, join_offset);
-//
-//        checkCuda(cudaMalloc((void **) &join_result, join_result_rows * sizeof(Entity)));
-//        get_join_result<<<grid_size, block_size>>>(hash_table, hash_table_rows,
-//                                                   t_delta, reverse_relation_rows, join_offset, join_result);
-//        checkCuda(cudaDeviceSynchronize());
-//
-//        thrust::stable_sort(thrust::device, join_result, join_result + join_result_rows, cmp());
-//        projection_rows = (thrust::unique(thrust::device,
-//                                          join_result, join_result + join_result_rows,
-//                                          is_equal())) - join_result;
-//        join_result_host = (Entity *) malloc(projection_rows * sizeof(Entity));
-//        cudaMemcpy(join_result_host, join_result, projection_rows * sizeof(Entity),
-//                   cudaMemcpyDeviceToHost);
-////         Update the reverse relation which will be used in next iteration
-//        reverse_relation = (int *) realloc(reverse_relation, projection_rows * total_columns * sizeof(int));
-//        update_reverse_relation(join_result_host, projection_rows, reverse_relation);
-//
-//        free(join_result_host);
-//        cudaFree(join_offset);
-//        cudaFree(join_result);
-//
-//
-//        // Scatter the new facts among relevant processes
-//        pair<int *, long int> scatter_fact_data = get_split_relation(rank, reverse_relation,
-//                                                                     projection_rows * total_columns,
-//                                                                     total_columns, nprocs);
-//        reverse_relation_size = scatter_fact_data.second;
-//        reverse_relation_rows = reverse_relation_size / total_columns;
-//        // Update the reverse relation which will be used in next iteration
-//        reverse_relation = (int *) realloc(reverse_relation, reverse_relation_rows * total_columns * sizeof(int));
-//        reverse_relation = scatter_fact_data.first;
-//        checkCuda(cudaMalloc((void **) &t_delta, reverse_relation_rows * relation_columns * sizeof(int)));
-//        cudaMemcpy(t_delta, reverse_relation, reverse_relation_rows * total_columns * sizeof(int),
-//                   cudaMemcpyHostToDevice);
-//
-//        // Update t full for current process
-//        pair<int *, long int> t_full_data = update_t_full(t_full, t_full_size,
-//                                                          reverse_relation,
-//                                                          reverse_relation_size,
-//                                                          total_columns);
-//        t_full_size = t_full_data.second;
-//        t_full = (int *) realloc(t_full, t_full_size * sizeof(int));
-//        t_full = t_full_data.first;
-//
-//        // Check if the global t full size has changed in this iteration
-//        long int old_global_t_full_size = global_t_full_size;
-//        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG, MPI_SUM,
-//                      MPI_COMM_WORLD);
-//        iterations++;
-//        if (old_global_t_full_size == global_t_full_size) {
-//            break;
-//        }
-//
-//    }
-//
-//    // Reverse the t_full as we stored it in reverse order initially
-//    t_full = get_reverse_relation(t_full, t_full_size, total_columns);
-//    global_tc_size = global_t_full_size;
-//
-//    // List the t full counts for each process and calculate the displacements in the final result
-//    long int *t_full_counts = (long int *) calloc(nprocs, sizeof(long int));
-//    MPI_Allgather(&t_full_size, 1, MPI_LONG,
-//                  t_full_counts, 1, MPI_LONG, MPI_COMM_WORLD);
-//
-//    long int *t_full_displacements = (long int *) calloc(nprocs, sizeof(long int));
-//    for (i = 1; i < nprocs; i++) {
-//        t_full_displacements[i] = t_full_displacements[i - 1] + t_full_counts[i - 1];
-//    }
-//
-//    // Write the t full to a offset of the output file
-//    MPI_File fh;
-//    string output_file = string(input_file) + "_tc.bin";
-//    const char *output_file_name = output_file.c_str();
-//    MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
-//    long int file_offset = t_full_displacements[rank] * sizeof(int);
-//    MPI_File_write_at(fh, file_offset, t_full, t_full_size, MPI_INT, MPI_STATUS_IGNORE);
-//    // Close the file and clean up
-//    MPI_File_close(&fh);
-//
-//
-//    free(local_data);
-//    free(local_data_reverse);
-//    free(input_relation);
-//    free(reverse_relation);
-//    free(t_full);
-//    free(t_full_counts);
-//    free(t_full_displacements);
-//    cudaFree(hash_table);
-//    elapsed_time += MPI_Wtime();
-//    MPI_Allreduce(&elapsed_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-//    if (rank == 0) {
-//        global_tc_size /= total_columns;
-//        printf("Total iterations %ld, TC size %ld, generated file %s\n",
-//               iterations, global_tc_size, output_file_name);
-//        printf("Total time: %.4lf seconds\n\n", max_time);
-//        printf("| # Input | # Process | # Iterations | # TC | Time (s) |\n");
-//        printf("| --- | --- | --- | --- | --- |\n");
-//        printf("| %'ld | %'d | %'ld | %'ld | %'8.4lf |\n",
-//               total_rows, nprocs, iterations, global_tc_size, max_time);
-//    }
+    global_tc_size = global_t_full_size;
+
+    // List the t full counts for each process and calculate the displacements in the final result
+    long int *t_full_counts = (long int *) calloc(nprocs, sizeof(long int));
+    MPI_Allgather(&t_full_size, 1, MPI_LONG,
+                  t_full_counts, 1, MPI_LONG, MPI_COMM_WORLD);
+
+    long int *t_full_displacements = (long int *) calloc(nprocs, sizeof(long int));
+    for (i = 1; i < nprocs; i++) {
+        t_full_displacements[i] = t_full_displacements[i - 1] + (t_full_counts[i - 1] * total_columns);
+    }
+
+    // Write the t full to a offset of the output file
+    MPI_File fh;
+    string output_file = string(input_file) + "_tc.bin";
+    const char *output_file_name = output_file.c_str();
+    MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+    long int file_offset = t_full_displacements[rank] * sizeof(int);
+    MPI_File_write_at(fh, file_offset, t_full_ar_host, t_full_size * total_columns, MPI_INT, MPI_STATUS_IGNORE);
+    // Close the file and clean up
+    MPI_File_close(&fh);
+
+    cudaFree(input_relation);
+    cudaFree(reverse_relation);
+    cudaFree(t_full_ar);
+    free(t_full_ar_host);
+    free(t_full_counts);
+    free(t_full_displacements);
+    elapsed_time += MPI_Wtime();
+    MPI_Allreduce(&elapsed_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (rank == 0) {
+        printf("Total iterations %ld, TC size %ld, generated file %s\n",
+               iterations, global_tc_size, output_file_name);
+        printf("Total time: %.4lf seconds\n\n", max_time);
+        printf("| # Input | # Process | # Iterations | # TC | Time (s) |\n");
+        printf("| --- | --- | --- | --- | --- |\n");
+        printf("| %'ld | %'d | %'ld | %'ld | %'8.4lf |\n",
+               total_rows, nprocs, iterations, global_tc_size, max_time);
+    }
+
     MPI_Finalize();
     return 0;
 }
-
 // make runsemi DATA_FILE=data/data_10.bin NPROCS=8

@@ -1,6 +1,6 @@
-TARGET = parallel_join
+TARGET = tc_naive
 SRC = $(TARGET).cu
-TARGET_MPI = mpi_tc
+TARGET_MPI = tc_mpi
 SRC_MPI = $(TARGET_MPI).cpp
 TARGET_GPU_COMM = gpu_comm
 SRC_GPU_COMM = $(TARGET_GPU_COMM).cu

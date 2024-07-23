@@ -27,6 +27,29 @@ void build_hash_table(Entity *hash_table, long int hash_table_row_size,
 }
 
 __global__
+void build_hash_table_entity(Entity *hash_table, long int hash_table_size,
+                             Entity *relation, long int relation_size) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= relation_size) return;
+
+    int stride = blockDim.x * gridDim.x;
+
+    for (int i = index; i < relation_size; i += stride) {
+        int key = relation[i].key;
+        int value = relation[i].value;
+        int position = get_position(key, hash_table_size);
+        while (true) {
+            int existing_key = atomicCAS(&hash_table[position].key, -1, key);
+            if (existing_key == -1) {
+                hash_table[position].value = value;
+                break;
+            }
+            position = (position + 1) & (hash_table_size - 1);
+        }
+    }
+}
+
+__global__
 void copy_t_delta(Entity *t_delta, int *reverse_relation, long int reverse_relation_rows, int relation_columns) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= reverse_relation_rows) return;
@@ -143,6 +166,57 @@ void get_join_result(Entity *hash_table, int hash_table_row_size,
     }
 }
 
+
+__global__
+void get_join_result_size_entity(Entity *hash_table, long int hash_table_size,
+                          Entity *t_delta, long int reverse_relation_size,
+                          int *join_result_size) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= reverse_relation_size) return;
+
+    int stride = blockDim.x * gridDim.x;
+
+    for (int i = index; i < reverse_relation_size; i += stride) {
+        int key = t_delta[i].key;
+        int current_size = 0;
+        int position = get_position(key, hash_table_size);
+        while (true) {
+            if (hash_table[position].key == key) {
+                current_size++;
+            } else if (hash_table[position].key == -1) {
+                break;
+            }
+            position = (position + 1) & (hash_table_size - 1);
+        }
+        join_result_size[i] = current_size;
+    }
+}
+
+__global__
+void get_join_result_entity(Entity *hash_table, int hash_table_size,
+                     Entity *t_delta, int reverse_relation_size, int *offset, Entity *join_result) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= reverse_relation_size) return;
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < reverse_relation_size; i += stride) {
+        int key = t_delta[i].key;
+        int value = t_delta[i].value;
+        int start_index = offset[i];
+        int position = get_position(key, hash_table_size);
+        while (true) {
+            if (hash_table[position].key == key) {
+                join_result[start_index].key = hash_table[position].value;
+                join_result[start_index].value = value;
+                start_index++;
+            } else if (hash_table[position].key == -1) {
+                break;
+            }
+            position = (position + 1) & (hash_table_size - 1);
+        }
+    }
+}
+
+
 __global__
 void get_join_result_size_ar(Entity *hash_table, long int hash_table_row_size,
                              int *t_delta, long int relation_rows,
@@ -189,5 +263,62 @@ void get_join_result_ar(Entity *hash_table, int hash_table_row_size,
             }
             position = (position + 1) & (hash_table_row_size - 1);
         }
+    }
+}
+
+/* Semi naive kernels */
+
+
+__global__ void get_send_count(Entity *local_data, int local_data_row_count,
+                               int *send_count, int nprocs) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= local_data_row_count) return;
+
+    int stride = blockDim.x * gridDim.x;
+
+    for (int i = index; i < local_data_row_count; i += stride) {
+        int key = local_data[i].key;
+        int destination_rank = key % nprocs;
+        atomicAdd(&send_count[destination_rank], 1);
+    }
+}
+
+__global__ void get_rank_data(Entity *local_data, int local_data_row_count,
+                              int *send_count_offset, int nprocs, Entity *rank_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= local_data_row_count) return;
+
+    int stride = blockDim.x * gridDim.x;
+
+    for (int i = index; i < local_data_row_count; i += stride) {
+        int key = local_data[i].key;
+        int value = local_data[i].value;
+        int destination_rank = key % nprocs;
+        int current_position = atomicAdd(&send_count_offset[destination_rank], 1);
+        rank_data[current_position].key = key;
+        rank_data[current_position].value = value;
+    }
+}
+
+
+__global__ void create_entity_ar(Entity *data, int data_rows, int *input_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= data_rows) return;
+
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < data_rows; i += stride) {
+        data[i].key = input_data[i * 2];
+        data[i].value = input_data[(i * 2) + 1];
+    }
+}
+
+__global__ void reverse_t_full(int *data, int data_rows, Entity *input_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= data_rows) return;
+
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < data_rows; i += stride) {
+        data[i * 2] = input_data[i].value;
+        data[(i * 2) + 1] = input_data[i].key;
     }
 }

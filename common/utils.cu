@@ -271,10 +271,24 @@ void show_variable(int *host_data, int data_size, int group, int rank, string me
     cout << endl;
 }
 
+void show_variable_entity(Entity *host_data, int data_size, int rank, string message) {
+    cout << "Rank " << rank << ", size " << data_size <<  " : " << message << " ----------------" << endl;
+    for (int i = 0; i < data_size; i++) {
+        cout << host_data[i].key << " " << host_data[i].value;
+        if(data_size <= 20) {
+            cout << ", ";
+        }
+        else {
+            cout << endl;
+        }
+    }
+    cout << endl;
+}
+
 void show_device_variable(int *device_data, int device_data_size, int group, int rank, string message) {
     int *host_data = (int *) malloc(device_data_size * sizeof(int));
     cudaMemcpy(host_data, device_data, device_data_size * sizeof(int), cudaMemcpyDeviceToHost);
-    cout << "Rank " << rank << ": " << message << " ----------------" << endl;
+    cout << "Rank " << rank << ", size " << device_data_size <<  " : " << message << " ----------------" << endl;
     for (int i = 0; i < device_data_size / group; i++) {
         for (int j = 0; j < group; j++) {
             cout << host_data[(i*group) + j] << " ";
@@ -285,6 +299,18 @@ void show_device_variable(int *device_data, int device_data_size, int group, int
         else {
             cout << endl;
         }
+    }
+    cout << endl;
+    free(host_data);
+}
+
+// show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table");
+void show_device_entity_variable(Entity *device_data, int device_data_size, int rank, string message) {
+    Entity *host_data = (Entity *) malloc(device_data_size * sizeof(Entity));
+    cudaMemcpy(host_data, device_data, device_data_size * sizeof(Entity), cudaMemcpyDeviceToHost);
+    cout << "Rank " << rank << ", size " << device_data_size <<  " : " << message << " ----------------" << endl;
+    for (int i = 0; i < device_data_size; i++) {
+        cout << host_data[i].key << " " << host_data[i].value << endl;
     }
     cout << endl;
     free(host_data);

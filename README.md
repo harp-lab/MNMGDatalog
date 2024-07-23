@@ -38,19 +38,21 @@ The utility program supports two main operations: converting text to binary (`tx
 ```shell
 python3 binary_file_utils.py txt_to_bin input_text_file output_binary_file
 # example usage:
+# python3 binary_file_utils.py txt_to_bin data/data_23874.txt data/data_23874.bin
 # python3 binary_file_utils.py txt_to_bin data/data_147892.txt data/data_147892.bin
 ```
 - To convert binary to text:
 ```shell
 python3 binary_file_utils.py bin_to_txt input_binary_file output_text_file
+# python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_23874_tc.txt
 # python3 binary_file_utils.py bin_to_txt data/hipc_2019.bin_tc.bin data/hipc_2019_tc.txt
 ```
 ### Local run instructions
 - Run the program to generate transitive closure for a given data file. Use `NPROCS=<n>` to set the number of processes and `DATA_FILE=<BINARY DATA FILE>` to set the binary datafile path.
 ```shell
 make run DATA_FILE=data/data_23874.bin NPROCS=8
-nvcc parallel_join.cu -o parallel_join.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm
-mpirun -np 8 ./parallel_join.out data/data_23874.bin
+nvcc tc_naive.cu -o tc_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm
+mpirun -np 8 ./tc_naive.out data/data_23874.bin
 
 Total iterations 58, TC size 481121, generated file data/data_23874.bin_tc.bin
 Total time: 5.1932 seconds
@@ -80,12 +82,36 @@ python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_238
 | 23,874   | 8         | 58           | 481,121 | 5.1932   |
 
 
-#### Performance imporvement using semi-naive:
+#### Performance improvement using semi-naive:
 ```shell
 // naive
 make run DATA_FILE=data/data_23874.bin NPROCS=8
 // 7.3803, 5.5220, 4.7417, 4.5751, 4.5915
 make runsemi DATA_FILE=data/data_23874.bin NPROCS=8
+// 1.2899, 1.1547, 1.1364, 1.1136, 1.0783
+
+# CUDA Aware MPI (if system supports)
+make runsemi DATA_FILE=data/data_23874.bin NPROCS=8
+nvcc tc_semi_naive.cu -o tc_semi_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm
+mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin
+Total iterations 58, TC size 481121, generated file data/data_23874.bin_tc.bin
+Total time: 1.0783 seconds
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 23,874 | 8 | 58 | 481,121 |   1.0783 |
+
+# CPU based MPI communication naive evaluation
+make run DATA_FILE=data/data_23874.bin NPROCS=8
+nvcc tc_naive.cu -o tc_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm
+mpirun -np 8 ./tc_naive.out data/data_23874.bin
+Total iterations 58, TC size 481121, generated file data/data_23874.bin_tc.bin
+Total time: 5.1148 seconds
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 23,874 | 8 | 58 | 481,121 |   5.1148 |
+
 ```
 
 ## Run in Polaris
@@ -105,8 +131,8 @@ qsub polaris-job.sh
 arsho::polaris-login-02 { ~/local_join }-> qstat -u $USER
 cat polaris-job.out
 NUM_OF_NODES= 10 TOTAL_NUM_RANKS= 40 RANKS_PER_NODE= 4 THREADS_PER_RANK= 1
-CC parallel_join.cu -o parallel_join.out -w -lm
-mpiexec -n 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./parallel_join.out data/data_147892.bin
+CC tc_naive.cu -o tc_naive.out -w -lm
+mpiexec -n 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_naive.out data/data_147892.bin
 “RANK= 32 LOCAL_RANK= 0 gpu= 0”
 “RANK= 20 LOCAL_RANK= 0 gpu= 0”
 “RANK= 23 LOCAL_RANK= 3 gpu= 3”
@@ -175,3 +201,5 @@ mpirun -np 2 ./cam
 - [Blog on MPI](https://www.codeproject.com/Articles/896437/A-Gentle-Introduction-to-the-Message-Passing-Inter)
 - [MPI all to all](https://mpi.deino.net/mpi_functions/MPI_Alltoall.html)
 - [Thrust: The C++ Parallel Algorithms Library](https://nvidia.github.io/cccl/thrust/)
+- [SO question on CudaFree](https://stackoverflow.com/questions/13100615/cudafree-is-not-freeing-memory)
+- [SO question on CudaMemset](https://stackoverflow.com/questions/62055890/does-cudamalloc-initialize-the-array-to-0)
