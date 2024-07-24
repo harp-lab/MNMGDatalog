@@ -154,13 +154,13 @@ int main(int argc, char **argv) {
     // Calculating the current rank's starting row and number of rows
     // Scatter larger blocks among processes (non-uniform)
     int total_columns = 2;
-    long int total_rows = filesize / (sizeof(int) * total_columns);
-    long int row_start = BLOCK_START(rank, nprocs, total_rows);
-    long int row_size = BLOCK_SIZE(rank, nprocs, total_rows);
-    long int local_count = row_size * total_columns;
+    int total_rows = filesize / (sizeof(int) * total_columns);
+    int row_start = BLOCK_START(rank, nprocs, total_rows);
+    int row_size = BLOCK_SIZE(rank, nprocs, total_rows);
+    int local_count = row_size * total_columns;
 
     // Reading specific portion from the file as char in parallel
-    long int offset = row_start * total_columns * sizeof(int);
+    int offset = row_start * total_columns * sizeof(int);
     int *local_data_host = (int *) malloc(local_count * sizeof(int));
     MPI_File mpi_file_buffer;
     if (MPI_File_open(MPI_COMM_WORLD, input_file, MPI_MODE_RDONLY,
@@ -201,13 +201,13 @@ int main(int argc, char **argv) {
     checkCuda(cudaMalloc((void **) &t_full, t_delta_size * sizeof(Entity)));
     cudaMemcpy(t_full, t_delta, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
 
-    long int global_t_full_size;
-    long int t_full_size = t_delta_size;
-    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+    int global_t_full_size;
+    int t_full_size = t_delta_size;
+    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
     Entity *hash_table;
     double load_factor = 0.4;
-    long int hash_table_rows = (long int) input_relation_size / load_factor;
+    int hash_table_rows = (int) input_relation_size / load_factor;
     hash_table_rows = pow(2, ceil(log(hash_table_rows) / log(2)));
     checkCuda(cudaMalloc((void **) &hash_table, hash_table_rows * sizeof(Entity)));
     Entity negative_entity;
@@ -216,11 +216,11 @@ int main(int argc, char **argv) {
     thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
     build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, input_relation,
                                                        input_relation_size);
-    long int iterations = 0;
+    int iterations = 0;
 
 
     while (true) {
-        long int join_result_size;
+        int join_result_size;
         int *join_offset;
         Entity *join_result;
         Entity *new_t_full;
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
         cudaMemcpy(t_delta, t_delta_temp, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
 
         // set union of two sets (sorted t full and t delta)
-        long int new_t_full_size = t_delta_size + t_full_size;
+        int new_t_full_size = t_delta_size + t_full_size;
         checkCuda(cudaMalloc((void **) &new_t_full, new_t_full_size * sizeof(Entity)));
         new_t_full_size = thrust::set_union(thrust::device,
                                             t_full, t_full + t_full_size,
@@ -271,8 +271,8 @@ int main(int argc, char **argv) {
         cudaFree(new_t_full);
         cudaFree(t_delta_temp);
         // Check if the global t full size has changed in this iteration
-        long int old_global_t_full_size = global_t_full_size;
-        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+        int old_global_t_full_size = global_t_full_size;
+        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
         if (old_global_t_full_size == global_t_full_size) {
             break;
@@ -288,11 +288,11 @@ int main(int argc, char **argv) {
 
 
     // List the t full counts for each process and calculate the displacements in the final result
-    long int *t_full_counts = (long int *) calloc(nprocs, sizeof(long int));
-    MPI_Allgather(&t_full_size, 1, MPI_LONG,
-                  t_full_counts, 1, MPI_LONG, MPI_COMM_WORLD);
+    int *t_full_counts = (int *) calloc(nprocs, sizeof(int));
+    MPI_Allgather(&t_full_size, 1, MPI_INT,
+                  t_full_counts, 1, MPI_INT, MPI_COMM_WORLD);
 
-    long int *t_full_displacements = (long int *) calloc(nprocs, sizeof(long int));
+    int *t_full_displacements = (int *) calloc(nprocs, sizeof(int));
     for (i = 1; i < nprocs; i++) {
         t_full_displacements[i] = t_full_displacements[i - 1] + (t_full_counts[i - 1] * total_columns);
     }
@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
     string output_file = string(input_file) + "_tc.bin";
     const char *output_file_name = output_file.c_str();
     MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
-    long int file_offset = t_full_displacements[rank] * sizeof(int);
+    int file_offset = t_full_displacements[rank] * sizeof(int);
     MPI_File_write_at(fh, file_offset, t_full_ar_host, t_full_size * total_columns, MPI_INT, MPI_STATUS_IGNORE);
     // Close the file and clean up
     MPI_File_close(&fh);
@@ -323,12 +323,12 @@ int main(int argc, char **argv) {
     elapsed_time += MPI_Wtime();
     MPI_Allreduce(&elapsed_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (rank == 0) {
-        printf("Total iterations %ld, TC size %ld, generated file %s\n",
+        printf("Total iterations %d, TC size %d, generated file %s\n",
                iterations, global_t_full_size, output_file_name);
         printf("Total time: %.4lf seconds\n\n", max_time);
         printf("| # Input | # Process | # Iterations | # TC | Time (s) |\n");
         printf("| --- | --- | --- | --- | --- |\n");
-        printf("| %'ld | %'d | %'ld | %'ld | %'8.4lf |\n",
+        printf("| %'d | %'d | %'d | %'d | %'8.4lf |\n",
                total_rows, nprocs, iterations, global_t_full_size, max_time);
     }
 

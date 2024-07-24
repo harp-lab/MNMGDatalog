@@ -88,18 +88,19 @@ python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_238
 make run DATA_FILE=data/data_23874.bin NPROCS=8
 // 7.3803, 5.5220, 4.7417, 4.5751, 4.5915
 make runsemi DATA_FILE=data/data_23874.bin NPROCS=8
-// 1.2899, 1.1547, 1.1364, 1.1136, 1.0783
+// 0.8464, 0.8506, 0.8679, 0.9242, 1.0613
 
 # CUDA Aware MPI (if system supports)
 make runsemi DATA_FILE=data/data_23874.bin NPROCS=8
 nvcc tc_semi_naive.cu -o tc_semi_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm
 mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin
 Total iterations 58, TC size 481121, generated file data/data_23874.bin_tc.bin
-Total time: 1.0783 seconds
+Total time: 0.8506 seconds
 
 | # Input | # Process | # Iterations | # TC | Time (s) |
 | --- | --- | --- | --- | --- |
-| 23,874 | 8 | 58 | 481,121 |   1.0783 |
+| 23,874 | 8 | 58 | 481,121 |   0.8506 |
+
 
 # CPU based MPI communication naive evaluation
 make run DATA_FILE=data/data_23874.bin NPROCS=8
