@@ -5,7 +5,7 @@
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
-#PBS -o polaris-job-semi.out
+#PBS -o polaris-job-semi.output
 #PBS -e polaris-job-semi.error
 
 cd ${PBS_O_WORKDIR}
@@ -15,14 +15,15 @@ NNODES=`wc -l < $PBS_NODEFILE` # Number of total nodes
 NRANKS_PER_NODE=4              # Number of MPI ranks to spawn per node
 NDEPTH=4                       # Number of hardware threads per rank (i.e. spacing between MPI ranks)
 NTHREADS=1                     # Number of software threads per rank to launch (i.e. OMP_NUM_THREADS)
-
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
 MNMGJOIN_HOME=/home/arsho/mnmgJOIN
 
 MPICH_GPU_SUPPORT_ENABLED=1
 
 NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
 echo "NUM_OF_NODES= ${NNODES} TOTAL_NUM_RANKS= ${NTOTRANKS} RANKS_PER_NODE= ${NRANKS_PER_NODE} THREADS_PER_RANK= ${NTHREADS}"
-cd MNMGJOIN_HOME
+cd $MNMGJOIN_HOME
 make buildpolarissemi
 
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"

@@ -14,7 +14,7 @@ DEBUG_FLAGS = -Og -Wall
 NPERNODE=8
 NPROCS?=3
 LDFLAGSLOCAL = -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi
-MPIGTLFLAG = /opt/cray/pe/mpich/8.1.25/gtl/lib/libmpi_gtl_cuda.so
+MPIGTLFLAG = /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so
 
 
 build:
@@ -70,8 +70,6 @@ clean:
 	rm -f *.o*
 	rm -f *.i*
 	rm -f *.out
-	rm -f *.output
-	rm -f *.error
 	rm -f *.cobaltlog
 	rm -f data/*_output.bin*
 	rm -f data/*_tc.bin*
