@@ -207,7 +207,7 @@ git reset --hard origin/main
 arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
 arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris_semi.sh
 arsho::polaris-login-04 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
-2037726.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+2037837.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 arsho::polaris-login-04 { ~/mnmgJOIN }-> qstat -u $USER
 
 polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 

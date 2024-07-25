@@ -51,7 +51,7 @@ buildpolarissemi:
 	CC $(SRC_SEMI) -o $(TARGET_SEMI).out $(COMPILER_FLAGS) $(MPIGTLFLAG)
 
 testpolarissemi:
-	mpiexec -n ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./$(TARGET_SEMI).out $(DATA_FILE) $(CUDA_AWARE_MPI)
+	MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./$(TARGET_SEMI).out $(DATA_FILE) $(CUDA_AWARE_MPI)
 
 run: build test
 
@@ -67,8 +67,6 @@ runsemi: buildsemi testsemi
 
 clean:
 	rm -f $(TARGET).out
-	rm -f *.o*
-	rm -f *.i*
 	rm -f *.out
 	rm -f *.cobaltlog
 	rm -f data/*_output.bin*
