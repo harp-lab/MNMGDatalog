@@ -203,7 +203,7 @@ Currently, it is spawning 4 ranks per node and sets 1 GPU per MPI rank.
 ssh arsho@polaris.alcf.anl.gov
 cd mnmgJOIN
 git fetch
-git reset --hard feature/gpu-comm
+git reset --hard origin/main
 arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
 arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris_semi.sh
 arsho::polaris-login-04 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 

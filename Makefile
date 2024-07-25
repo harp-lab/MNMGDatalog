@@ -78,5 +78,6 @@ clean:
 	rm -f data/*_output.txt*
 	rm -f data/*_tc.txt*
 	rm -f data/*_converted.txt*
+	rm -f core.*
 
 .PHONY.: build
