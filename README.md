@@ -194,7 +194,36 @@ Total time: 292.3941 seconds
 | 147,892 | 40 | 31 | 884,179,859 | 292.3941 |
 | 147,892 | 120 | 31 | 884,179,859 |  97.5625 |
 
-### CUDA Aware MPI
+## Run in Polaris (Semi naive)
+The job script [polaris-job-semi.sh](polaris-job.sh) contains the multi node multi GPU configuration for Polaris.
+Change this file to change the number of nodes in `PBS -l select=10:system=polaris` (default 10).
+Also, change the data file as necessary.
+Currently, it is spawning 4 ranks per node and sets 1 GPU per MPI rank.
+```shell
+ssh arsho@polaris.alcf.anl.gov
+cd mnmgJOIN
+git fetch
+git reset --hard feature/gpu-comm
+arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
+arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris_semi.sh
+arsho::polaris-login-04 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
+2037445.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+arsho::polaris-login-04 { ~/mnmgJOIN }-> qstat -u $USER
+
+polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
+                                                                 Req'd  Req'd   Elap
+Job ID               Username Queue    Jobname    SessID NDS TSK Memory Time  S Time
+-------------------- -------- -------- ---------- ------ --- --- ------ ----- - -----
+2037445.polaris-pbs* arsho    small    polaris-j*    --   10 640    --  00:30 Q   -- 
+
+cat polaris-job-semi.out
+```
+
+
+
+
+
+### Experiment: CUDA Aware MPI
 ```shell
 nvcc cam.cu -o cam -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm
 mpirun -np 2 ./cam
@@ -202,6 +231,7 @@ mpirun -np 2 ./cam
 
 ### References
 - [Polaris User Guides](https://docs.alcf.anl.gov/polaris/getting-started/)
+- [Polaris running jobs](https://docs.alcf.anl.gov/polaris/running-jobs/)
 - [Polaris CUDA MPI job example](https://github.com/argonne-lcf/GettingStarted/tree/master/Examples/Polaris/affinity_gpu)
 - [Stackoverflow answer for all gather vs all to all](https://stackoverflow.com/a/34113431/3129414)
 - [Blog on MPI](https://www.codeproject.com/Articles/896437/A-Gentle-Introduction-to-the-Message-Passing-Inter)

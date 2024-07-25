@@ -18,5 +18,5 @@ NTHREADS=1                     # Number of software threads per rank to launch (
 
 NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
 echo "NUM_OF_NODES= ${NNODES} TOTAL_NUM_RANKS= ${NTOTRANKS} RANKS_PER_NODE= ${NRANKS_PER_NODE} THREADS_PER_RANK= ${NTHREADS}"
-cd /home/arsho/local_join
+cd /home/arsho/mnmgJOIN
 make runpolaris NTOTRANKS=${NTOTRANKS} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_147892.bin
