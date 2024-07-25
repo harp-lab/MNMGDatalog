@@ -15,7 +15,6 @@ NNODES=`wc -l < $PBS_NODEFILE` # Number of total nodes
 NRANKS_PER_NODE=4              # Number of MPI ranks to spawn per node
 NDEPTH=4                       # Number of hardware threads per rank (i.e. spacing between MPI ranks)
 NTHREADS=1                     # Number of software threads per rank to launch (i.e. OMP_NUM_THREADS)
-module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
 
 MPICH_GPU_SUPPORT_ENABLED=1

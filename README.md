@@ -207,7 +207,7 @@ git reset --hard origin/main
 arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
 arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris_semi.sh
 arsho::polaris-login-04 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
-2037837.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+2037916.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 arsho::polaris-login-04 { ~/mnmgJOIN }-> qstat -u $USER
 
 polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
@@ -217,6 +217,7 @@ Job ID               Username Queue    Jobname    SessID NDS TSK Memory Time  S 
 2037445.polaris-pbs* arsho    small    polaris-j*    --   10 640    --  00:30 Q   -- 
 
 cat polaris-job-semi.out
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive.out data/data_147892.bin 1
 ```
 
 

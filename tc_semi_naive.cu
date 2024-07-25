@@ -337,3 +337,4 @@ int main(int argc, char **argv) {
 }
 // make runsemi DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0
 // make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1
+// make runsemi DATA_FILE=data/data_147892.bin NPROCS=8 CUDA_AWARE_MPI=0
