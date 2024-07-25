@@ -14,6 +14,8 @@ DEBUG_FLAGS = -Og -Wall
 NPERNODE=8
 NPROCS?=3
 LDFLAGSLOCAL = -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi
+MPIGTLFLAG = /opt/cray/pe/mpich/8.1.25/gtl/lib/libmpi_gtl_cuda.so
+
 
 build:
 	nvcc $(SRC) -o $(TARGET).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS)
@@ -46,7 +48,7 @@ testpolaris:
 	mpiexec -n ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET).out $(DATA_FILE)
 
 buildpolarissemi:
-	CC $(SRC_SEMI) -o $(TARGET_SEMI).out $(COMPILER_FLAGS)
+	CC $(SRC_SEMI) -o $(TARGET_SEMI).out $(COMPILER_FLAGS) $(MPIGTLFLAG)
 
 testpolarissemi:
 	mpiexec -n ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./$(TARGET_SEMI).out $(DATA_FILE) $(CUDA_AWARE_MPI)
