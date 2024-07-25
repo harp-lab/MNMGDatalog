@@ -40,6 +40,10 @@ python3 binary_file_utils.py txt_to_bin input_text_file output_binary_file
 # example usage:
 # python3 binary_file_utils.py txt_to_bin data/data_23874.txt data/data_23874.bin
 # python3 binary_file_utils.py txt_to_bin data/data_147892.txt data/data_147892.bin
+# python3 binary_file_utils.py txt_to_bin data/data_165435.txt data/data_165435.bin
+# python3 binary_file_utils.py txt_to_bin data/data_409593.txt data/data_409593.bin
+# python3 binary_file_utils.py txt_to_bin data/vsp_finan512_scagr7-2c_rlfddd.mtx data/vsp_finan512_scagr7-2c_rlfddd.bin
+# python3 binary_file_utils.py txt_to_bin data/com-dblpungraph.txt data/com-dblpungraph.bin
 ```
 - To convert binary to text:
 ```shell
@@ -87,19 +91,20 @@ python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_238
 // naive
 make run DATA_FILE=data/data_23874.bin NPROCS=8
 // 7.3803, 5.5220, 4.7417, 4.5751, 4.5915
-make runsemi DATA_FILE=data/data_23874.bin NPROCS=8
+make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0
 // 0.8464, 0.8506, 0.8679, 0.9242, 1.0613
 
 # CUDA Aware MPI (if system supports)
-make runsemi DATA_FILE=data/data_23874.bin NPROCS=8
+make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0
 nvcc tc_semi_naive.cu -o tc_semi_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm
-mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin
+mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin 0
 Total iterations 58, TC size 481121, generated file data/data_23874.bin_tc.bin
-Total time: 0.8506 seconds
+Total time: 0.8484 seconds
 
 | # Input | # Process | # Iterations | # TC | Time (s) |
 | --- | --- | --- | --- | --- |
-| 23,874 | 8 | 58 | 481,121 |   0.8506 |
+| 23,874 | 8 | 58 | 481,121 |   0.8484 |
+
 
 
 # CPU based MPI communication naive evaluation

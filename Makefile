@@ -25,7 +25,7 @@ buildsemi:
 	nvcc $(SRC_SEMI) -o $(TARGET_SEMI).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS)
 
 testsemi:
-	${MPIRUN} -np $(NPROCS) ./$(TARGET_SEMI).out $(DATA_FILE)
+	${MPIRUN} -np $(NPROCS) ./$(TARGET_SEMI).out $(DATA_FILE) $(CUDA_AWARE_MPI)
 
 buildmpi:
 	${MPICC} $(SRC_MPI) -o $(TARGET_MPI).out $(COMPILER_FLAGS)
@@ -45,6 +45,11 @@ buildpolaris:
 testpolaris:
 	mpiexec -n ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET).out $(DATA_FILE)
 
+buildpolarissemi:
+	CC $(SRC_SEMI) -o $(TARGET_SEMI).out $(COMPILER_FLAGS)
+
+testpolarissemi:
+	mpiexec -n ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./$(TARGET_SEMI).out $(DATA_FILE) $(CUDA_AWARE_MPI)
 
 run: build test
 
@@ -53,6 +58,8 @@ runmpi: buildmpi testmpi
 runcomm: buildcomm testcomm
 
 runpolaris: buildpolaris testpolaris
+
+runpolarissemi: buildpolarissemi testpolarissemi
 
 runsemi: buildsemi testsemi
 

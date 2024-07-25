@@ -140,7 +140,10 @@ int main(int argc, char **argv) {
     // Should pass the input filename in command line argument
     const char *input_file;
     int cuda_aware_mpi = 0;
-    if (argc == 2) {
+    if (argc == 3) {
+        input_file = argv[1];
+        cuda_aware_mpi = atoi(argv[2]);
+    } else if (argc == 2) {
         input_file = argv[1];
     } else {
         input_file = "hipc_2019.bin";
@@ -323,17 +326,14 @@ int main(int argc, char **argv) {
     elapsed_time += MPI_Wtime();
     MPI_Allreduce(&elapsed_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (rank == 0) {
-        printf("Total iterations %d, TC size %d, generated file %s\n",
-               iterations, global_t_full_size, output_file_name);
-        printf("Total time: %.4lf seconds\n\n", max_time);
+        printf("\nGenerated file %s\n", output_file_name);
         printf("| # Input | # Process | # Iterations | # TC | Time (s) |\n");
         printf("| --- | --- | --- | --- | --- |\n");
-        printf("| %'d | %'d | %'d | %'d | %'8.4lf |\n",
-               total_rows, nprocs, iterations, global_t_full_size, max_time);
+        printf("| %'d | %'d | %'d | %'d | %'8.4lf |\n", total_rows, nprocs, iterations, global_t_full_size, max_time);
     }
 
     MPI_Finalize();
     return 0;
 }
-// make runsemi DATA_FILE=data/data_10.bin NPROCS=8
-// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8
+// make runsemi DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0
+// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1
