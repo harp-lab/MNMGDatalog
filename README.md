@@ -207,8 +207,9 @@ git reset --hard origin/main
 arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
 arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris_semi.sh
 arsho::polaris-login-04 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
-2037916.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 arsho::polaris-login-04 { ~/mnmgJOIN }-> qstat -u $USER
+qstat -Qf small
 
 polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
                                                                  Req'd  Req'd   Elap
@@ -218,6 +219,71 @@ Job ID               Username Queue    Jobname    SessID NDS TSK Memory Time  S 
 
 cat polaris-job-semi.out
 MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive.out data/data_147892.bin 1
+# Error
+cat polaris-job-semi.error
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatUwp3fkPSWn7LK.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+x3103c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 31 died from signal 11 and dumped core
+make: *** [Makefile:54: testpolarissemi] Error 139
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafat_0r3f6fcK9rMk.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+x3103c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 31 died from signal 11 and dumped core
+make: *** [Makefile:54: testpolarissemi] Error 139
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatodt3fQvGbTabF.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+x3102c0s37b1n0.hsn.cm.polaris.alcf.anl.gov: rank 6 died from signal 11 and dumped core
+make: *** [Makefile:54: testpolarissemi] Error 139
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatEDv3fAonBDRh4.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+x3102c0s7b0n0.hsn.cm.polaris.alcf.anl.gov: rank 11 died from signal 11 and dumped core
+make: *** [Makefile:54: testpolarissemi] Error 139
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatm1x3fKCJd-vQt.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+x3102c0s37b1n0.hsn.cm.polaris.alcf.anl.gov: rank 6 died from signal 11 and dumped core
+make: *** [Makefile:54: testpolarissemi] Error 139
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafat_ez3f6yQ-9kFn.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+x3102c0s7b0n0.hsn.cm.polaris.alcf.anl.gov: rank 10 died from signal 11 and dumped core
+make: *** [Makefile:54: testpolarissemi] Error 139
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatoxB3fQaSvTbKl.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+x3103c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 16 died from signal 11 and dumped core
+make: *** [Makefile:54: testpolarissemi] Error 139
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatEPC3fA9SUD4MI.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+x3103c0s13b1n0.hsn.cm.polaris.alcf.anl.gov: rank 22 died from signal 11 and dumped core
+make: *** [Makefile:54: testpolarissemi] Error 139
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatUaF3fkdHXnjdh.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+x3102c0s37b0n0.hsn.cm.polaris.alcf.anl.gov: rank 3 died from signal 11 and dumped core
+make: *** [Makefile:54: testpolarissemi] Error 139
+tc_semi_naive.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatCqG3fuOwIV4dS.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: 
+/usr/bin/ld: final link failed: 
+/usr/bin/ld: 
+
+
+cat polaris-job-semi.output
+NUM_OF_NODES= 10 TOTAL_NUM_RANKS= 40 RANKS_PER_NODE= 4 THREADS_PER_RANK= 1
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> p2p-Gnutella31 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive.out data/data_147892.bin 1
+“RANK= 7 LOCAL_RANK= 3 gpu= 3”
+“RANK= 3 LOCAL_RANK= 3 gpu= 3”
+“RANK= 19 LOCAL_RANK= 3 gpu= 3”
+
+
 ```
 
 
@@ -226,6 +292,48 @@ MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth .
 
 ### Experiment: CUDA Aware MPI
 ```shell
+# Polaris (working with cam)
+ssh arsho@polaris.alcf.anl.gov
+qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
+cd rough
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+CC cam.cu -o cam.out
+# 2 MPI ranks, 2 ranks per node, 2 depth, 1 thread per rank
+mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./../set_affinity_gpu_polaris_semi.sh ./cam.out
+arsho::x3002c0s37b0n0 { ~/mnmgJOIN/rough }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./../set_affinity_gpu_polaris_semi.sh ./cam.out
+“RANK= 0 LOCAL_RANK= 0 gpu= 0”
+“RANK= 1 LOCAL_RANK= 1 gpu= 1”
+received: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 
+
+# Polaris (working with cam) without the module load
+ssh arsho@polaris.alcf.anl.gov
+qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
+cd rough
+export MPICH_GPU_SUPPORT_ENABLED=1
+arsho::x3206c0s37b0n0 { ~/mnmgJOIN/rough }-> CC cam.cu -o cam.out /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so
+cam.cu:
+/usr/bin/ld: warning: /var/tmp/pbs.2038492.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatUQ5JckieWnySs.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+# 2 MPI ranks, 2 ranks per node, 2 depth, 1 thread per rank
+arsho::x3206c0s37b0n0 { ~/mnmgJOIN/rough }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./../set_affinity_gpu_polaris_semi.sh ./cam.out
+“RANK= 0 LOCAL_RANK= 0 gpu= 0”
+“RANK= 1 LOCAL_RANK= 1 gpu= 1”
+received: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 
+
+
+
+# Compiles and creates the executable. Also tried with cuda_aware_mpi=1
+CC tc_semi_naive.cu -o tc_semi_naive_interactive.out /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1
+“RANK= 0 LOCAL_RANK= 0 gpu= 0”
+“RANK= 3 LOCAL_RANK= 3 gpu= 3”
+“RANK= 2 LOCAL_RANK= 2 gpu= 2”
+“RANK= 1 LOCAL_RANK= 1 gpu= 1”
+x3206c0s37b0n0.hsn.cm.polaris.alcf.anl.gov: rank 2 died from signal 11 and dumped core
+
+
+# Local machine
 nvcc cam.cu -o cam -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm
 mpirun -np 2 ./cam
 ```
