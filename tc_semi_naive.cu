@@ -37,7 +37,7 @@ using namespace std;
 
 Entity *get_split_relation(int rank, Entity *local_data_device,
                            int row_size, int total_columns, int nprocs,
-                           int grid_size, int block_size, int cuda_aware_mpi, int *size, MPI_Comm comm) {
+                           int grid_size, int block_size, int cuda_aware_mpi, int *size) {
     int *send_count;
     checkCuda(cudaMalloc((void **) &send_count, nprocs * sizeof(int)));
     checkCuda(cudaMemset(send_count, 0, nprocs * sizeof(int)));
@@ -94,7 +94,6 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
     Entity *receive_data;
     checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
     if (cuda_aware_mpi) {
-
         int *send_count_host = (int *) malloc(nprocs * sizeof(int));
         int *receive_count_host = (int *) malloc(nprocs * sizeof(int));
         int *send_displacements_host = (int *) malloc(nprocs * sizeof(int));
@@ -113,6 +112,10 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
             fprintf(stderr, "MPI error on device MPI_Alltoallv call: %s\n", error_string);
             MPI_Abort(MPI_COMM_WORLD, mpi_error);
         }
+        free(send_count_host);
+        free(receive_count_host);
+        free(send_displacements_host);
+        free(receive_displacements_host);
     } else {
         int *send_count_host = (int *) malloc(nprocs * sizeof(int));;
         int *receive_count_host = (int *) malloc(nprocs * sizeof(int));;
@@ -225,14 +228,12 @@ int main(int argc, char **argv) {
     int input_relation_size = 0;
     Entity *input_relation = get_split_relation(rank, local_data,
                                                 row_size, total_columns, nprocs,
-                                                grid_size, block_size, cuda_aware_mpi, &input_relation_size,
-                                                MPI_COMM_WORLD);
+                                                grid_size, block_size, cuda_aware_mpi, &input_relation_size);
 
     int t_delta_size;
     Entity *t_delta = get_split_relation(rank, local_data_reverse,
                                          row_size, total_columns, nprocs,
-                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size,
-                                         MPI_COMM_WORLD);
+                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size);
     thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
                                    t_delta, t_delta + t_delta_size,
@@ -255,7 +256,6 @@ int main(int argc, char **argv) {
     Entity negative_entity;
     negative_entity.key = -1;
     negative_entity.value = -1;
-//    cout << "Size of entity: " << sizeof(negative_entity) << endl;
     thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
     build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, input_relation,
                                                        input_relation_size);
@@ -282,8 +282,7 @@ int main(int argc, char **argv) {
         // Scatter the new facts among relevant processes
         Entity *t_delta_temp = get_split_relation(rank, join_result,
                                                   join_result_size, total_columns, nprocs,
-                                                  grid_size, block_size, cuda_aware_mpi, &t_delta_size,
-                                                  MPI_COMM_WORLD);
+                                                  grid_size, block_size, cuda_aware_mpi, &t_delta_size);
         // Deduplicate scattered facts
         thrust::stable_sort(thrust::device, t_delta_temp, t_delta_temp + t_delta_size, set_cmp());
         t_delta_size = (thrust::unique(thrust::device,
@@ -329,7 +328,6 @@ int main(int argc, char **argv) {
     reverse_t_full<<<grid_size, block_size>>>(t_full_ar, t_full_size, t_full);
     int *t_full_ar_host = (int *) malloc(t_full_size * total_columns * sizeof(int));
     cudaMemcpy(t_full_ar_host, t_full_ar, t_full_size * total_columns * sizeof(int), cudaMemcpyDeviceToHost);
-
 
     // List the t full counts for each process and calculate the displacements in the final result
     int *t_full_counts = (int *) calloc(nprocs, sizeof(int));
@@ -377,5 +375,6 @@ int main(int argc, char **argv) {
     return 0;
 }
 // make runsemi DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0
+// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0
 // make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1
 // make runsemi DATA_FILE=data/data_147892.bin NPROCS=8 CUDA_AWARE_MPI=0

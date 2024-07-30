@@ -124,11 +124,12 @@ Total time: 5.1148 seconds
 ```shell
 docker build -t mnmgjoindocker .
 #docker run --rm --entrypoint=bash -it -v $(pwd):/workspace mnmgjoindocker
-docker run --rm --entrypoint=bash -it --gpus all mnmgjoindocker
+docker run --rm --entrypoint=bash -it --gpus all -v $(pwd):/opt/mnmgjoin mnmgjoindocker
+
 mnmgjoin@6b53317e0449:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx tc_semi_naive.cu -o tc_semi_naive.out
 mnmgjoin@6b53317e0449:/opt/mnmgjoin$ whereis mpirun
 mpirun: /usr/bin/mpirun /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun
-mnmgjoin@6b53317e0449:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 2 ./tc_semi_naive.out data/data_23874.bin 1
+mnmgjoin@6b53317e0449:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1
 --------------------------------------------------------------------------
 WARNING: Open MPI tried to bind a process but failed.  This is a
 warning only; your job will continue, though performance may
@@ -195,7 +196,6 @@ Generated file data/data_23874.bin_tc.bin
 docker run --rm --entrypoint=bash --user root -it --gpus all mnmgjoindocker
 apt update
 apt install valgrind
-whereis mpicxx
 /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx tc_semi_naive.cu -o tc_semi_naive.out
 mpirun -np 2 ./tc_semi_naive.out data/data_23874.bin 0
 OMPI_ALLOW_RUN_AS_ROOT=1 mpirun --allow-run-as-root -np 2 valgrind ./tc_semi_naive.out data/data_23874.bin 1
@@ -336,46 +336,7 @@ tc_semi_naive.cu:
 /usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
 x3103c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 31 died from signal 11 and dumped core
 make: *** [Makefile:54: testpolarissemi] Error 139
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafat_0r3f6fcK9rMk.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
-x3103c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 31 died from signal 11 and dumped core
-make: *** [Makefile:54: testpolarissemi] Error 139
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatodt3fQvGbTabF.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
-x3102c0s37b1n0.hsn.cm.polaris.alcf.anl.gov: rank 6 died from signal 11 and dumped core
-make: *** [Makefile:54: testpolarissemi] Error 139
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatEDv3fAonBDRh4.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
-x3102c0s7b0n0.hsn.cm.polaris.alcf.anl.gov: rank 11 died from signal 11 and dumped core
-make: *** [Makefile:54: testpolarissemi] Error 139
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatm1x3fKCJd-vQt.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
-x3102c0s37b1n0.hsn.cm.polaris.alcf.anl.gov: rank 6 died from signal 11 and dumped core
-make: *** [Makefile:54: testpolarissemi] Error 139
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafat_ez3f6yQ-9kFn.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
-x3102c0s7b0n0.hsn.cm.polaris.alcf.anl.gov: rank 10 died from signal 11 and dumped core
-make: *** [Makefile:54: testpolarissemi] Error 139
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatoxB3fQaSvTbKl.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
-x3103c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 16 died from signal 11 and dumped core
-make: *** [Makefile:54: testpolarissemi] Error 139
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatEPC3fA9SUD4MI.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
-x3103c0s13b1n0.hsn.cm.polaris.alcf.anl.gov: rank 22 died from signal 11 and dumped core
-make: *** [Makefile:54: testpolarissemi] Error 139
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatUaF3fkdHXnjdh.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
-x3102c0s37b0n0.hsn.cm.polaris.alcf.anl.gov: rank 3 died from signal 11 and dumped core
-make: *** [Makefile:54: testpolarissemi] Error 139
+....
 tc_semi_naive.cu:
 /usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatCqG3fuOwIV4dS.o: missing .note.GNU-stack section implies executable stack
 /usr/bin/ld: 
@@ -431,20 +392,12 @@ Generated file data/data_23874.bin_tc.bin
 | # Input | # Process | # Iterations | # TC | Time (s) |
 | --- | --- | --- | --- | --- |
 | 23,874 | 4 | 58 | 481,121 |   2.7517 |
-
 ```
-
-
-
 
 
 ### Experiment: CUDA Aware MPI
 ```shell
 # Polaris (working with cam)
-
-
-
-
 CC cam.cu -o cam.out
 # 2 MPI ranks, 2 ranks per node, 2 depth, 1 thread per rank
 mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./../set_affinity_gpu_polaris_semi.sh ./cam.out
@@ -473,27 +426,6 @@ arsho::x3006c0s25b0n0 { ~ }-> cd mnmgJOIN
 arsho::x3006c0s25b0n0 { ~/mnmgJOIN }-> module load craype-accel-nvidia80
 arsho::x3006c0s25b0n0 { ~/mnmgJOIN }-> module load valgrind4hpc
 arsho::x3006c0s25b0n0 { ~/mnmgJOIN }-> export MPICH_GPU_SUPPORT_ENABLED=1
-
-
-
-
-# Compiles and creates the executable. Also tried with cuda_aware_mpi=1
-CC tc_semi_naive.cu -o tc_semi_naive_interactive.out /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so
-mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh valgrind ./tc_semi_naive_interactive.out data/data_165435.bin 1
-
-CC tc_semi_naive.cu -o tc_semi_naive_interactive.out /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so
-mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1
-
-
-
-mpiexec --np 4 valgrind --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1
-
-“RANK= 0 LOCAL_RANK= 0 gpu= 0”
-“RANK= 3 LOCAL_RANK= 3 gpu= 3”
-“RANK= 2 LOCAL_RANK= 2 gpu= 2”
-“RANK= 1 LOCAL_RANK= 1 gpu= 1”
-x3206c0s37b0n0.hsn.cm.polaris.alcf.anl.gov: rank 2 died from signal 11 and dumped core
-
 
 # Local machine
 nvcc cam.cu -o cam -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -w -lm

@@ -8,9 +8,8 @@ RUN apt-get install -y ca-certificates gpg wget
 RUN test -f /usr/share/doc/kitware-archive-keyring/copyright || wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
 RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
 RUN apt-get update && apt-get install -y kitware-archive-keyring
-# RUN apt-get update && apt-get install -y cmake
+RUN apt-get update && apt-get install -y valgrind
 
-# use gcc-13 and g++-13 on ubuntu 22.04
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG USER=mnmgjoin
 ARG PASS="mnmgjoin"
@@ -20,7 +19,5 @@ USER mnmgjoin
 COPY --chown=mnmgjoin:mnmgjoin . /opt/mnmgjoin
 WORKDIR /opt/mnmgjoin
 
-#RUN cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -Bbuild . && cd build && make -j
-#RUN make
 RUN chmod -R 757 /opt/mnmgjoin
 
