@@ -37,7 +37,7 @@ using namespace std;
 
 Entity *get_split_relation(int rank, Entity *local_data_device,
                            int row_size, int total_columns, int nprocs,
-                           int grid_size, int block_size, int cuda_aware_mpi, int *size) {
+                           int grid_size, int block_size, int cuda_aware_mpi, int *size, MPI_Comm comm) {
     int *send_count;
     checkCuda(cudaMalloc((void **) &send_count, nprocs * sizeof(int)));
     checkCuda(cudaMemset(send_count, 0, nprocs * sizeof(int)));
@@ -64,12 +64,26 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
     checkCuda(cudaMemset(receive_displacements, 0, nprocs * sizeof(int)));
 
     if (cuda_aware_mpi) {
-        MPI_Alltoall(send_count, 1, MPI_INT, receive_count, 1, MPI_INT, MPI_COMM_WORLD);
+        int mpi_error = MPI_Alltoall(send_count, 1, MPI_INT, receive_count, 1, MPI_INT, MPI_COMM_WORLD);
+        if (mpi_error != MPI_SUCCESS) {
+            char error_string[BUFSIZ];
+            int length_of_error_string;
+            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
+            fprintf(stderr, "MPI error on device MPI_Alltoall call: %s\n", error_string);
+            MPI_Abort(MPI_COMM_WORLD, mpi_error);
+        }
     } else {
         int *send_count_host = (int *) malloc(nprocs * sizeof(int));;
         int *receive_count_host = (int *) malloc(nprocs * sizeof(int));;
         cudaMemcpy(send_count_host, send_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-        MPI_Alltoall(send_count_host, 1, MPI_INT, receive_count_host, 1, MPI_INT, MPI_COMM_WORLD);
+        int mpi_error = MPI_Alltoall(send_count_host, 1, MPI_INT, receive_count_host, 1, MPI_INT, MPI_COMM_WORLD);
+        if (mpi_error != MPI_SUCCESS) {
+            char error_string[BUFSIZ];
+            int length_of_error_string;
+            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
+            fprintf(stderr, "MPI error on host MPI_Alltoall call: %s\n", error_string);
+            MPI_Abort(MPI_COMM_WORLD, mpi_error);
+        }
         cudaMemcpy(receive_count, receive_count_host, nprocs * sizeof(int), cudaMemcpyHostToDevice);
         free(send_count_host);
         free(receive_count_host);
@@ -80,9 +94,25 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
     Entity *receive_data;
     checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
     if (cuda_aware_mpi) {
-        MPI_Alltoallv(send_data, send_count, send_displacements, MPI_UINT64_T,
-                      receive_data, receive_count, receive_displacements, MPI_UINT64_T,
-                      MPI_COMM_WORLD);
+
+        int *send_count_host = (int *) malloc(nprocs * sizeof(int));
+        int *receive_count_host = (int *) malloc(nprocs * sizeof(int));
+        int *send_displacements_host = (int *) malloc(nprocs * sizeof(int));
+        int *receive_displacements_host = (int *) malloc(nprocs * sizeof(int));
+        cudaMemcpy(send_count_host, send_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(receive_count_host, receive_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(send_displacements_host, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(receive_displacements_host, receive_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+        int mpi_error = MPI_Alltoallv(send_data, send_count_host, send_displacements_host, MPI_UINT64_T,
+                                      receive_data, receive_count_host, receive_displacements_host, MPI_UINT64_T,
+                                      MPI_COMM_WORLD);
+        if (mpi_error != MPI_SUCCESS) {
+            char error_string[BUFSIZ];
+            int length_of_error_string;
+            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
+            fprintf(stderr, "MPI error on device MPI_Alltoallv call: %s\n", error_string);
+            MPI_Abort(MPI_COMM_WORLD, mpi_error);
+        }
     } else {
         int *send_count_host = (int *) malloc(nprocs * sizeof(int));;
         int *receive_count_host = (int *) malloc(nprocs * sizeof(int));;
@@ -95,9 +125,16 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
         cudaMemcpy(send_displacements_host, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
         cudaMemcpy(receive_displacements_host, receive_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
         cudaMemcpy(send_data_host, send_data, row_size * sizeof(Entity), cudaMemcpyDeviceToHost);
-        MPI_Alltoallv(send_data_host, send_count_host, send_displacements_host, MPI_UINT64_T,
-                      receive_data_host, receive_count_host, receive_displacements_host, MPI_UINT64_T,
-                      MPI_COMM_WORLD);
+        int mpi_error = MPI_Alltoallv(send_data_host, send_count_host, send_displacements_host, MPI_UINT64_T,
+                                      receive_data_host, receive_count_host, receive_displacements_host, MPI_UINT64_T,
+                                      MPI_COMM_WORLD);
+        if (mpi_error != MPI_SUCCESS) {
+            char error_string[BUFSIZ];
+            int length_of_error_string;
+            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
+            fprintf(stderr, "MPI error on host MPI_Alltoallv call: %s\n", error_string);
+            MPI_Abort(MPI_COMM_WORLD, mpi_error);
+        }
         cudaMemcpy(receive_data, receive_data_host, total_receive * sizeof(Entity), cudaMemcpyHostToDevice);
         free(send_count_host);
         free(receive_count_host);
@@ -134,7 +171,7 @@ int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
     double max_time = 0.0;
     int nprocs, rank;
-    int i, j, k;
+    int i;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     // Should pass the input filename in command line argument
@@ -188,12 +225,14 @@ int main(int argc, char **argv) {
     int input_relation_size = 0;
     Entity *input_relation = get_split_relation(rank, local_data,
                                                 row_size, total_columns, nprocs,
-                                                grid_size, block_size, cuda_aware_mpi, &input_relation_size);
+                                                grid_size, block_size, cuda_aware_mpi, &input_relation_size,
+                                                MPI_COMM_WORLD);
 
     int t_delta_size;
     Entity *t_delta = get_split_relation(rank, local_data_reverse,
                                          row_size, total_columns, nprocs,
-                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size);
+                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size,
+                                         MPI_COMM_WORLD);
     thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
                                    t_delta, t_delta + t_delta_size,
@@ -216,6 +255,7 @@ int main(int argc, char **argv) {
     Entity negative_entity;
     negative_entity.key = -1;
     negative_entity.value = -1;
+//    cout << "Size of entity: " << sizeof(negative_entity) << endl;
     thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
     build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, input_relation,
                                                        input_relation_size);
@@ -242,7 +282,8 @@ int main(int argc, char **argv) {
         // Scatter the new facts among relevant processes
         Entity *t_delta_temp = get_split_relation(rank, join_result,
                                                   join_result_size, total_columns, nprocs,
-                                                  grid_size, block_size, cuda_aware_mpi, &t_delta_size);
+                                                  grid_size, block_size, cuda_aware_mpi, &t_delta_size,
+                                                  MPI_COMM_WORLD);
         // Deduplicate scattered facts
         thrust::stable_sort(thrust::device, t_delta_temp, t_delta_temp + t_delta_size, set_cmp());
         t_delta_size = (thrust::unique(thrust::device,
