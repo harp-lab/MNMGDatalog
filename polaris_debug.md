@@ -1,3 +1,123 @@
+### Polaris partial result
+```shell
+NUM_OF_NODES= 10 TOTAL_NUM_RANKS= 40 RANKS_PER_NODE= 4 THREADS_PER_RANK= 1
+CC tc_semi_naive.cu -o tc_semi_naive.out -lm
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> fe_ocean 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 40 | 247 | 1,669,750,513 |  10.0284 |
+>>>>>>>>>>>>> fe_ocean 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 32 | 247 | 1,669,750,513 |  10.4754 |
+>>>>>>>>>>>>> fe_ocean 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 24 | 247 | 1,669,750,513 |  11.9613 |
+>>>>>>>>>>>>> fe_ocean 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 16 | 247 | 1,669,750,513 |  11.6706 |
+>>>>>>>>>>>>> fe_ocean 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 8 | 247 | 1,669,750,513 |  20.1498 |
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> vsp_finan 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 40 | 520 | 910,070,918 |  13.5197 |
+>>>>>>>>>>>>> vsp_finan 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 32 | 520 | 910,070,918 |  12.3224 |
+>>>>>>>>>>>>> vsp_finan 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 24 | 520 | 910,070,918 |  20.1347 |
+>>>>>>>>>>>>> vsp_finan 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 16 | 520 | 910,070,918 |  19.6395 |
+>>>>>>>>>>>>> vsp_finan 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 8 | 520 | 910,070,918 |  29.1619 |
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> com-dblp 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 40 | 31 | 1,911,754,892 |   6.6690 |
+>>>>>>>>>>>>> com-dblp 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 32 | 31 | 1,911,754,892 |   8.4425 |
+>>>>>>>>>>>>> com-dblp 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 24 | 31 | 1,911,754,892 |   7.7934 |
+>>>>>>>>>>>>> com-dblp 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 16 | 31 | 1,911,754,892 |   8.5105 |
+>>>>>>>>>>>>> com-dblp 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 8 | 31 | 1,911,754,892 |  12.0870 |
+arsho::polaris-login-02 { ~/mnmgJOIN }-> cat polaris-job-semi.error
+/usr/bin/ld: warning: /var/tmp/pbs.2048766.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatg4G9nsMpoLYop.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+ADIOI_CRAY_WRITECONTIG(245): filename='data/com-dblpungraph.bin_tc.bin'  error='Disk quota exceeded'  errno=122  PE=00003  W_rec=00000  off=1448931176  len=1914325320  See MPICH_MPIIO_ABORT_ON_RW_ERROR.
+ADIOI_CRAY_WRITECONTIG(245): filename='data/com-dblpungraph.bin_tc.bin'  error='Disk quota exceeded'  errno=122  PE=00001  W_rec=00000  off=1913487456  len=1915886176  See MPICH_MPIIO_ABORT_ON_RW_ERROR.
+
+```
+### Polaris partial result
 ```shell
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 >>>>>>>>>>>>> p2p-Gnutella31 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>

@@ -22,13 +22,17 @@ Compute Transitive Closure using CUDA and MPI for a given relation.
 
 ### Dataset
 
-| Dataset        | # Input  | Path                 | 
-|----------------|----------|----------------------|
-| p2p-Gnutella31 | 1,47,892 | data/data_147892.bin |
-| TG.cedge       | 23,874   | data/data_23874.bin  |
-| OL.cedge       | 7,035    | data/data_7035.bin   |
-| Small          | 10       | data/data_10.bin     |
-| Extra small    | 5        | data/hipc_2019.bin   |
+| Dataset        | # Input   | Path                                   | 
+|----------------|-----------|----------------------------------------|
+| fe_ocean       | 4,09,593  | data/data_409593.bin                   |
+| usroad         | 1,65,435  | data/data_165435.bin                   |
+| p2p-Gnutella31 | 1,47,892  | data/data_147892.bin                   |
+| com-dblp       | 1,049,866 | data/com-dblpungraph.bin               |
+| vsp_finan      | 552,020   | data/vsp_finan512_scagr7-2c_rlfddd.bin |
+| TG.cedge       | 23,874    | data/data_23874.bin                    |
+| OL.cedge       | 7,035     | data/data_7035.bin                     |
+| Small          | 10        | data/data_10.bin                       |
+| Extra small    | 5         | data/hipc_2019.bin                     |
 
 ### Dataset Utility Program
 When using `MPI_File_read_at` and `MPI_File_write_at` at offset in MPI programs, this utility program becomes essential because these MPI functions operate directly on binary files. `MPI_File_read_at` reads binary data from a specified offset, and `MPI_File_write_at` writes binary data to a specified offset.
@@ -249,46 +253,6 @@ cat polaris-job.out
 NUM_OF_NODES= 10 TOTAL_NUM_RANKS= 40 RANKS_PER_NODE= 4 THREADS_PER_RANK= 1
 CC tc_naive.cu -o tc_naive.out -w -lm
 mpiexec -n 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_naive.out data/data_147892.bin
-“RANK= 32 LOCAL_RANK= 0 gpu= 0”
-“RANK= 20 LOCAL_RANK= 0 gpu= 0”
-“RANK= 23 LOCAL_RANK= 3 gpu= 3”
-“RANK= 22 LOCAL_RANK= 2 gpu= 2”
-“RANK= 21 LOCAL_RANK= 1 gpu= 1”
-“RANK= 16 LOCAL_RANK= 0 gpu= 0”
-“RANK= 34 LOCAL_RANK= 2 gpu= 2”
-“RANK= 9 LOCAL_RANK= 1 gpu= 1”
-“RANK= 13 LOCAL_RANK= 1 gpu= 1”
-“RANK= 10 LOCAL_RANK= 2 gpu= 2”
-“RANK= 35 LOCAL_RANK= 3 gpu= 3”
-“RANK= 33 LOCAL_RANK= 1 gpu= 1”
-“RANK= 14 LOCAL_RANK= 2 gpu= 2”
-“RANK= 37 LOCAL_RANK= 1 gpu= 1”
-“RANK= 29 LOCAL_RANK= 1 gpu= 1”
-“RANK= 5 LOCAL_RANK= 1 gpu= 1”
-“RANK= 6 LOCAL_RANK= 2 gpu= 2”
-“RANK= 15 LOCAL_RANK= 3 gpu= 3”
-“RANK= 18 LOCAL_RANK= 2 gpu= 2”
-“RANK= 17 LOCAL_RANK= 1 gpu= 1”
-“RANK= 11 LOCAL_RANK= 3 gpu= 3”
-“RANK= 8 LOCAL_RANK= 0 gpu= 0”
-“RANK= 19 LOCAL_RANK= 3 gpu= 3”
-“RANK= 12 LOCAL_RANK= 0 gpu= 0”
-“RANK= 38 LOCAL_RANK= 2 gpu= 2”
-“RANK= 24 LOCAL_RANK= 0 gpu= 0”
-“RANK= 36 LOCAL_RANK= 0 gpu= 0”
-“RANK= 25 LOCAL_RANK= 1 gpu= 1”
-“RANK= 1 LOCAL_RANK= 1 gpu= 1”
-“RANK= 39 LOCAL_RANK= 3 gpu= 3”
-“RANK= 30 LOCAL_RANK= 2 gpu= 2”
-“RANK= 3 LOCAL_RANK= 3 gpu= 3”
-“RANK= 4 LOCAL_RANK= 0 gpu= 0”
-“RANK= 7 LOCAL_RANK= 3 gpu= 3”
-“RANK= 28 LOCAL_RANK= 0 gpu= 0”
-“RANK= 31 LOCAL_RANK= 3 gpu= 3”
-“RANK= 27 LOCAL_RANK= 3 gpu= 3”
-“RANK= 0 LOCAL_RANK= 0 gpu= 0”
-“RANK= 26 LOCAL_RANK= 2 gpu= 2”
-“RANK= 2 LOCAL_RANK= 2 gpu= 2”
 Total iterations 31, TC size 884179859, generated file data/data_147892.bin_tc.bin
 Total time: 292.3941 seconds
 
@@ -318,6 +282,7 @@ arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
 2041991.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+2048766.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -u $USER
 
 polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
@@ -375,6 +340,37 @@ Generated file data/data_23874.bin_tc.bin
 | 23,874 | 4 | 58 | 481,121 |   2.7517 |
 ```
 
+#### TC on fe_ocean
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 40 | 247 | 1,669,750,513 | 10.0284 |
+| 409,593 | 32 | 247 | 1,669,750,513 | 10.4754 |
+| 409,593 | 24 | 247 | 1,669,750,513 | 11.9613 |
+| 409,593 | 16 | 247 | 1,669,750,513 | 11.6706 |
+| 409,593 | 8 | 247 | 1,669,750,513 | 20.1498 |
+
+#### TC on vsp_finan
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 40 | 520 | 910,070,918 | 13.5197 |
+| 552,020 | 32 | 520 | 910,070,918 | 12.3224 |
+| 552,020 | 24 | 520 | 910,070,918 | 20.1347 |
+| 552,020 | 16 | 520 | 910,070,918 | 19.6395 |
+| 552,020 | 8 | 520 | 910,070,918 | 29.1619 |
+
+#### TC on com-dblp
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 40 | 31 | 1,911,754,892 | 6.6690 |
+| 1,049,866 | 32 | 31 | 1,911,754,892 | 8.4425 |
+| 1,049,866 | 24 | 31 | 1,911,754,892 | 7.7934 |
+| 1,049,866 | 16 | 31 | 1,911,754,892 | 8.5105 |
+| 1,049,866 | 8 | 31 | 1,911,754,892 | 12.0870 |
+
+
 #### TC on p2p-Gnutella31
 
 | # Input | # Process | # Iterations | # TC | Time (s) |
@@ -403,12 +399,6 @@ Generated file data/data_23874.bin_tc.bin
 | 409,593 | 32 | 247 | 1,669,750,513 | 9.6925 |
 | 409,593 | 24 | 247 | 1,669,750,513 | 11.4334 |
 | 409,593 | 16 | 247 | 1,669,750,513 | 11.7146 |
-
-
-
-
-
-
 
 ### Experiment: CUDA Aware MPI
 ```shell
