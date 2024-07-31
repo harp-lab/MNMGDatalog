@@ -311,48 +311,29 @@ Also, change the data file as necessary.
 Currently, it is spawning 4 ranks per node and sets 1 GPU per MPI rank.
 ```shell
 ssh arsho@polaris.alcf.anl.gov
-cd mnmgJOIN
-git fetch
-git reset --hard origin/main
-arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
-arsho::polaris-login-04 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
-arsho::polaris-login-04 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
-2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
-arsho::polaris-login-04 { ~/mnmgJOIN }-> qstat -u $USER
-qstat -Qf small
+arsho::polaris-login-02 { ~ }-> cd mnmgJOIN
+arsho::polaris-login-02 { ~/mnmgJOIN }-> git fetch
+arsho::polaris-login-02 { ~/mnmgJOIN }-> git reset --hard origin/main
+arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
+arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
+arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
+2041991.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -u $USER
 
 polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
                                                                  Req'd  Req'd   Elap
 Job ID               Username Queue    Jobname    SessID NDS TSK Memory Time  S Time
 -------------------- -------- -------- ---------- ------ --- --- ------ ----- - -----
-2037445.polaris-pbs* arsho    small    polaris-j*    --   10 640    --  00:30 Q   -- 
+2041991.polaris-pbs* arsho    small    polaris-j*    --   10 640    --  00:30 Q   -- 
+arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -Qf small
+Queue: small
+    queue_type = Execution
+    Priority = 150
+    total_jobs = 40
+    state_count = Transit:0 Queued:27 Held:13 Waiting:0 Running:0 Exiting:0 Beg
 
 cat polaris-job-semi.out
-MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive.out data/data_147892.bin 1
-# Error
-cat polaris-job-semi.error
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatUwp3fkPSWn7LK.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
-x3103c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 31 died from signal 11 and dumped core
-make: *** [Makefile:54: testpolarissemi] Error 139
-....
-tc_semi_naive.cu:
-/usr/bin/ld: warning: /var/tmp/pbs.2037965.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatCqG3fuOwIV4dS.o: missing .note.GNU-stack section implies executable stack
-/usr/bin/ld: 
-/usr/bin/ld: final link failed: 
-/usr/bin/ld: 
-
-
-cat polaris-job-semi.output
-NUM_OF_NODES= 10 TOTAL_NUM_RANKS= 40 RANKS_PER_NODE= 4 THREADS_PER_RANK= 1
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
->>>>>>>>>>>>> p2p-Gnutella31 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
-CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so
-MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive.out data/data_147892.bin 1
-“RANK= 7 LOCAL_RANK= 3 gpu= 3”
-“RANK= 3 LOCAL_RANK= 3 gpu= 3”
-“RANK= 19 LOCAL_RANK= 3 gpu= 3”
+cat polaris-jop-semi.error
 
 # Interactive node run tc
 ssh arsho@polaris.alcf.anl.gov
@@ -393,6 +374,40 @@ Generated file data/data_23874.bin_tc.bin
 | --- | --- | --- | --- | --- |
 | 23,874 | 4 | 58 | 481,121 |   2.7517 |
 ```
+
+#### TC on p2p-Gnutella31
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 40 | 31 | 884,179,859 | 2.6287 |
+| 147,892 | 32 | 31 | 884,179,859 | 3.2223 |
+| 147,892 | 24 | 31 | 884,179,859 | 3.6492 |
+| 147,892 | 16 | 31 | 884,179,859 | 3.8662 |
+| 147,892 | 8 | 31 | 884,179,859 | 5.7059 |
+
+#### TC on usroad
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 40 | 606 | 871,365,688 | 11.4508 |
+| 165,435 | 32 | 606 | 871,365,688 | 11.9498 |
+| 165,435 | 24 | 606 | 871,365,688 | 12.4402 |
+| 165,435 | 16 | 606 | 871,365,688 | 13.3520 |
+| 165,435 | 8 | 606 | 871,365,688 | 24.4126 |
+
+#### TC on fe_ocean
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 40 | 247 | 1,669,750,513 | 10.9424 |
+| 409,593 | 32 | 247 | 1,669,750,513 | 9.6925 |
+| 409,593 | 24 | 247 | 1,669,750,513 | 11.4334 |
+| 409,593 | 16 | 247 | 1,669,750,513 | 11.7146 |
+
+
+
+
+
 
 
 ### Experiment: CUDA Aware MPI

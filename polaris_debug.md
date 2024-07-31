@@ -1,4 +1,156 @@
 ```shell
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> p2p-Gnutella31 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 40 | 31 | 884,179,859 |   2.6287 |
+>>>>>>>>>>>>> p2p-Gnutella31 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 32 | 31 | 884,179,859 |   3.2223 |
+>>>>>>>>>>>>> p2p-Gnutella31 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 24 | 31 | 884,179,859 |   3.6492 |
+>>>>>>>>>>>>> p2p-Gnutella31 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 16 | 31 | 884,179,859 |   3.8662 |
+>>>>>>>>>>>>> p2p-Gnutella31 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 8 | 31 | 884,179,859 |   5.7059 |
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> usroad 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 40 | 606 | 871,365,688 |  11.4508 |
+>>>>>>>>>>>>> usroad 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 32 | 606 | 871,365,688 |  11.9498 |
+>>>>>>>>>>>>> usroad 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 24 | 606 | 871,365,688 |  12.4402 |
+>>>>>>>>>>>>> usroad 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 16 | 606 | 871,365,688 |  13.3520 |
+>>>>>>>>>>>>> usroad 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 8 | 606 | 871,365,688 |  24.4126 |
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> fe_ocean 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 40 | 247 | 1,669,750,513 |  10.9424 |
+>>>>>>>>>>>>> fe_ocean 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 32 | 247 | 1,669,750,513 |   9.6925 |
+>>>>>>>>>>>>> fe_ocean 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 24 | 247 | 1,669,750,513 |  11.4334 |
+>>>>>>>>>>>>> fe_ocean 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 16 | 247 | 1,669,750,513 |  11.7146 |
+>>>>>>>>>>>>> fe_ocean 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> vsp_finan 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1
+>>>>>>>>>>>>> vsp_finan 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+>>>>>>>>>>>>> vsp_finan 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1
+>>>>>>>>>>>>> vsp_finan 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1
+>>>>>>>>>>>>> vsp_finan 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> com-dblp 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1
+>>>>>>>>>>>>> com-dblp 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1
+>>>>>>>>>>>>> com-dblp 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+>>>>>>>>>>>>> com-dblp 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1
+>>>>>>>>>>>>> com-dblp 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+CC tc_semi_naive.cu -o tc_semi_naive.out -w -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1
+
+```
+### Error using GPU displacements and offset buffers in alltoallv
+```shell
 arsho::x3005c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1
 “RANK= 3 LOCAL_RANK= 3 gpu= 3”
 “RANK= 2 LOCAL_RANK= 2 gpu= 2”

@@ -47,14 +47,12 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
     int *send_displacements_temp;
     checkCuda(cudaMalloc((void **) &send_displacements_temp, nprocs * sizeof(int)));
     checkCuda(cudaMemset(send_displacements_temp, 0, nprocs * sizeof(int)));
-
     get_send_count<<<grid_size, block_size>>>(local_data_device, row_size, send_count, nprocs);
     thrust::exclusive_scan(thrust::device, send_count, send_count + nprocs, send_displacements);
     cudaMemcpy(send_displacements_temp, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToDevice);
     Entity *send_data;
     checkCuda(cudaMalloc((void **) &send_data, row_size * sizeof(Entity)));
     get_rank_data<<<grid_size, block_size>>>(local_data_device, row_size, send_displacements_temp, nprocs, send_data);
-    checkCuda(cudaDeviceSynchronize());
     int *receive_count;
     checkCuda(cudaMalloc((void **) &receive_count, nprocs * sizeof(int)));
     checkCuda(cudaMemset(receive_count, 0, nprocs * sizeof(int)));

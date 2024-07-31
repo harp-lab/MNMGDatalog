@@ -7,7 +7,7 @@ SRC_GPU_COMM = $(TARGET_GPU_COMM).cu
 TARGET_SEMI = tc_semi_naive
 SRC_SEMI = $(TARGET_SEMI).cu
 
-COMPILER_FLAGS = -w -lm
+COMPILER_FLAGS = -lm
 MPICC?=mpiCC
 MPIRUN?=mpirun
 DEBUG_FLAGS = -Og -Wall
@@ -75,5 +75,6 @@ clean:
 	rm -f data/*_tc.txt*
 	rm -f data/*_converted.txt*
 	rm -f core.*
+	rm -f vgcore.*
 
 .PHONY.: build
