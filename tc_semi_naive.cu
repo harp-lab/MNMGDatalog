@@ -53,82 +53,47 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
     Entity *send_data;
     checkCuda(cudaMalloc((void **) &send_data, row_size * sizeof(Entity)));
     get_rank_data<<<grid_size, block_size>>>(local_data_device, row_size, send_displacements_temp, nprocs, send_data);
-    int *receive_count;
-    checkCuda(cudaMalloc((void **) &receive_count, nprocs * sizeof(int)));
-    checkCuda(cudaMemset(receive_count, 0, nprocs * sizeof(int)));
+    int mpi_error;
 
-    int *receive_displacements;
-    checkCuda(cudaMalloc((void **) &receive_displacements, nprocs * sizeof(int)));
-    checkCuda(cudaMemset(receive_displacements, 0, nprocs * sizeof(int)));
+    int *send_count_host = (int *) malloc(nprocs * sizeof(int));
+    int *receive_count_host = (int *) malloc(nprocs * sizeof(int));
+    int *send_displacements_host = (int *) malloc(nprocs * sizeof(int));
+    int *receive_displacements_host = (int *) malloc(nprocs * sizeof(int));
+    cudaMemcpy(send_count_host, send_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(send_displacements_host, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
 
-    if (cuda_aware_mpi) {
-        int mpi_error = MPI_Alltoall(send_count, 1, MPI_INT, receive_count, 1, MPI_INT, MPI_COMM_WORLD);
-        if (mpi_error != MPI_SUCCESS) {
-            char error_string[BUFSIZ];
-            int length_of_error_string;
-            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
-            fprintf(stderr, "MPI error on device MPI_Alltoall call: %s\n", error_string);
-            MPI_Abort(MPI_COMM_WORLD, mpi_error);
-        }
-    } else {
-        int *send_count_host = (int *) malloc(nprocs * sizeof(int));;
-        int *receive_count_host = (int *) malloc(nprocs * sizeof(int));;
-        cudaMemcpy(send_count_host, send_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-        int mpi_error = MPI_Alltoall(send_count_host, 1, MPI_INT, receive_count_host, 1, MPI_INT, MPI_COMM_WORLD);
-        if (mpi_error != MPI_SUCCESS) {
-            char error_string[BUFSIZ];
-            int length_of_error_string;
-            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
-            fprintf(stderr, "MPI error on host MPI_Alltoall call: %s\n", error_string);
-            MPI_Abort(MPI_COMM_WORLD, mpi_error);
-        }
-        cudaMemcpy(receive_count, receive_count_host, nprocs * sizeof(int), cudaMemcpyHostToDevice);
-        free(send_count_host);
-        free(receive_count_host);
+    mpi_error = MPI_Alltoall(send_count_host, 1, MPI_INT, receive_count_host, 1, MPI_INT, MPI_COMM_WORLD);
+    if (mpi_error != MPI_SUCCESS) {
+        char error_string[BUFSIZ];
+        int length_of_error_string;
+        MPI_Error_string(mpi_error, error_string, &length_of_error_string);
+        fprintf(stderr, "MPI error on MPI_Alltoall call: %s\n", error_string);
+        MPI_Abort(MPI_COMM_WORLD, mpi_error);
     }
-    int total_receive = thrust::reduce(thrust::device, receive_count, receive_count + nprocs, 0, thrust::plus<int>());
-    thrust::exclusive_scan(thrust::device, receive_count, receive_count + nprocs, receive_displacements);
-    checkCuda(cudaDeviceSynchronize());
+
+    int total_receive = thrust::reduce(receive_count_host, receive_count_host + nprocs, 0, thrust::plus<int>());
+    thrust::exclusive_scan(receive_count_host, receive_count_host + nprocs, receive_displacements_host);
     Entity *receive_data;
     checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
+
     if (cuda_aware_mpi) {
-        int *send_count_host = (int *) malloc(nprocs * sizeof(int));
-        int *receive_count_host = (int *) malloc(nprocs * sizeof(int));
-        int *send_displacements_host = (int *) malloc(nprocs * sizeof(int));
-        int *receive_displacements_host = (int *) malloc(nprocs * sizeof(int));
-        cudaMemcpy(send_count_host, send_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-        cudaMemcpy(receive_count_host, receive_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-        cudaMemcpy(send_displacements_host, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-        cudaMemcpy(receive_displacements_host, receive_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-        int mpi_error = MPI_Alltoallv(send_data, send_count_host, send_displacements_host, MPI_UINT64_T,
-                                      receive_data, receive_count_host, receive_displacements_host, MPI_UINT64_T,
-                                      MPI_COMM_WORLD);
+        mpi_error = MPI_Alltoallv(send_data, send_count_host, send_displacements_host, MPI_UINT64_T,
+                                  receive_data, receive_count_host, receive_displacements_host, MPI_UINT64_T,
+                                  MPI_COMM_WORLD);
         if (mpi_error != MPI_SUCCESS) {
             char error_string[BUFSIZ];
             int length_of_error_string;
             MPI_Error_string(mpi_error, error_string, &length_of_error_string);
-            fprintf(stderr, "MPI error on device MPI_Alltoallv call: %s\n", error_string);
+            fprintf(stderr, "MPI error on CUDA AWARE MPI MPI_Alltoallv call: %s\n", error_string);
             MPI_Abort(MPI_COMM_WORLD, mpi_error);
         }
-        free(send_count_host);
-        free(receive_count_host);
-        free(send_displacements_host);
-        free(receive_displacements_host);
     } else {
-        int *send_count_host = (int *) malloc(nprocs * sizeof(int));;
-        int *receive_count_host = (int *) malloc(nprocs * sizeof(int));;
-        int *send_displacements_host = (int *) malloc(nprocs * sizeof(int));;
-        int *receive_displacements_host = (int *) malloc(nprocs * sizeof(int));;
         Entity *send_data_host = (Entity *) malloc(row_size * sizeof(Entity));;
         Entity *receive_data_host = (Entity *) malloc(total_receive * sizeof(Entity));;
-        cudaMemcpy(send_count_host, send_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-        cudaMemcpy(receive_count_host, receive_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-        cudaMemcpy(send_displacements_host, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-        cudaMemcpy(receive_displacements_host, receive_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
         cudaMemcpy(send_data_host, send_data, row_size * sizeof(Entity), cudaMemcpyDeviceToHost);
-        int mpi_error = MPI_Alltoallv(send_data_host, send_count_host, send_displacements_host, MPI_UINT64_T,
-                                      receive_data_host, receive_count_host, receive_displacements_host, MPI_UINT64_T,
-                                      MPI_COMM_WORLD);
+        mpi_error = MPI_Alltoallv(send_data_host, send_count_host, send_displacements_host, MPI_UINT64_T,
+                                  receive_data_host, receive_count_host, receive_displacements_host, MPI_UINT64_T,
+                                  MPI_COMM_WORLD);
         if (mpi_error != MPI_SUCCESS) {
             char error_string[BUFSIZ];
             int length_of_error_string;
@@ -137,25 +102,19 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
             MPI_Abort(MPI_COMM_WORLD, mpi_error);
         }
         cudaMemcpy(receive_data, receive_data_host, total_receive * sizeof(Entity), cudaMemcpyHostToDevice);
-        free(send_count_host);
-        free(receive_count_host);
-        free(send_displacements_host);
-        free(receive_displacements_host);
         free(send_data_host);
         free(receive_data_host);
     }
     *size = total_receive;
-    Entity *result_data;
-    checkCuda(cudaMalloc((void **) &result_data, total_receive * sizeof(Entity)));
-    cudaMemcpy(result_data, receive_data, total_receive * sizeof(Entity), cudaMemcpyDeviceToDevice);
+    free(send_count_host);
+    free(receive_count_host);
+    free(send_displacements_host);
+    free(receive_displacements_host);
     cudaFree(send_count);
-    cudaFree(receive_count);
     cudaFree(send_displacements);
     cudaFree(send_displacements_temp);
-    cudaFree(receive_displacements);
     cudaFree(send_data);
-    cudaFree(receive_data);
-    return result_data;
+    return receive_data;
 }
 
 int main(int argc, char **argv) {
@@ -372,7 +331,7 @@ int main(int argc, char **argv) {
     MPI_Finalize();
     return 0;
 }
-// make runsemi DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0
 // make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0
+// make runsemi DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0
 // make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1
 // make runsemi DATA_FILE=data/data_147892.bin NPROCS=8 CUDA_AWARE_MPI=0
