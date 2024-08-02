@@ -1,3 +1,50 @@
+### Polaris disk quota error fix
+I was getting error like:
+```shell
+Couldn't write output: Disk quota exceeded
+```
+#### Solution of disk quota error
+- I checked my disk quota:
+```shell
+myquota
+
+Current quota information for yourself and projects you're a member of:
+
+Name                           Type     Filesystem          Used          Quota           Grace
+===============================================================================================
+arsho                       User        /home            50.93G*            50G         expired
+dist_relational_alg         Project     /lus/grand        929.5G            11T               -
+dist_relational_alg         Project     /lus/eagle        929.5G            11T               -
+```
+- Then, I identified the largest directories:
+```shell
+arsho::polaris-login-02 { ~ }-> du -h --max-depth=1 | sort -hr
+51G	.
+11G	./mnmgJOIN
+6.7G	./local_join
+6.4G	./.conda
+6.2G	./.cache
+5.8G	./cudf_env
+3.2G	./gpujoinenv
+```
+- Then, I deleted the large unnecessary folders:
+```shell
+arsho::polaris-login-02 { ~ }-> rm -rf ./local_join
+```
+- Check disk quota again:
+```shell
+arsho::polaris-login-02 { ~/mnmgJOIN }-> myquota
+
+Current quota information for yourself and projects you're a member of:
+
+Name                           Type     Filesystem          Used          Quota           Grace
+===============================================================================================
+arsho                       User        /home             28.66G            50G               -
+dist_relational_alg         Project     /lus/grand        929.5G            11T               -
+dist_relational_alg         Project     /lus/eagle        929.5G            11T               -
+
+```
+
 ### Polaris two pass results
 #### Two pass method
 

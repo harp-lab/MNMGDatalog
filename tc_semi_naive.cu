@@ -251,14 +251,6 @@ int main(int argc, char **argv) {
         input_file = "hipc_2019.bin";
     }
 
-    if (rank == 0) {
-        if (comm_method == 0) {
-            cout << "Using two pass method for all to all communication" << endl;
-        } else {
-            cout << "Using sort method for all to all communication" << endl;
-        }
-    }
-
     // READ THE FILE IN PARALLEL
     // Reading filesize in bytes
     struct stat filestats;
