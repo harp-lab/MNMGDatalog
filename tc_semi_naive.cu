@@ -23,6 +23,8 @@
 #include <thrust/copy.h>
 #include <thrust/fill.h>
 #include <thrust/set_operations.h>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include "common/error_handler.cu"
 #include "common/utils.cu"
 #include "common/kernels.cu"
@@ -35,32 +37,33 @@ using namespace std;
     (BLOCK_START(process_id + 1, total_process, n) - BLOCK_START(process_id, total_process, n))
 
 
-Entity *get_split_relation(int rank, Entity *local_data_device,
-                           int row_size, int total_columns, int nprocs,
-                           int grid_size, int block_size, int cuda_aware_mpi, int *size) {
+Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
+                                       int row_size, int total_columns, int total_rank,
+                                       int grid_size, int block_size, int cuda_aware_mpi, int *size) {
     int *send_count;
-    checkCuda(cudaMalloc((void **) &send_count, nprocs * sizeof(int)));
-    checkCuda(cudaMemset(send_count, 0, nprocs * sizeof(int)));
+    checkCuda(cudaMalloc((void **) &send_count, total_rank * sizeof(int)));
+    checkCuda(cudaMemset(send_count, 0, total_rank * sizeof(int)));
     int *send_displacements;
-    checkCuda(cudaMalloc((void **) &send_displacements, nprocs * sizeof(int)));
-    checkCuda(cudaMemset(send_displacements, 0, nprocs * sizeof(int)));
+    checkCuda(cudaMalloc((void **) &send_displacements, total_rank * sizeof(int)));
+    checkCuda(cudaMemset(send_displacements, 0, total_rank * sizeof(int)));
     int *send_displacements_temp;
-    checkCuda(cudaMalloc((void **) &send_displacements_temp, nprocs * sizeof(int)));
-    checkCuda(cudaMemset(send_displacements_temp, 0, nprocs * sizeof(int)));
-    get_send_count<<<grid_size, block_size>>>(local_data_device, row_size, send_count, nprocs);
-    thrust::exclusive_scan(thrust::device, send_count, send_count + nprocs, send_displacements);
-    cudaMemcpy(send_displacements_temp, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToDevice);
+    checkCuda(cudaMalloc((void **) &send_displacements_temp, total_rank * sizeof(int)));
+    checkCuda(cudaMemset(send_displacements_temp, 0, total_rank * sizeof(int)));
+    get_send_count<<<grid_size, block_size>>>(local_data_device, row_size, send_count, total_rank);
+    thrust::exclusive_scan(thrust::device, send_count, send_count + total_rank, send_displacements);
+    cudaMemcpy(send_displacements_temp, send_displacements, total_rank * sizeof(int), cudaMemcpyDeviceToDevice);
     Entity *send_data;
     checkCuda(cudaMalloc((void **) &send_data, row_size * sizeof(Entity)));
-    get_rank_data<<<grid_size, block_size>>>(local_data_device, row_size, send_displacements_temp, nprocs, send_data);
+    get_rank_data<<<grid_size, block_size>>>(local_data_device, row_size, send_displacements_temp, total_rank,
+                                             send_data);
     int mpi_error;
 
-    int *send_count_host = (int *) malloc(nprocs * sizeof(int));
-    int *receive_count_host = (int *) malloc(nprocs * sizeof(int));
-    int *send_displacements_host = (int *) malloc(nprocs * sizeof(int));
-    int *receive_displacements_host = (int *) malloc(nprocs * sizeof(int));
-    cudaMemcpy(send_count_host, send_count, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(send_displacements_host, send_displacements, nprocs * sizeof(int), cudaMemcpyDeviceToHost);
+    int *send_count_host = (int *) malloc(total_rank * sizeof(int));
+    int *receive_count_host = (int *) malloc(total_rank * sizeof(int));
+    int *send_displacements_host = (int *) malloc(total_rank * sizeof(int));
+    int *receive_displacements_host = (int *) malloc(total_rank * sizeof(int));
+    cudaMemcpy(send_count_host, send_count, total_rank * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(send_displacements_host, send_displacements, total_rank * sizeof(int), cudaMemcpyDeviceToHost);
 
     mpi_error = MPI_Alltoall(send_count_host, 1, MPI_INT, receive_count_host, 1, MPI_INT, MPI_COMM_WORLD);
     if (mpi_error != MPI_SUCCESS) {
@@ -71,8 +74,8 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
         MPI_Abort(MPI_COMM_WORLD, mpi_error);
     }
 
-    int total_receive = thrust::reduce(receive_count_host, receive_count_host + nprocs, 0, thrust::plus<int>());
-    thrust::exclusive_scan(receive_count_host, receive_count_host + nprocs, receive_displacements_host);
+    int total_receive = thrust::reduce(receive_count_host, receive_count_host + total_rank, 0, thrust::plus<int>());
+    thrust::exclusive_scan(receive_count_host, receive_count_host + total_rank, receive_displacements_host);
     Entity *receive_data;
     checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
 
@@ -88,8 +91,8 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
             MPI_Abort(MPI_COMM_WORLD, mpi_error);
         }
     } else {
-        Entity *send_data_host = (Entity *) malloc(row_size * sizeof(Entity));;
-        Entity *receive_data_host = (Entity *) malloc(total_receive * sizeof(Entity));;
+        Entity *send_data_host = (Entity *) malloc(row_size * sizeof(Entity));
+        Entity *receive_data_host = (Entity *) malloc(total_receive * sizeof(Entity));
         cudaMemcpy(send_data_host, send_data, row_size * sizeof(Entity), cudaMemcpyDeviceToHost);
         mpi_error = MPI_Alltoallv(send_data_host, send_count_host, send_displacements_host, MPI_UINT64_T,
                                   receive_data_host, receive_count_host, receive_displacements_host, MPI_UINT64_T,
@@ -117,6 +120,102 @@ Entity *get_split_relation(int rank, Entity *local_data_device,
     return receive_data;
 }
 
+Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
+                                       int row_size, int total_columns, int total_rank,
+                                       int grid_size, int block_size, int cuda_aware_mpi, int *size) {
+
+    thrust::device_vector <uint8_t> row_mapping(row_size);
+
+    thrust::transform(
+            thrust::device, local_data_device,
+            local_data_device + row_size, row_mapping.begin(),
+    [total_rank = total_rank] __device__(
+    const Entity &entity) -> uint8_t{
+            return (uint8_t)(entity.key % total_rank);
+    });
+
+    thrust::stable_sort_by_key(thrust::device, row_mapping.begin(), row_mapping.end(), local_data_device);
+
+    thrust::device_vector<int> unique_rank_row_count(total_rank);
+    thrust::device_vector <uint8_t> unique_rank(total_rank);
+
+    auto unique_rank_range = thrust::reduce_by_key(
+            thrust::device, row_mapping.begin(), row_mapping.end(),
+            thrust::constant_iterator<int>(1), unique_rank.begin(),
+            unique_rank_row_count.begin());
+    auto total_unique_rank = unique_rank_range.first - unique_rank.begin();
+    unique_rank_row_count.resize(total_unique_rank);
+    unique_rank.resize(total_unique_rank);
+    thrust::host_vector<int> unique_rank_row_count_host(unique_rank_row_count);
+    thrust::host_vector <uint8_t> unique_rank_host(unique_rank);
+    thrust::host_vector<int> send_count_host(total_rank);
+    for (int i = 0; i < total_unique_rank; i++) {
+        send_count_host[unique_rank_host[i]] = unique_rank_row_count_host[i];
+    }
+    thrust::host_vector<int> receive_count_host(total_rank);
+
+    MPI_Alltoall(send_count_host.data(), 1, MPI_INT,
+                 receive_count_host.data(), 1, MPI_INT, MPI_COMM_WORLD);
+    int total_receive = thrust::reduce(receive_count_host.begin(), receive_count_host.end());
+
+    thrust::host_vector<int> send_displacements_host(total_rank);
+    thrust::host_vector<int> receive_displacements_host(total_rank);
+
+    thrust::exclusive_scan(send_count_host.begin(), send_count_host.end(), send_displacements_host.begin());
+    thrust::exclusive_scan(receive_count_host.begin(), receive_count_host.end(), receive_displacements_host.begin());
+
+    Entity *receive_data;
+    checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
+    int mpi_error;
+    if (cuda_aware_mpi) {
+        mpi_error = MPI_Alltoallv(local_data_device, send_count_host.data(), send_displacements_host.data(),
+                                  MPI_UINT64_T,
+                                  receive_data, receive_count_host.data(), receive_displacements_host.data(),
+                                  MPI_UINT64_T,
+                                  MPI_COMM_WORLD);
+        if (mpi_error != MPI_SUCCESS) {
+            char error_string[BUFSIZ];
+            int length_of_error_string;
+            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
+            fprintf(stderr, "MPI error on CUDA AWARE MPI MPI_Alltoallv call: %s\n", error_string);
+            MPI_Abort(MPI_COMM_WORLD, mpi_error);
+        }
+    } else {
+        Entity *send_data_host = (Entity *) malloc(row_size * sizeof(Entity));
+        Entity *receive_data_host = (Entity *) malloc(total_receive * sizeof(Entity));
+        cudaMemcpy(send_data_host, local_data_device, row_size * sizeof(Entity), cudaMemcpyDeviceToHost);
+        mpi_error = MPI_Alltoallv(send_data_host, send_count_host.data(), send_displacements_host.data(),
+                                  MPI_UINT64_T,
+                                  receive_data_host, receive_count_host.data(), receive_displacements_host.data(),
+                                  MPI_UINT64_T,
+                                  MPI_COMM_WORLD);
+        if (mpi_error != MPI_SUCCESS) {
+            char error_string[BUFSIZ];
+            int length_of_error_string;
+            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
+            fprintf(stderr, "MPI error on host MPI_Alltoallv call: %s\n", error_string);
+            MPI_Abort(MPI_COMM_WORLD, mpi_error);
+        }
+        cudaMemcpy(receive_data, receive_data_host, total_receive * sizeof(Entity), cudaMemcpyHostToDevice);
+        free(send_data_host);
+        free(receive_data_host);
+    }
+    *size = total_receive;
+    return receive_data;
+}
+
+Entity *get_split_relation(int rank, Entity *local_data_device,
+                           int row_size, int total_columns, int total_rank,
+                           int grid_size, int block_size, int cuda_aware_mpi, int *size, int method) {
+    if (method == 0) {
+        return get_split_relation_pass_method(rank, local_data_device, row_size,
+                                              total_columns, total_rank, grid_size, block_size, cuda_aware_mpi, size);
+    } else {
+        return get_split_relation_sort_method(rank, local_data_device, row_size,
+                                              total_columns, total_rank, grid_size, block_size, cuda_aware_mpi, size);
+    }
+}
+
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -130,14 +229,20 @@ int main(int argc, char **argv) {
     grid_size = 32 * number_of_sm;
     setlocale(LC_ALL, "");
     double max_time = 0.0;
-    int nprocs, rank;
+    int total_rank, rank;
     int i;
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    MPI_Comm_size(MPI_COMM_WORLD, &total_rank);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     // Should pass the input filename in command line argument
     const char *input_file;
+    int comm_method = 0;
     int cuda_aware_mpi = 0;
-    if (argc == 3) {
+
+    if (argc == 4) {
+        input_file = argv[1];
+        cuda_aware_mpi = atoi(argv[2]);
+        comm_method = atoi(argv[3]);
+    } else if (argc == 3) {
         input_file = argv[1];
         cuda_aware_mpi = atoi(argv[2]);
     } else if (argc == 2) {
@@ -145,6 +250,15 @@ int main(int argc, char **argv) {
     } else {
         input_file = "hipc_2019.bin";
     }
+
+    if (rank == 0) {
+        if (comm_method == 0) {
+            cout << "Using two pass method for all to all communication" << endl;
+        } else {
+            cout << "Using sort method for all to all communication" << endl;
+        }
+    }
+
     // READ THE FILE IN PARALLEL
     // Reading filesize in bytes
     struct stat filestats;
@@ -155,8 +269,8 @@ int main(int argc, char **argv) {
     // Scatter larger blocks among processes (non-uniform)
     int total_columns = 2;
     int total_rows = filesize / (sizeof(int) * total_columns);
-    int row_start = BLOCK_START(rank, nprocs, total_rows);
-    int row_size = BLOCK_SIZE(rank, nprocs, total_rows);
+    int row_start = BLOCK_START(rank, total_rank, total_rows);
+    int row_size = BLOCK_SIZE(rank, total_rank, total_rows);
     int local_count = row_size * total_columns;
 
     // Reading specific portion from the file as char in parallel
@@ -184,13 +298,14 @@ int main(int argc, char **argv) {
     create_entity_ar_reverse<<<grid_size, block_size>>>(local_data_reverse, row_size, local_data_device);
     int input_relation_size = 0;
     Entity *input_relation = get_split_relation(rank, local_data,
-                                                row_size, total_columns, nprocs,
-                                                grid_size, block_size, cuda_aware_mpi, &input_relation_size);
+                                                row_size, total_columns, total_rank,
+                                                grid_size, block_size, cuda_aware_mpi,
+                                                &input_relation_size, comm_method);
 
     int t_delta_size;
     Entity *t_delta = get_split_relation(rank, local_data_reverse,
-                                         row_size, total_columns, nprocs,
-                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size);
+                                         row_size, total_columns, total_rank,
+                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method);
     thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
                                    t_delta, t_delta + t_delta_size,
@@ -238,8 +353,9 @@ int main(int argc, char **argv) {
 
         // Scatter the new facts among relevant processes
         Entity *t_delta_temp = get_split_relation(rank, join_result,
-                                                  join_result_size, total_columns, nprocs,
-                                                  grid_size, block_size, cuda_aware_mpi, &t_delta_size);
+                                                  join_result_size, total_columns, total_rank,
+                                                  grid_size, block_size, cuda_aware_mpi, &t_delta_size,
+                                                  comm_method);
         // Deduplicate scattered facts
         thrust::stable_sort(thrust::device, t_delta_temp, t_delta_temp + t_delta_size, set_cmp());
         t_delta_size = (thrust::unique(thrust::device,
@@ -287,12 +403,12 @@ int main(int argc, char **argv) {
     cudaMemcpy(t_full_ar_host, t_full_ar, t_full_size * total_columns * sizeof(int), cudaMemcpyDeviceToHost);
 
     // List the t full counts for each process and calculate the displacements in the final result
-    int *t_full_counts = (int *) calloc(nprocs, sizeof(int));
+    int *t_full_counts = (int *) calloc(total_rank, sizeof(int));
     MPI_Allgather(&t_full_size, 1, MPI_INT,
                   t_full_counts, 1, MPI_INT, MPI_COMM_WORLD);
 
-    int *t_full_displacements = (int *) calloc(nprocs, sizeof(int));
-    for (i = 1; i < nprocs; i++) {
+    int *t_full_displacements = (int *) calloc(total_rank, sizeof(int));
+    for (i = 1; i < total_rank; i++) {
         t_full_displacements[i] = t_full_displacements[i - 1] + (t_full_counts[i - 1] * total_columns);
     }
 
@@ -325,13 +441,15 @@ int main(int argc, char **argv) {
         printf("\nGenerated file %s\n", output_file_name);
         printf("| # Input | # Process | # Iterations | # TC | Time (s) |\n");
         printf("| --- | --- | --- | --- | --- |\n");
-        printf("| %'d | %'d | %'d | %'d | %'8.4lf |\n", total_rows, nprocs, iterations, global_t_full_size, max_time);
+        printf("| %'d | %'d | %'d | %'d | %'8.4lf |\n", total_rows, total_rank, iterations, global_t_full_size,
+               max_time);
     }
 
     MPI_Finalize();
     return 0;
 }
-// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0
-// make runsemi DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0
-// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1
-// make runsemi DATA_FILE=data/data_147892.bin NPROCS=8 CUDA_AWARE_MPI=0
+// METHOD 0 = two pass method, 1 = sorting method
+// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
+// make runsemi DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1 METHOD=1
+// make runsemi DATA_FILE=data/data_147892.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0

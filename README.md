@@ -52,6 +52,7 @@ python3 binary_file_utils.py txt_to_bin input_text_file output_binary_file
 - To convert binary to text:
 ```shell
 python3 binary_file_utils.py bin_to_txt input_binary_file output_text_file
+# python3 binary_file_utils.py bin_to_txt data/data_10.bin_tc.bin data/data_10_tc.txt
 # python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_23874_tc.txt
 # python3 binary_file_utils.py bin_to_txt data/hipc_2019.bin_tc.bin data/hipc_2019_tc.txt
 ```
@@ -62,16 +63,18 @@ python3 binary_file_utils.py bin_to_txt input_binary_file output_text_file
   - `NPROCS=<n>` to set the number of processes
   - `DATA_FILE=<BINARY DATA FILE>` to set the binary datafile path
   - `CUDA_AWARE_MPI=<0/1>` to use CUDA AWARE MPI. Set it to `1` if system supports CUDA AWARE MPI, otherwise `0`.
+  - `METHOD=<0/1>` to use two pass approach (0) or sorting technique (1) for all to all communication. 
 
 ```shell
-make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0
-nvcc tc_semi_naive.cu -o tc_semi_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm
-mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin 0
+make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+nvcc tc_semi_naive.cu -o tc_semi_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda
+mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin 0 0
+Using two pass method for all to all communication
 
 Generated file data/data_23874.bin_tc.bin
 | # Input | # Process | # Iterations | # TC | Time (s) |
 | --- | --- | --- | --- | --- |
-| 23,874 | 8 | 58 | 481,121 |   0.8245 |
+| 23,874 | 8 | 58 | 481,121 |   0.8547 |
 ```
 It generated `data/data_23874.bin_tc.bin` file that contains all paths of the transitive closure for the input relation.
 - Convert the generated binary to text file using `binary_file_utils.py`.
@@ -114,7 +117,7 @@ docker run --rm --entrypoint=bash -it --gpus all -v $(pwd):/opt/mnmgjoin mnmgjoi
 mnmgjoin@6b53317e0449:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx tc_semi_naive.cu -o tc_semi_naive.out
 mnmgjoin@6b53317e0449:/opt/mnmgjoin$ whereis mpirun
 mpirun: /usr/bin/mpirun /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun
-mnmgjoin@6b53317e0449:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1
+mnmgjoin@6b53317e0449:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1 0
 --------------------------------------------------------------------------
 WARNING: Open MPI tried to bind a process but failed.  This is a
 warning only; your job will continue, though performance may
@@ -159,6 +162,7 @@ arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
 2048766.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+2050751.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -u $USER
 
 polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
