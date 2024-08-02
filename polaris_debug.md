@@ -1,3 +1,477 @@
+### Polaris two pass results
+#### Two pass method
+
+##### TC on fe_ocean
+
+| # Input | # Process | # Iterations | # TC          | Time (s) |
+| --- |----| --- |---------------| --- |
+| 409,593 | 40 | 247 | 1,669,750,513 | 10.0284 |
+| 409,593 | 32 | 247 | 1,669,750,513 | 10.4754 |
+| 409,593 | 24 | 247 | 1,669,750,513 | 11.9613 |
+| 409,593 | 16 | 247 | 1,669,750,513 | 11.6706 |
+| 409,593 | 8  | 247 | 1,669,750,513 | 20.1498 |
+
+##### TC on vsp_finan
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- |-----------| --- | --- | --- |
+| 552,020 | 40        | 520 | 910,070,918 | 13.5197 |
+| 552,020 | 32        | 520 | 910,070,918 | 12.3224 |
+| 552,020 | 24        | 520 | 910,070,918 | 20.1347 |
+| 552,020 | 16        | 520 | 910,070,918 | 19.6395 |
+| 552,020 | 8         | 520 | 910,070,918 | 29.1619 |
+
+##### TC on com-dblp
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- |-----------| --- | --- | --- |
+| 1,049,866 | 40        | 31 | 1,911,754,892 | 6.6690 |
+| 1,049,866 | 32        | 31 | 1,911,754,892 | 8.4425 |
+| 1,049,866 | 24        | 31 | 1,911,754,892 | 7.7934 |
+| 1,049,866 | 16        | 31 | 1,911,754,892 | 8.5105 |
+| 1,049,866 | 8         | 31 | 1,911,754,892 | 12.0870 |
+
+
+##### TC on p2p-Gnutella31
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- |-----------| --- | --- | --- |
+| 147,892 | 40        | 31 | 884,179,859 | 2.6287 |
+| 147,892 | 32        | 31 | 884,179,859 | 3.2223 |
+| 147,892 | 24        | 31 | 884,179,859 | 3.6492 |
+| 147,892 | 16        | 31 | 884,179,859 | 3.8662 |
+| 147,892 | 8         | 31 | 884,179,859 | 5.7059 |
+
+##### TC on usroad
+
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- |-----------| --- | --- | --- |
+| 165,435 | 40        | 606 | 871,365,688 | 11.4508 |
+| 165,435 | 32        | 606 | 871,365,688 | 11.9498 |
+| 165,435 | 24        | 606 | 871,365,688 | 12.4402 |
+| 165,435 | 16        | 606 | 871,365,688 | 13.3520 |
+| 165,435 | 8         | 606 | 871,365,688 | 24.4126 |
+
+#### Sorting method
+
+##### TC on p2p-Gnutella31
+
+| # Input | # Process | # Iterations | # TC          | Time (s) |
+| ------- | --------- | ------------ | ------------- | -------- |
+| 147,892 | 40        | 31           | 884,179,859   | 3.6636   |
+| 147,892 | 32        | 31           | 884,179,859   | 3.3396   |
+| 147,892 | 24        | 31           | 884,179,859   | 3.7802   |
+| 147,892 | 16        | 31           | 884,179,859   | 3.2177   |
+| 147,892 | 8         | 31           | 884,179,859   | 5.4038   |
+
+##### TC on usroad
+
+| # Input | # Process | # Iterations | # TC          | Time (s) |
+| ------- | --------- | ------------ | ------------- | -------- |
+| 165,435 | 40        | 606          | 871,365,688   | 12.7780  |
+| 165,435 | 32        | 606          | 871,365,688   | 12.0318  |
+| 165,435 | 24        | 606          | 871,365,688   | 12.2798  |
+| 165,435 | 16        | 606          | 871,365,688   | 13.9222  |
+| 165,435 | 8         | 606          | 871,365,688   | 24.4752  |
+
+##### TC on fe_ocean
+
+| # Input | # Process | # Iterations | # TC          | Time (s) |
+| ------- | --------- | ------------ | ------------- | -------- |
+| 409,593 | 40        | 247          | 1,669,750,513 | 9.5108   |
+| 409,593 | 32        | 247          | 1,669,750,513 | 9.9862   |
+| 409,593 | 24        | 247          | 1,669,750,513 | 10.7940  |
+| 409,593 | 16        | 247          | 1,669,750,513 | 12.2178  |
+| 409,593 | 8         | 247          | 1,669,750,513 | 20.8513  |
+
+##### TC on vsp_finan
+
+| # Input | # Process | # Iterations | # TC          | Time (s) |
+| ------- | --------- | ------------ | ------------- | -------- |
+| 552,020 | 40        | 520          | 910,070,918   | 10.7864  |
+| 552,020 | 32        | 520          | 910,070,918   | 12.2597  |
+| 552,020 | 24        | 520          | 910,070,918   | 18.6044  |
+| 552,020 | 16        | 520          | 910,070,918   | 17.9082  |
+| 552,020 | 8         | 520          | 910,070,918   | 26.2326  |
+
+##### TC on com-dblp
+
+| # Input  | # Process | # Iterations | # TC          | Time (s) |
+| -------- | --------- | ------------ | ------------- | -------- |
+| 1,049,866 | 40        | 31           | 1,911,754,892 | 3.3003   |
+| 1,049,866 | 32        | 31           | 1,911,754,892 | 2.4805   |
+| 1,049,866 | 24        | 31           | 1,911,754,892 | 2.5032   |
+| 1,049,866 | 16        | 31           | 1,911,754,892 | 2.5689   |
+| 1,049,866 | 8         | 31           | 1,911,754,892 | 4.0724   |
+
+
+```shell
+cat polaris-job-semi.output
+NUM_OF_NODES= 10 TOTAL_NUM_RANKS= 40 RANKS_PER_NODE= 4 THREADS_PER_RANK= 1
+ALL TO ALL COMMUNICATION METHOD: TWO PASS
+------------------------------------------------------------------------------------
+CC tc_semi_naive.cu -o tc_semi_naive.out -lm
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> p2p-Gnutella31 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+Using two pass method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 40 | 31 | 884,179,859 |   3.2770 |
+>>>>>>>>>>>>> p2p-Gnutella31 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+Using two pass method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 32 | 31 | 884,179,859 |   3.3626 |
+>>>>>>>>>>>>> p2p-Gnutella31 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+Using two pass method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 24 | 31 | 884,179,859 |   4.0524 |
+>>>>>>>>>>>>> p2p-Gnutella31 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+Using two pass method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 16 | 31 | 884,179,859 |   4.7072 |
+>>>>>>>>>>>>> p2p-Gnutella31 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+Using two pass method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 8 | 31 | 884,179,859 |   6.1971 |
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> usroad 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 0
+Using two pass method for all to all communication
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 40 | 606 | 871,365,688 |  13.0661 |
+>>>>>>>>>>>>> usroad 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 0
+Using two pass method for all to all communication
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 32 | 606 | 871,365,688 |  11.4291 |
+>>>>>>>>>>>>> usroad 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 0
+Using two pass method for all to all communication
+
+```
+
+- Error:
+```shell
+/usr/bin/ld: warning: /var/tmp/pbs.2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatZViHizvVGyaE4.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 75: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 75: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 79: echo: write error: Disk quota exceeded
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 81: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 81: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 81: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 81: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 81: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 85: echo: write error: Disk quota exceeded
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 87: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 87: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 87: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 87: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 87: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 91: echo: write error: Disk quota exceeded
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 93: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 93: echo: write error: Disk quota exceeded
+Couldn't write output: Disk quota exceeded
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 93: echo: write error: Disk quota exceeded
+start failed on x3013c0s1b0n0: CXI alloc failed on cxi0: no LE pools available
+CXI alloc failed on cxi1: no LE pools available
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 93: echo: write error: Disk quota exceeded
+start failed on x3013c0s1b0n0: CXI alloc failed on cxi0: no LE pools available
+CXI alloc failed on cxi1: no LE pools available
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+/var/spool/pbs/mom_priv/jobs/2051517.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov.SC: line 93: echo: write error: Disk quota exceeded
+start failed on x3013c0s1b0n0: CXI alloc failed on cxi0: no LE pools available
+CXI alloc failed on cxi1: no LE pools available
+make: *** [Makefile:55: testpolarissemi] Error 127
+make: write error: stdout
+```
+
+
+### Polaris result with sorting
+```shell
+NUM_OF_NODES= 10 TOTAL_NUM_RANKS= 40 RANKS_PER_NODE= 4 THREADS_PER_RANK= 1
+ALL TO ALL COMMUNICATION METHOD: SORTING
+------------------------------------------------------------------------------------
+CC tc_semi_naive.cu -o tc_semi_naive.out -lm
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> p2p-Gnutella31 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 40 | 31 | 884,179,859 |   3.6636 |
+>>>>>>>>>>>>> p2p-Gnutella31 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 32 | 31 | 884,179,859 |   3.3396 |
+>>>>>>>>>>>>> p2p-Gnutella31 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 24 | 31 | 884,179,859 |   3.7802 |
+>>>>>>>>>>>>> p2p-Gnutella31 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 16 | 31 | 884,179,859 |   3.2177 |
+>>>>>>>>>>>>> p2p-Gnutella31 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_147892.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 147,892 | 8 | 31 | 884,179,859 |   5.4038 |
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> usroad 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 40 | 606 | 871,365,688 |  12.7780 |
+>>>>>>>>>>>>> usroad 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 32 | 606 | 871,365,688 |  12.0318 |
+>>>>>>>>>>>>> usroad 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 24 | 606 | 871,365,688 |  12.2798 |
+>>>>>>>>>>>>> usroad 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 16 | 606 | 871,365,688 |  13.9222 |
+>>>>>>>>>>>>> usroad 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_165435.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 165,435 | 8 | 606 | 871,365,688 |  24.4752 |
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> fe_ocean 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 40 | 247 | 1,669,750,513 |   9.5108 |
+>>>>>>>>>>>>> fe_ocean 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 32 | 247 | 1,669,750,513 |   9.9862 |
+>>>>>>>>>>>>> fe_ocean 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 24 | 247 | 1,669,750,513 |  10.7940 |
+>>>>>>>>>>>>> fe_ocean 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 16 | 247 | 1,669,750,513 |  12.2178 |
+>>>>>>>>>>>>> fe_ocean 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/data_409593.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 409,593 | 8 | 247 | 1,669,750,513 |  20.8513 |
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> vsp_finan 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 40 | 520 | 910,070,918 |  10.7864 |
+>>>>>>>>>>>>> vsp_finan 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 32 | 520 | 910,070,918 |  12.2597 |
+>>>>>>>>>>>>> vsp_finan 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 24 | 520 | 910,070,918 |  18.6044 |
+>>>>>>>>>>>>> vsp_finan 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 16 | 520 | 910,070,918 |  17.9082 |
+>>>>>>>>>>>>> vsp_finan 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 552,020 | 8 | 520 | 910,070,918 |  26.2326 |
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>> com-dblp 40 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 40 | 31 | 1,911,754,892 |   3.3003 |
+>>>>>>>>>>>>> com-dblp 32 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 32 | 31 | 1,911,754,892 |   2.4805 |
+>>>>>>>>>>>>> com-dblp 24 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 24 | 31 | 1,911,754,892 |   2.5032 |
+>>>>>>>>>>>>> com-dblp 16 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 16 | 31 | 1,911,754,892 |   2.5689 |
+>>>>>>>>>>>>> com-dblp 8 MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+Using sort method for all to all communication
+
+Generated file data/com-dblpungraph.bin_tc.bin
+| # Input | # Process | # Iterations | # TC | Time (s) |
+| --- | --- | --- | --- | --- |
+| 1,049,866 | 8 | 31 | 1,911,754,892 |   4.0724 |
+
+```
+
 ### Polaris result with host MPI all to all
 ```shell
 cat polaris-job-semi.output

@@ -163,6 +163,7 @@ arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
 2048766.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 2050751.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+2051510.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -u $USER
 
 polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
@@ -188,73 +189,53 @@ module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
 
 CC tc_semi_naive.cu -o tc_semi_naive_interactive.out
-arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1
+arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1 0
 Generated file data/data_165435.bin_tc.bin
 | # Input | # Process | # Iterations | # TC | Time (s) |
 | --- | --- | --- | --- | --- |
 | 165,435 | 4 | 606 | 871,365,688 |  46.4964 |
-arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_7035.bin 1
+arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_7035.bin 1 0
 Generated file data/data_7035.bin_tc.bin
 | # Input | # Process | # Iterations | # TC | Time (s) |
 | --- | --- | --- | --- | --- |
 | 7,035 | 4 | 64 | 146,120 |   2.7993 |
-arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_23874.bin 1
+arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_23874.bin 1 0
 Generated file data/data_23874.bin_tc.bin
 | # Input | # Process | # Iterations | # TC | Time (s) |
 | --- | --- | --- | --- | --- |
 | 23,874 | 4 | 58 | 481,121 |   2.7517 |
 ```
-#### Polaris semi naive evaluation results with `CUDA_AWARE_MPI=1` and GPUDirect
-##### TC on fe_ocean
+### Polaris semi naive evaluation results with `CUDA_AWARE_MPI=1` and GPUDirect
 
-| # Input | # Process | # Iterations | # TC          | Time (s) |
-| --- |----| --- |---------------| --- |
-| 409,593 | 40 | 247 | 1,669,750,513 | 10.0284 |
-| 409,593 | 32 | 247 | 1,669,750,513 | 10.4754 |
-| 409,593 | 24 | 247 | 1,669,750,513 | 11.9613 |
-| 409,593 | 16 | 247 | 1,669,750,513 | 11.6706 |
-| 409,593 | 8  | 247 | 1,669,750,513 | 20.1498 |
+| Dataset        | # Input  | # Process | # Iterations | # TC          | Pass Method Time (s) | Sorting Method Time (s) |
+|----------------|----------|-----------|--------------|---------------|----------------------|-------------------------|
+| fe_ocean       | 409,593  | 40        | 247          | 1,669,750,513 | 10.0284              | 9.5108                  |
+| fe_ocean       | 409,593  | 32        | 247          | 1,669,750,513 | 10.4754              | 9.9862                  |
+| fe_ocean       | 409,593  | 24        | 247          | 1,669,750,513 | 11.9613              | 10.7940                 |
+| fe_ocean       | 409,593  | 16        | 247          | 1,669,750,513 | 11.6706              | 12.2178                 |
+| fe_ocean       | 409,593  | 8         | 247          | 1,669,750,513 | 20.1498              | 20.8513                 |
+| vsp_finan      | 552,020  | 40        | 520          | 910,070,918   | 13.5197              | 10.7864                 |
+| vsp_finan      | 552,020  | 32        | 520          | 910,070,918   | 12.3224              | 12.2597                 |
+| vsp_finan      | 552,020  | 24        | 520          | 910,070,918   | 20.1347              | 18.6044                 |
+| vsp_finan      | 552,020  | 16        | 520          | 910,070,918   | 19.6395              | 17.9082                 |
+| vsp_finan      | 552,020  | 8         | 520          | 910,070,918   | 29.1619              | 26.2326                 |
+| com-dblp       | 1,049,866| 40        | 31           | 1,911,754,892 | 6.6690               | 3.3003                  |
+| com-dblp       | 1,049,866| 32        | 31           | 1,911,754,892 | 8.4425               | 2.4805                  |
+| com-dblp       | 1,049,866| 24        | 31           | 1,911,754,892 | 7.7934               | 2.5032                  |
+| com-dblp       | 1,049,866| 16        | 31           | 1,911,754,892 | 8.5105               | 2.5689                  |
+| com-dblp       | 1,049,866| 8         | 31           | 1,911,754,892 | 12.0870              | 4.0724                  |
+| p2p-Gnutella31 | 147,892  | 40        | 31           | 884,179,859   | 2.6287               | 3.6636                  |
+| p2p-Gnutella31 | 147,892  | 32        | 31           | 884,179,859   | 3.2223               | 3.3396                  |
+| p2p-Gnutella31 | 147,892  | 24        | 31           | 884,179,859   | 3.6492               | 3.7802                  |
+| p2p-Gnutella31 | 147,892  | 16        | 31           | 884,179,859   | 3.8662               | 3.2177                  |
+| p2p-Gnutella31 | 147,892  | 8         | 31           | 884,179,859   | 5.7059               | 5.4038                  |
+| usroad         | 165,435  | 40        | 606          | 871,365,688   | 11.4508              | 12.7780                 |
+| usroad         | 165,435  | 32        | 606          | 871,365,688   | 11.9498              | 12.0318                 |
+| usroad         | 165,435  | 24        | 606          | 871,365,688   | 12.4402              | 12.2798                 |
+| usroad         | 165,435  | 16        | 606          | 871,365,688   | 13.3520              | 13.9222                 |
+| usroad         | 165,435  | 8         | 606          | 871,365,688   | 24.4126              | 24.4752                 |
 
-##### TC on vsp_finan
 
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- |-----------| --- | --- | --- |
-| 552,020 | 40        | 520 | 910,070,918 | 13.5197 |
-| 552,020 | 32        | 520 | 910,070,918 | 12.3224 |
-| 552,020 | 24        | 520 | 910,070,918 | 20.1347 |
-| 552,020 | 16        | 520 | 910,070,918 | 19.6395 |
-| 552,020 | 8         | 520 | 910,070,918 | 29.1619 |
-
-##### TC on com-dblp
-
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- |-----------| --- | --- | --- |
-| 1,049,866 | 40        | 31 | 1,911,754,892 | 6.6690 |
-| 1,049,866 | 32        | 31 | 1,911,754,892 | 8.4425 |
-| 1,049,866 | 24        | 31 | 1,911,754,892 | 7.7934 |
-| 1,049,866 | 16        | 31 | 1,911,754,892 | 8.5105 |
-| 1,049,866 | 8         | 31 | 1,911,754,892 | 12.0870 |
-
-
-##### TC on p2p-Gnutella31
-
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- |-----------| --- | --- | --- |
-| 147,892 | 40        | 31 | 884,179,859 | 2.6287 |
-| 147,892 | 32        | 31 | 884,179,859 | 3.2223 |
-| 147,892 | 24        | 31 | 884,179,859 | 3.6492 |
-| 147,892 | 16        | 31 | 884,179,859 | 3.8662 |
-| 147,892 | 8         | 31 | 884,179,859 | 5.7059 |
-
-##### TC on usroad
-
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- |-----------| --- | --- | --- |
-| 165,435 | 40        | 606 | 871,365,688 | 11.4508 |
-| 165,435 | 32        | 606 | 871,365,688 | 11.9498 |
-| 165,435 | 24        | 606 | 871,365,688 | 12.4402 |
-| 165,435 | 16        | 606 | 871,365,688 | 13.3520 |
-| 165,435 | 8         | 606 | 871,365,688 | 24.4126 |
 
 ### References
 - [Polaris User Guides](https://docs.alcf.anl.gov/polaris/getting-started/)
