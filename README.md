@@ -161,9 +161,7 @@ arsho::polaris-login-02 { ~/mnmgJOIN }-> git reset --hard origin/main
 arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
-2048766.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
-2050751.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
-2051510.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+2051688.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -u $USER
 
 polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
@@ -180,6 +178,15 @@ Queue: small
 
 cat polaris-job-semi.out
 cat polaris-jop-semi.error
+# Manage disk quota limit of 50GB in Polaris /home directory
+# Check quota
+myquota
+# Check large folders
+du -h --max-depth=1 | sort -hr
+# Delete large folders
+rm -rf ./local_join
+# Delete the generated bin files
+make clean
 
 # Interactive 1 node run tc
 ssh arsho@polaris.alcf.anl.gov
@@ -205,36 +212,38 @@ Generated file data/data_23874.bin_tc.bin
 | --- | --- | --- | --- | --- |
 | 23,874 | 4 | 58 | 481,121 |   2.7517 |
 ```
-### Polaris semi naive evaluation results with `CUDA_AWARE_MPI=1` and GPUDirect
 
-| Dataset        | # Input  | # Process | # Iterations | # TC          | Pass Method Time (s) | Sorting Method Time (s) |
-|----------------|----------|-----------|--------------|---------------|----------------------|-------------------------|
-| fe_ocean       | 409,593  | 40        | 247          | 1,669,750,513 | 10.0284              | 9.5108                  |
-| fe_ocean       | 409,593  | 32        | 247          | 1,669,750,513 | 10.4754              | 9.9862                  |
-| fe_ocean       | 409,593  | 24        | 247          | 1,669,750,513 | 11.9613              | 10.7940                 |
-| fe_ocean       | 409,593  | 16        | 247          | 1,669,750,513 | 11.6706              | 12.2178                 |
-| fe_ocean       | 409,593  | 8         | 247          | 1,669,750,513 | 20.1498              | 20.8513                 |
-| vsp_finan      | 552,020  | 40        | 520          | 910,070,918   | 13.5197              | 10.7864                 |
-| vsp_finan      | 552,020  | 32        | 520          | 910,070,918   | 12.3224              | 12.2597                 |
-| vsp_finan      | 552,020  | 24        | 520          | 910,070,918   | 20.1347              | 18.6044                 |
-| vsp_finan      | 552,020  | 16        | 520          | 910,070,918   | 19.6395              | 17.9082                 |
-| vsp_finan      | 552,020  | 8         | 520          | 910,070,918   | 29.1619              | 26.2326                 |
-| com-dblp       | 1,049,866| 40        | 31           | 1,911,754,892 | 6.6690               | 3.3003                  |
-| com-dblp       | 1,049,866| 32        | 31           | 1,911,754,892 | 8.4425               | 2.4805                  |
-| com-dblp       | 1,049,866| 24        | 31           | 1,911,754,892 | 7.7934               | 2.5032                  |
-| com-dblp       | 1,049,866| 16        | 31           | 1,911,754,892 | 8.5105               | 2.5689                  |
-| com-dblp       | 1,049,866| 8         | 31           | 1,911,754,892 | 12.0870              | 4.0724                  |
-| p2p-Gnutella31 | 147,892  | 40        | 31           | 884,179,859   | 2.6287               | 3.6636                  |
-| p2p-Gnutella31 | 147,892  | 32        | 31           | 884,179,859   | 3.2223               | 3.3396                  |
-| p2p-Gnutella31 | 147,892  | 24        | 31           | 884,179,859   | 3.6492               | 3.7802                  |
-| p2p-Gnutella31 | 147,892  | 16        | 31           | 884,179,859   | 3.8662               | 3.2177                  |
-| p2p-Gnutella31 | 147,892  | 8         | 31           | 884,179,859   | 5.7059               | 5.4038                  |
-| usroad         | 165,435  | 40        | 606          | 871,365,688   | 11.4508              | 12.7780                 |
-| usroad         | 165,435  | 32        | 606          | 871,365,688   | 11.9498              | 12.0318                 |
-| usroad         | 165,435  | 24        | 606          | 871,365,688   | 12.4402              | 12.2798                 |
-| usroad         | 165,435  | 16        | 606          | 871,365,688   | 13.3520              | 13.9222                 |
-| usroad         | 165,435  | 8         | 606          | 871,365,688   | 24.4126              | 24.4752                 |
+Here is the updated table with the Two Pass Method times included:
 
+### Performance for All-to-All Communication Methods (Sorting and two pass) on Polaris using CUDA AWARE MPI and GPU Direct
+
+| Dataset            | # Input | # Process | # Iterations | # TC         | Sorting Method Time (s) | Two Pass Method Time (s) |
+|--------------------|---------|-----------|--------------|--------------|-------------------------|--------------------------|
+| p2p-Gnutella31     | 147,892 | 40        | 31           | 884,179,859  | 3.6863                  | 2.8211                   |
+| p2p-Gnutella31     | 147,892 | 32        | 31           | 884,179,859  | 3.4231                  | 3.3650                   |
+| p2p-Gnutella31     | 147,892 | 24        | 31           | 884,179,859  | 3.8711                  | 3.5686                   |
+| p2p-Gnutella31     | 147,892 | 16        | 31           | 884,179,859  | 4.2495                  | 4.5925                   |
+| p2p-Gnutella31     | 147,892 | 8         | 31           | 884,179,859  | 4.9168                  | 5.5405                   |
+| usroad             | 165,435 | 40        | 606          | 871,365,688  | 12.2708                 | 12.3503                  |
+| usroad             | 165,435 | 32        | 606          | 871,365,688  | 12.3314                 | 11.3393                  |
+| usroad             | 165,435 | 24        | 606          | 871,365,688  | 12.7211                 | 13.1363                  |
+| usroad             | 165,435 | 16        | 606          | 871,365,688  | 14.2997                 | 13.5109                  |
+| usroad             | 165,435 | 8         | 606          | 871,365,688  | 23.0048                 | 23.6570                  |
+| fe_ocean           | 409,593 | 40        | 247          | 1,669,750,513| 11.7615                 | 10.3831                  |
+| fe_ocean           | 409,593 | 32        | 247          | 1,669,750,513| 10.4713                 | 9.4638                   |
+| fe_ocean           | 409,593 | 24        | 247          | 1,669,750,513| 10.8981                 | 11.9389                  |
+| fe_ocean           | 409,593 | 16        | 247          | 1,669,750,513| 12.4006                 | 12.0058                  |
+| fe_ocean           | 409,593 | 8         | 247          | 1,669,750,513| 20.5007                 | 21.6534                  |
+| vsp_finan          | 552,020 | 40        | 520          | 910,070,918  | 10.7563                 | 12.5607                  |
+| vsp_finan          | 552,020 | 32        | 520          | 910,070,918  | 13.4290                 | 12.7959                  |
+| vsp_finan          | 552,020 | 24        | 520          | 910,070,918  | 21.1224                 | 20.2548                  |
+| vsp_finan          | 552,020 | 16        | 520          | 910,070,918  | 19.3254                 | 19.3602                  |
+| vsp_finan          | 552,020 | 8         | 520          | 910,070,918  | 29.1141                 | 29.5762                  |
+| com-dblp           | 1,049,866| 40       | 31           | 1,911,754,892| 7.0940                  | 6.8107                   |
+| com-dblp           | 1,049,866| 32       | 31           | 1,911,754,892| 7.2212                  | 8.3900                   |
+| com-dblp           | 1,049,866| 24       | 31           | 1,911,754,892| 7.1020                  | 8.0064                   |
+| com-dblp           | 1,049,866| 16       | 31           | 1,911,754,892| 8.5480                  | 9.2024                   |
+| com-dblp           | 1,049,866| 8        | 31           | 1,911,754,892| 11.4592                 | 12.9087                  |
 
 
 ### References
