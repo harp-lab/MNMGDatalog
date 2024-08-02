@@ -213,9 +213,11 @@ Generated file data/data_23874.bin_tc.bin
 | 23,874 | 4 | 58 | 481,121 |   2.7517 |
 ```
 
-Here is the updated table with the Two Pass Method times included:
 
-### Performance for All-to-All Communication Methods (Sorting and two pass) on Polaris using CUDA AWARE MPI and GPU Direct
+### Performance evaluation on Polaris using CUDA AWARE MPI and GPU Direct
+
+This table provides a performance summary of All-to-All communication methods using both sorting and two-pass methods.
+The performance is evaluated in terms of the time taken by each method in the same execution on Polaris.
 
 | Dataset            | # Input | # Process | # Iterations | # TC         | Sorting Method Time (s) | Two Pass Method Time (s) |
 |--------------------|---------|-----------|--------------|--------------|-------------------------|--------------------------|
