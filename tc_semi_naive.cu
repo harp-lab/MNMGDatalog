@@ -110,7 +110,6 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     file_io_time = elapsed_time;
-//    MPI_Allreduce(&elapsed_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     warm_up_kernel<<<1, 1>>>();
     start_time = MPI_Wtime();
     int *local_data_device;
