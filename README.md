@@ -143,7 +143,7 @@ arsho::polaris-login-02 { ~/mnmgJOIN }-> git reset --hard origin/main
 arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
-2051688.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+2053599.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -u $USER
 
 polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
@@ -176,23 +176,9 @@ qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A di
 cd mnmgJOIN
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
-
 CC tc_semi_naive.cu -o tc_semi_naive_interactive.out
 arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1 0
-Generated file data/data_165435.bin_tc.bin
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- | --- | --- | --- | --- |
-| 165,435 | 4 | 606 | 871,365,688 |  46.4964 |
-arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_7035.bin 1 0
-Generated file data/data_7035.bin_tc.bin
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- | --- | --- | --- | --- |
-| 7,035 | 4 | 64 | 146,120 |   2.7993 |
-arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_23874.bin 1 0
-Generated file data/data_23874.bin_tc.bin
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- | --- | --- | --- | --- |
-| 23,874 | 4 | 58 | 481,121 |   2.7517 |
+arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1 1
 ```
 
 
