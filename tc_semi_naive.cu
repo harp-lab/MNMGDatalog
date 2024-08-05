@@ -57,6 +57,7 @@ void benchmark(int argc, char **argv) {
     double buffer_preparation_time = 0.0, communication_time = 0.0;
     double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
     double join_time = 0.0, merge_time = 0.0;
+    double file_io_time = 0.0;
     double total_time = 0.0, max_total_time = 0.0;
     int total_rank, rank;
     int i;
@@ -108,7 +109,8 @@ void benchmark(int argc, char **argv) {
     MPI_File_close(&mpi_file_buffer);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    MPI_Allreduce(&elapsed_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    file_io_time = elapsed_time;
+//    MPI_Allreduce(&elapsed_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     warm_up_kernel<<<1, 1>>>();
     start_time = MPI_Wtime();
     int *local_data_device;
@@ -290,8 +292,9 @@ void benchmark(int argc, char **argv) {
     // Close the file and clean up
     MPI_File_close(&fh);
     end_time = MPI_Wtime();
-    elapsed_time = max_fileio_time + (end_time - start_time);
-    MPI_Allreduce(&elapsed_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    elapsed_time = end_time - start_time;
+    file_io_time += elapsed_time;
+    MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     start_time = MPI_Wtime();
     cudaFree(local_data_device);
