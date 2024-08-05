@@ -67,7 +67,6 @@ runpolarissemi: buildpolarissemi testpolarissemi
 runsemi: buildsemi testsemi
 
 clean:
-	rm -f $(TARGET).out
 	rm -f *.out
 	rm -f *.cobaltlog
 	rm -f data/*_output.bin*

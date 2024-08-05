@@ -18,7 +18,7 @@ Compute Transitive Closure using CUDA and MPI for a given relation.
 - OS: Ubuntu 22.04
 - GCC: gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0
 - MPI: Open MPI 4.1.2
-- CUDA: 12.2
+- CUDA: 12.0
 
 ### Dataset
 
@@ -66,15 +66,22 @@ python3 binary_file_utils.py bin_to_txt input_binary_file output_text_file
   - `METHOD=<0/1>` to use two pass approach (0) or sorting technique (1) for all to all communication. 
 
 ```shell
+# Using two pass method for communication
 make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 nvcc tc_semi_naive.cu -o tc_semi_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda
 mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin 0 0
-Using two pass method for all to all communication
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 23,874 | 8 | 58 | 481,121 |   0.3950 |   0.0004 |   0.0119 |   0.0007 |   0.0595 |   0.0993 |   0.0236 |   0.1958 |   0.0037 | data/data_23874.bin_tc.bin |
 
-Generated file data/data_23874.bin_tc.bin
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- | --- | --- | --- | --- |
-| 23,874 | 8 | 58 | 481,121 |   0.8547 |
+# Using sorting method for communication
+make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
+nvcc tc_semi_naive.cu -o tc_semi_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda
+mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin 0 1
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 23,874 | 8 | 58 | 481,121 |   0.4793 |   0.0008 |   0.0127 |   0.0007 |   0.0524 |   0.2016 |   0.0275 |   0.1799 |   0.0036 | data/data_23874.bin_tc.bin |
+
 ```
 It generated `data/data_23874.bin_tc.bin` file that contains all paths of the transitive closure for the input relation.
 - Convert the generated binary to text file using `binary_file_utils.py`.
@@ -82,70 +89,45 @@ It generated `data/data_23874.bin_tc.bin` file that contains all paths of the tr
 python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_23874_tc.txt
 ```
 
-#### Naive evaluation
-```shell
-make run DATA_FILE=data/data_23874.bin NPROCS=8
-nvcc tc_naive.cu -o tc_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm
-mpirun -np 8 ./tc_naive.out data/data_23874.bin
-Total iterations 58, TC size 481121, generated file data/data_23874.bin_tc.bin
-Total time: 7.2097 seconds
-
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- | --- | --- | --- | --- |
-| 23,874 | 8 | 58 | 481,121 |   7.2097 |
-```
-
 ### Results (Semi Naive) 
-#### Local machine (`CUDA_AWARE_MPI` = 0)
+#### Local machine (`CUDA_AWARE_MPI` = 0, Two pass method)
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 23,874 | 2 | 58 | 481,121 |   0.1196 |   0.0003 |   0.0042 |   0.0002 |   0.0184 |   0.0257 |   0.0075 |   0.0607 |   0.0025 | data/data_23874.bin_tc.bin |
+| 23,874 | 3 | 58 | 481,121 |   0.1692 |   0.0003 |   0.0054 |   0.0003 |   0.0252 |   0.0368 |   0.0102 |   0.0889 |   0.0022 | data/data_23874.bin_tc.bin |
+| 23,874 | 4 | 58 | 481,121 |   0.2297 |   0.0003 |   0.0072 |   0.0004 |   0.0341 |   0.0568 |   0.0127 |   0.1156 |   0.0028 | data/data_23874.bin_tc.bin |
+| 23,874 | 5 | 58 | 481,121 |   0.2585 |   0.0003 |   0.0078 |   0.0004 |   0.0395 |   0.0620 |   0.0171 |   0.1290 |   0.0023 | data/data_23874.bin_tc.bin |
+| 23,874 | 6 | 58 | 481,121 |   0.2854 |   0.0003 |   0.0105 |   0.0005 |   0.0410 |   0.0688 |   0.0196 |   0.1416 |   0.0030 | data/data_23874.bin_tc.bin |
+| 23,874 | 7 | 58 | 481,121 |   0.3473 |   0.0004 |   0.0101 |   0.0007 |   0.0514 |   0.0848 |   0.0244 |   0.1721 |   0.0034 | data/data_23874.bin_tc.bin |
+| 23,874 | 8 | 58 | 481,121 |   0.3950 |   0.0004 |   0.0119 |   0.0007 |   0.0595 |   0.0993 |   0.0236 |   0.1958 |   0.0037 | data/data_23874.bin_tc.bin |
 
-| # Input  | # Process | # Iterations | # TC   | Time (s) |
-|----------|-----------|--------------|--------|----------|
-| 23,874   | 2         | 58           | 481,121 | 0.2373   |
-| 23,874   | 3         | 58           | 481,121 | 0.3333   |
-| 23,874   | 4         | 58           | 481,121 | 0.4301   |
-| 23,874   | 5         | 58           | 481,121 | 0.5428   |
-| 23,874   | 6         | 58           | 481,121 | 0.6283   |
-| 23,874   | 7         | 58           | 481,121 | 0.8440   |
-| 23,874   | 8         | 58           | 481,121 | 0.8184   |
+#### Local machine (`CUDA_AWARE_MPI` = 0, Sort method)
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 23,874 | 2 | 58 | 481,121 |   0.1554 |   0.0003 |   0.0044 |   0.0001 |   0.0182 |   0.0580 |   0.0077 |   0.0641 |   0.0026 | data/data_23874.bin_tc.bin |
+| 23,874 | 3 | 58 | 481,121 |   0.2148 |   0.0002 |   0.0058 |   0.0003 |   0.0236 |   0.0835 |   0.0100 |   0.0890 |   0.0023 | data/data_23874.bin_tc.bin |
+| 23,874 | 4 | 58 | 481,121 |   0.2810 |   0.0004 |   0.0085 |   0.0004 |   0.0309 |   0.1134 |   0.0138 |   0.1109 |   0.0027 | data/data_23874.bin_tc.bin |
+| 23,874 | 5 | 58 | 481,121 |   0.3220 |   0.0005 |   0.0134 |   0.0005 |   0.0349 |   0.1300 |   0.0177 |   0.1222 |   0.0028 | data/data_23874.bin_tc.bin |
+| 23,874 | 6 | 58 | 481,121 |   0.3820 |   0.0003 |   0.0096 |   0.0005 |   0.0419 |   0.1590 |   0.0241 |   0.1427 |   0.0040 | data/data_23874.bin_tc.bin |
+| 23,874 | 7 | 58 | 481,121 |   0.4512 |   0.0004 |   0.0114 |   0.0006 |   0.0520 |   0.1873 |   0.0292 |   0.1672 |   0.0032 | data/data_23874.bin_tc.bin |
+| 23,874 | 8 | 58 | 481,121 |   0.5179 |   0.0006 |   0.0221 |   0.0007 |   0.0577 |   0.2112 |   0.0319 |   0.1890 |   0.0046 | data/data_23874.bin_tc.bin |
 
 
 ### Run using Docker (`CUDA_AWARE_MPI` = 1)
 ```shell
-docker build -t mnmgjoindocker .
-docker run --rm --entrypoint=bash -it --gpus all -v $(pwd):/opt/mnmgjoin mnmgjoindocker
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx tc_semi_naive.cu -o tc_semi_naive.out
 
-mnmgjoin@6b53317e0449:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx tc_semi_naive.cu -o tc_semi_naive.out
-mnmgjoin@6b53317e0449:/opt/mnmgjoin$ whereis mpirun
-mpirun: /usr/bin/mpirun /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun
-mnmgjoin@6b53317e0449:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1 0
---------------------------------------------------------------------------
-WARNING: Open MPI tried to bind a process but failed.  This is a
-warning only; your job will continue, though performance may
-be degraded.
+# Two pass method
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1 0
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 23874 | 4 | 58 | 481121 |   0.6453 |   0.1964 |   0.0252 |   0.0004 |   0.0297 |   0.0398 |   0.1983 |   0.1530 |   0.0025 | data/data_23874.bin_tc.bin |
 
-  Local host:        6b53317e0449
-  Application name:  ./tc_semi_naive.out
-  Error message:     failed to bind memory
-  Location:          ../../../../../orte/mca/rtc/hwloc/rtc_hwloc.c:447
-
---------------------------------------------------------------------------
-[LOG_CAT_ML] You must specify a valid HCA device by setting:
--x HCOLL_MAIN_IB=<dev_name:port> or -x UCX_NET_DEVICES=<dev_name:port>.
-If no device was specified for HCOLL (or the calling library), automatic device detection will be run.
-In case of unfounded HCA device please contact your system administrator.
-[LOG_CAT_ML] You must specify a valid HCA device by setting:
--x HCOLL_MAIN_IB=<dev_name:port> or -x UCX_NET_DEVICES=<dev_name:port>.
-If no device was specified for HCOLL (or the calling library), automatic device detection will be run.
-In case of unfounded HCA device please contact your system administrator.
-[6b53317e0449:00209] Error: ../../../../../ompi/mca/coll/hcoll/coll_hcoll_module.c:310 - mca_coll_hcoll_comm_query() Hcol library init failed
-[6b53317e0449:00210] Error: ../../../../../ompi/mca/coll/hcoll/coll_hcoll_module.c:310 - mca_coll_hcoll_comm_query() Hcol library init failed
-
-Generated file data/data_23874.bin_tc.bin
-| # Input | # Process | # Iterations | # TC | Time (s) |
-| --- | --- | --- | --- | --- |
-| 23874 | 2 | 58 | 481121 |   0.3150 |
-[6b53317e0449:00205] 1 more process has sent help message help-orte-odls-default.txt / memory not bound
-[6b53317e0449:00205] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+# Sort method
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1 1
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 23874 | 4 | 58 | 481121 |   0.7154 |   0.2117 |   0.0389 |   0.0004 |   0.0289 |   0.1017 |   0.1901 |   0.1411 |   0.0027 | data/data_23874.bin_tc.bin |
 ```
 
 ## Run in Polaris (Semi naive)

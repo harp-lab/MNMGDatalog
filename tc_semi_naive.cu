@@ -28,6 +28,7 @@
 #include "common/error_handler.cu"
 #include "common/utils.cu"
 #include "common/kernels.cu"
+#include "common/comm.cu"
 
 using namespace std;
 
@@ -37,189 +38,10 @@ using namespace std;
     (BLOCK_START(process_id + 1, total_process, n) - BLOCK_START(process_id, total_process, n))
 
 
-Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
-                                       int row_size, int total_columns, int total_rank,
-                                       int grid_size, int block_size, int cuda_aware_mpi, int *size) {
-    int *send_count;
-    checkCuda(cudaMalloc((void **) &send_count, total_rank * sizeof(int)));
-    checkCuda(cudaMemset(send_count, 0, total_rank * sizeof(int)));
-    int *send_displacements;
-    checkCuda(cudaMalloc((void **) &send_displacements, total_rank * sizeof(int)));
-    checkCuda(cudaMemset(send_displacements, 0, total_rank * sizeof(int)));
-    int *send_displacements_temp;
-    checkCuda(cudaMalloc((void **) &send_displacements_temp, total_rank * sizeof(int)));
-    checkCuda(cudaMemset(send_displacements_temp, 0, total_rank * sizeof(int)));
-    get_send_count<<<grid_size, block_size>>>(local_data_device, row_size, send_count, total_rank);
-    thrust::exclusive_scan(thrust::device, send_count, send_count + total_rank, send_displacements);
-    cudaMemcpy(send_displacements_temp, send_displacements, total_rank * sizeof(int), cudaMemcpyDeviceToDevice);
-    Entity *send_data;
-    checkCuda(cudaMalloc((void **) &send_data, row_size * sizeof(Entity)));
-    get_rank_data<<<grid_size, block_size>>>(local_data_device, row_size, send_displacements_temp, total_rank,
-                                             send_data);
-    int mpi_error;
-
-    int *send_count_host = (int *) malloc(total_rank * sizeof(int));
-    int *receive_count_host = (int *) malloc(total_rank * sizeof(int));
-    int *send_displacements_host = (int *) malloc(total_rank * sizeof(int));
-    int *receive_displacements_host = (int *) malloc(total_rank * sizeof(int));
-    cudaMemcpy(send_count_host, send_count, total_rank * sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(send_displacements_host, send_displacements, total_rank * sizeof(int), cudaMemcpyDeviceToHost);
-
-    mpi_error = MPI_Alltoall(send_count_host, 1, MPI_INT, receive_count_host, 1, MPI_INT, MPI_COMM_WORLD);
-    if (mpi_error != MPI_SUCCESS) {
-        char error_string[BUFSIZ];
-        int length_of_error_string;
-        MPI_Error_string(mpi_error, error_string, &length_of_error_string);
-        fprintf(stderr, "MPI error on MPI_Alltoall call: %s\n", error_string);
-        MPI_Abort(MPI_COMM_WORLD, mpi_error);
-    }
-
-    int total_receive = thrust::reduce(receive_count_host, receive_count_host + total_rank, 0, thrust::plus<int>());
-    thrust::exclusive_scan(receive_count_host, receive_count_host + total_rank, receive_displacements_host);
-    Entity *receive_data;
-    checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
-
-    if (cuda_aware_mpi) {
-        mpi_error = MPI_Alltoallv(send_data, send_count_host, send_displacements_host, MPI_UINT64_T,
-                                  receive_data, receive_count_host, receive_displacements_host, MPI_UINT64_T,
-                                  MPI_COMM_WORLD);
-        if (mpi_error != MPI_SUCCESS) {
-            char error_string[BUFSIZ];
-            int length_of_error_string;
-            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
-            fprintf(stderr, "MPI error on CUDA AWARE MPI MPI_Alltoallv call: %s\n", error_string);
-            MPI_Abort(MPI_COMM_WORLD, mpi_error);
-        }
-    } else {
-        Entity *send_data_host = (Entity *) malloc(row_size * sizeof(Entity));
-        Entity *receive_data_host = (Entity *) malloc(total_receive * sizeof(Entity));
-        cudaMemcpy(send_data_host, send_data, row_size * sizeof(Entity), cudaMemcpyDeviceToHost);
-        mpi_error = MPI_Alltoallv(send_data_host, send_count_host, send_displacements_host, MPI_UINT64_T,
-                                  receive_data_host, receive_count_host, receive_displacements_host, MPI_UINT64_T,
-                                  MPI_COMM_WORLD);
-        if (mpi_error != MPI_SUCCESS) {
-            char error_string[BUFSIZ];
-            int length_of_error_string;
-            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
-            fprintf(stderr, "MPI error on host MPI_Alltoallv call: %s\n", error_string);
-            MPI_Abort(MPI_COMM_WORLD, mpi_error);
-        }
-        cudaMemcpy(receive_data, receive_data_host, total_receive * sizeof(Entity), cudaMemcpyHostToDevice);
-        free(send_data_host);
-        free(receive_data_host);
-    }
-    *size = total_receive;
-    free(send_count_host);
-    free(receive_count_host);
-    free(send_displacements_host);
-    free(receive_displacements_host);
-    cudaFree(send_count);
-    cudaFree(send_displacements);
-    cudaFree(send_displacements_temp);
-    cudaFree(send_data);
-    return receive_data;
-}
-
-Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
-                                       int row_size, int total_columns, int total_rank,
-                                       int grid_size, int block_size, int cuda_aware_mpi, int *size) {
-
-    thrust::device_vector <uint8_t> row_mapping(row_size);
-
-    thrust::transform(
-            thrust::device, local_data_device,
-            local_data_device + row_size, row_mapping.begin(),
-    [total_rank = total_rank] __device__(
-    const Entity &entity) -> uint8_t{
-            return (uint8_t)(entity.key % total_rank);
-    });
-
-    thrust::stable_sort_by_key(thrust::device, row_mapping.begin(), row_mapping.end(), local_data_device);
-
-    thrust::device_vector<int> unique_rank_row_count(total_rank);
-    thrust::device_vector <uint8_t> unique_rank(total_rank);
-
-    auto unique_rank_range = thrust::reduce_by_key(
-            thrust::device, row_mapping.begin(), row_mapping.end(),
-            thrust::constant_iterator<int>(1), unique_rank.begin(),
-            unique_rank_row_count.begin());
-    auto total_unique_rank = unique_rank_range.first - unique_rank.begin();
-    unique_rank_row_count.resize(total_unique_rank);
-    unique_rank.resize(total_unique_rank);
-    thrust::host_vector<int> unique_rank_row_count_host(unique_rank_row_count);
-    thrust::host_vector <uint8_t> unique_rank_host(unique_rank);
-    thrust::host_vector<int> send_count_host(total_rank);
-    for (int i = 0; i < total_unique_rank; i++) {
-        send_count_host[unique_rank_host[i]] = unique_rank_row_count_host[i];
-    }
-    thrust::host_vector<int> receive_count_host(total_rank);
-
-    MPI_Alltoall(send_count_host.data(), 1, MPI_INT,
-                 receive_count_host.data(), 1, MPI_INT, MPI_COMM_WORLD);
-    int total_receive = thrust::reduce(receive_count_host.begin(), receive_count_host.end());
-
-    thrust::host_vector<int> send_displacements_host(total_rank);
-    thrust::host_vector<int> receive_displacements_host(total_rank);
-
-    thrust::exclusive_scan(send_count_host.begin(), send_count_host.end(), send_displacements_host.begin());
-    thrust::exclusive_scan(receive_count_host.begin(), receive_count_host.end(), receive_displacements_host.begin());
-
-    Entity *receive_data;
-    checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
-    int mpi_error;
-    if (cuda_aware_mpi) {
-        mpi_error = MPI_Alltoallv(local_data_device, send_count_host.data(), send_displacements_host.data(),
-                                  MPI_UINT64_T,
-                                  receive_data, receive_count_host.data(), receive_displacements_host.data(),
-                                  MPI_UINT64_T,
-                                  MPI_COMM_WORLD);
-        if (mpi_error != MPI_SUCCESS) {
-            char error_string[BUFSIZ];
-            int length_of_error_string;
-            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
-            fprintf(stderr, "MPI error on CUDA AWARE MPI MPI_Alltoallv call: %s\n", error_string);
-            MPI_Abort(MPI_COMM_WORLD, mpi_error);
-        }
-    } else {
-        Entity *send_data_host = (Entity *) malloc(row_size * sizeof(Entity));
-        Entity *receive_data_host = (Entity *) malloc(total_receive * sizeof(Entity));
-        cudaMemcpy(send_data_host, local_data_device, row_size * sizeof(Entity), cudaMemcpyDeviceToHost);
-        mpi_error = MPI_Alltoallv(send_data_host, send_count_host.data(), send_displacements_host.data(),
-                                  MPI_UINT64_T,
-                                  receive_data_host, receive_count_host.data(), receive_displacements_host.data(),
-                                  MPI_UINT64_T,
-                                  MPI_COMM_WORLD);
-        if (mpi_error != MPI_SUCCESS) {
-            char error_string[BUFSIZ];
-            int length_of_error_string;
-            MPI_Error_string(mpi_error, error_string, &length_of_error_string);
-            fprintf(stderr, "MPI error on host MPI_Alltoallv call: %s\n", error_string);
-            MPI_Abort(MPI_COMM_WORLD, mpi_error);
-        }
-        cudaMemcpy(receive_data, receive_data_host, total_receive * sizeof(Entity), cudaMemcpyHostToDevice);
-        free(send_data_host);
-        free(receive_data_host);
-    }
-    *size = total_receive;
-    return receive_data;
-}
-
-Entity *get_split_relation(int rank, Entity *local_data_device,
-                           int row_size, int total_columns, int total_rank,
-                           int grid_size, int block_size, int cuda_aware_mpi, int *size, int method) {
-    if (method == 0) {
-        return get_split_relation_pass_method(rank, local_data_device, row_size,
-                                              total_columns, total_rank, grid_size, block_size, cuda_aware_mpi, size);
-    } else {
-        return get_split_relation_sort_method(rank, local_data_device, row_size,
-                                              total_columns, total_rank, grid_size, block_size, cuda_aware_mpi, size);
-    }
-}
-
-int main(int argc, char **argv) {
+void benchmark(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Barrier(MPI_COMM_WORLD);
-    double elapsed_time = -MPI_Wtime();
+    Output output;
     int device_id;
     int number_of_sm;
     cudaGetDevice(&device_id);
@@ -228,7 +50,14 @@ int main(int argc, char **argv) {
     block_size = 512;
     grid_size = 32 * number_of_sm;
     setlocale(LC_ALL, "");
-    double max_time = 0.0;
+    double start_time, end_time, elapsed_time;
+    double max_fileio_time = 0.0, max_initialization_time = 0.0, max_hashtable_build_time = 0.0, max_finalization_time = 0.0;
+    double max_join_time = 0.0, max_merge_time = 0.0;
+    double max_buffer_preparation_time = 0.0, max_communication_time = 0.0;
+    double buffer_preparation_time = 0.0, communication_time = 0.0;
+    double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
+    double join_time = 0.0, merge_time = 0.0;
+    double total_time = 0.0, max_total_time = 0.0;
     int total_rank, rank;
     int i;
     MPI_Comm_size(MPI_COMM_WORLD, &total_rank);
@@ -253,6 +82,7 @@ int main(int argc, char **argv) {
 
     // READ THE FILE IN PARALLEL
     // Reading filesize in bytes
+    start_time = MPI_Wtime();
     struct stat filestats;
     stat(input_file, &filestats);
     off_t filesize = filestats.st_size;
@@ -276,28 +106,46 @@ int main(int argc, char **argv) {
     }
     MPI_File_read_at(mpi_file_buffer, offset, local_data_host, local_count, MPI_INT, MPI_STATUS_IGNORE);
     MPI_File_close(&mpi_file_buffer);
-
-
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    MPI_Allreduce(&elapsed_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    warm_up_kernel<<<1, 1>>>();
+    start_time = MPI_Wtime();
     int *local_data_device;
     checkCuda(cudaMalloc((void **) &local_data_device, local_count * sizeof(int)));
     cudaMemcpy(local_data_device, local_data_host, local_count * sizeof(int), cudaMemcpyHostToDevice);
-
     Entity *local_data;
     checkCuda(cudaMalloc((void **) &local_data, row_size * sizeof(Entity)));
     Entity *local_data_reverse;
     checkCuda(cudaMalloc((void **) &local_data_reverse, row_size * sizeof(Entity)));
     create_entity_ar<<<grid_size, block_size>>>(local_data, row_size, local_data_device);
     create_entity_ar_reverse<<<grid_size, block_size>>>(local_data_reverse, row_size, local_data_device);
+    int iterations = 0;
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    MPI_Allreduce(&elapsed_time, &max_initialization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     int input_relation_size = 0;
+    buffer_preparation_time_temp = 0.0;
+    communication_time_temp = 0.0;
     Entity *input_relation = get_split_relation(rank, local_data,
                                                 row_size, total_columns, total_rank,
                                                 grid_size, block_size, cuda_aware_mpi,
-                                                &input_relation_size, comm_method);
+                                                &input_relation_size, comm_method,
+                                                &buffer_preparation_time_temp, &communication_time_temp);
+    buffer_preparation_time += buffer_preparation_time_temp;
+    communication_time += communication_time_temp;
 
+    buffer_preparation_time_temp = 0.0;
+    communication_time_temp = 0.0;
     int t_delta_size;
     Entity *t_delta = get_split_relation(rank, local_data_reverse,
                                          row_size, total_columns, total_rank,
-                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method);
+                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
+                                         &buffer_preparation_time_temp, &communication_time_temp);
+    buffer_preparation_time += buffer_preparation_time_temp;
+    communication_time += communication_time_temp;
+
+    start_time = MPI_Wtime();
     thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
                                    t_delta, t_delta + t_delta_size,
@@ -311,7 +159,10 @@ int main(int argc, char **argv) {
     int global_t_full_size;
     int t_full_size = t_delta_size;
     MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    merge_time += elapsed_time;
+    start_time = MPI_Wtime();
     Entity *hash_table;
     double load_factor = 0.4;
     int hash_table_rows = (int) input_relation_size / load_factor;
@@ -323,10 +174,12 @@ int main(int argc, char **argv) {
     thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
     build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, input_relation,
                                                        input_relation_size);
-    int iterations = 0;
-
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    MPI_Allreduce(&elapsed_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     while (true) {
+        start_time = MPI_Wtime();
         int join_result_size;
         int *join_offset;
         Entity *join_result;
@@ -342,12 +195,21 @@ int main(int argc, char **argv) {
 
         get_join_result_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows,
                                                           t_delta, t_delta_size, join_offset, join_result);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        join_time += elapsed_time;
 
         // Scatter the new facts among relevant processes
+        buffer_preparation_time_temp = 0.0;
+        communication_time_temp = 0.0;
         Entity *t_delta_temp = get_split_relation(rank, join_result,
                                                   join_result_size, total_columns, total_rank,
                                                   grid_size, block_size, cuda_aware_mpi, &t_delta_size,
-                                                  comm_method);
+                                                  comm_method,
+                                                  &buffer_preparation_time_temp, &communication_time_temp);
+        buffer_preparation_time += buffer_preparation_time_temp;
+        communication_time += communication_time_temp;
+        start_time = MPI_Wtime();
         // Deduplicate scattered facts
         thrust::stable_sort(thrust::device, t_delta_temp, t_delta_temp + t_delta_size, set_cmp());
         t_delta_size = (thrust::unique(thrust::device,
@@ -356,7 +218,6 @@ int main(int argc, char **argv) {
         cudaFree(t_delta);
         checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
         cudaMemcpy(t_delta, t_delta_temp, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
-
         // set union of two sets (sorted t full and t delta)
         int new_t_full_size = t_delta_size + t_full_size;
         checkCuda(cudaMalloc((void **) &new_t_full, new_t_full_size * sizeof(Entity)));
@@ -382,15 +243,26 @@ int main(int argc, char **argv) {
         int old_global_t_full_size = global_t_full_size;
         MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        merge_time += elapsed_time;
         if (old_global_t_full_size == global_t_full_size) {
             break;
         }
     }
 
+    MPI_Allreduce(&join_time, &max_join_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&merge_time, &max_merge_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&buffer_preparation_time, &max_buffer_preparation_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&communication_time, &max_communication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+    start_time = MPI_Wtime();
     // Reverse the t_full as we stored it in reverse order initially
     int *t_full_ar;
     checkCuda(cudaMalloc((void **) &t_full_ar, t_full_size * total_columns * sizeof(int)));
     reverse_t_full<<<grid_size, block_size>>>(t_full_ar, t_full_size, t_full);
+
+    // Copy t full to host for file write
     int *t_full_ar_host = (int *) malloc(t_full_size * total_columns * sizeof(int));
     cudaMemcpy(t_full_ar_host, t_full_ar, t_full_size * total_columns * sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -403,8 +275,12 @@ int main(int argc, char **argv) {
     for (i = 1; i < total_rank; i++) {
         t_full_displacements[i] = t_full_displacements[i - 1] + (t_full_counts[i - 1] * total_columns);
     }
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    MPI_Allreduce(&elapsed_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     // Write the t full to an offset of the output file
+    start_time = MPI_Wtime();
     MPI_File fh;
     string output_file = string(input_file) + "_tc.bin";
     const char *output_file_name = output_file.c_str();
@@ -413,7 +289,11 @@ int main(int argc, char **argv) {
     MPI_File_write_at(fh, file_offset, t_full_ar_host, t_full_size * total_columns, MPI_INT, MPI_STATUS_IGNORE);
     // Close the file and clean up
     MPI_File_close(&fh);
+    end_time = MPI_Wtime();
+    elapsed_time = max_fileio_time + (end_time - start_time);
+    MPI_Allreduce(&elapsed_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
+    start_time = MPI_Wtime();
     cudaFree(local_data_device);
     cudaFree(input_relation);
     cudaFree(local_data);
@@ -427,20 +307,50 @@ int main(int argc, char **argv) {
     free(t_full_counts);
     free(t_full_displacements);
     free(local_data_host);
-    elapsed_time += MPI_Wtime();
-    MPI_Allreduce(&elapsed_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    if (rank == 0) {
-        printf("\nGenerated file %s\n", output_file_name);
-        printf("| # Input | # Process | # Iterations | # TC | Time (s) |\n");
-        printf("| --- | --- | --- | --- | --- |\n");
-        printf("| %'d | %'d | %'d | %'d | %'8.4lf |\n", total_rows, total_rank, iterations, global_t_full_size,
-               max_time);
-    }
+    end_time = MPI_Wtime();
+    elapsed_time = max_finalization_time + (end_time - start_time);
+    MPI_Allreduce(&elapsed_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    total_time = max_initialization_time + max_fileio_time + max_hashtable_build_time + max_join_time +
+                 max_buffer_preparation_time + max_communication_time + max_merge_time + max_finalization_time;
+    MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
+    if (rank == 0) {
+        output.block_size = block_size;
+        output.grid_size = grid_size;
+        output.input_rows = total_rows;
+        output.total_rank = total_rank;
+        output.iterations = iterations;
+        output.output_file_name = output_file_name;
+        output.output_size = global_t_full_size;
+
+        output.total_time = max_total_time;
+        output.initialization_time = max_initialization_time;
+        output.fileio_time = max_fileio_time;
+        output.hashtable_build_time = max_hashtable_build_time;
+        output.join_time = max_join_time;
+        output.buffer_preparation_time = max_buffer_preparation_time;
+        output.communication_time = max_communication_time;
+        output.merge_time = max_merge_time;
+        output.finalization_time = max_finalization_time;
+        printf("| # Input | # Process | # Iterations | # TC | Total Time ");
+        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |\n");
+        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        printf("| %'d | %'d | %'d | %'d | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
+               output.input_rows, output.total_rank, output.iterations,
+               output.output_size, output.total_time,
+               output.initialization_time, output.fileio_time, output.hashtable_build_time, output.join_time,
+               output.buffer_preparation_time, output.communication_time, output.merge_time, output.finalization_time,
+               output.output_file_name);
+    }
     MPI_Finalize();
+}
+
+int main(int argc, char **argv) {
+    benchmark(argc, argv);
     return 0;
 }
 // METHOD 0 = two pass method, 1 = sorting method
+// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
 // make runsemi DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1 METHOD=1

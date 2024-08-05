@@ -268,9 +268,19 @@ void get_join_result_ar(Entity *hash_table, int hash_table_row_size,
 
 /* Semi naive kernels */
 
+__global__ void warm_up_kernel() {}
+
+__host__ __device__ int get_rank(int key, int total_rank) {
+    key ^= key >> 16;
+    key *= 0x85ebca6b;
+    key ^= key >> 13;
+    key *= 0xc2b2ae35;
+    key ^= key >> 16;
+    return key % total_rank;
+}
 
 __global__ void get_send_count(Entity *local_data, int local_data_row_count,
-                               int *send_count, int nprocs) {
+                               int *send_count, int total_rank) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= local_data_row_count) return;
 
@@ -278,13 +288,13 @@ __global__ void get_send_count(Entity *local_data, int local_data_row_count,
 
     for (int i = index; i < local_data_row_count; i += stride) {
         int key = local_data[i].key;
-        int destination_rank = key % nprocs;
+        int destination_rank = get_rank(key, total_rank);
         atomicAdd(&send_count[destination_rank], 1);
     }
 }
 
 __global__ void get_rank_data(Entity *local_data, int local_data_row_count,
-                              int *send_count_offset, int nprocs, Entity *rank_data) {
+                              int *send_count_offset, int total_rank, Entity *rank_data) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= local_data_row_count) return;
 
@@ -293,7 +303,7 @@ __global__ void get_rank_data(Entity *local_data, int local_data_row_count,
     for (int i = index; i < local_data_row_count; i += stride) {
         int key = local_data[i].key;
         int value = local_data[i].value;
-        int destination_rank = key % nprocs;
+        int destination_rank = get_rank(key, total_rank);
         int current_position = atomicAdd(&send_count_offset[destination_rank], 1);
         rank_data[current_position].key = key;
         rank_data[current_position].value = value;

@@ -11,22 +11,26 @@ struct Entity {
 struct Output {
     int block_size;
     int grid_size;
-    long int input_rows;
-    long int hashtable_rows;
+    int total_rank;
+    int input_rows;
+    int hashtable_rows;
+    int iterations;
+    int output_size;
     double load_factor;
-    double initialization_time;
-    double memory_clear_time;
-    double read_time;
     double reverse_time;
-    double hashtable_build_time;
-    long int hashtable_build_rate;
-    double join_time;
-    double projection_time;
-    double deduplication_time;
-    double union_time;
-    double total_time;
+    int hashtable_build_rate;
     const char *dataset_name;
-} output;
+    const char *output_file_name;
+    double total_time;
+    double initialization_time;
+    double fileio_time;
+    double hashtable_build_time;
+    double join_time;
+    double buffer_preparation_time;
+    double communication_time;
+    double merge_time;
+    double finalization_time;
+};
 
 struct KernelTimer {
     cudaEvent_t start;
@@ -259,12 +263,11 @@ void show_variable(int *host_data, int data_size, int group, int rank, string me
     cout << "Rank " << rank << ": " << message << " ----------------" << endl;
     for (int i = 0; i < data_size / group; i++) {
         for (int j = 0; j < group; j++) {
-            cout << host_data[(i*group) + j] << " ";
+            cout << host_data[(i * group) + j] << " ";
         }
-        if(data_size <= 20) {
+        if (data_size <= 20) {
             cout << ", ";
-        }
-        else {
+        } else {
             cout << endl;
         }
     }
@@ -272,13 +275,12 @@ void show_variable(int *host_data, int data_size, int group, int rank, string me
 }
 
 void show_variable_entity(Entity *host_data, int data_size, int rank, string message) {
-    cout << "Rank " << rank << ", size " << data_size <<  " : " << message << " ----------------" << endl;
+    cout << "Rank " << rank << ", size " << data_size << " : " << message << " ----------------" << endl;
     for (int i = 0; i < data_size; i++) {
         cout << host_data[i].key << " " << host_data[i].value;
-        if(data_size <= 20) {
+        if (data_size <= 20) {
             cout << ", ";
-        }
-        else {
+        } else {
             cout << endl;
         }
     }
@@ -288,15 +290,14 @@ void show_variable_entity(Entity *host_data, int data_size, int rank, string mes
 void show_device_variable(int *device_data, int device_data_size, int group, int rank, string message) {
     int *host_data = (int *) malloc(device_data_size * sizeof(int));
     cudaMemcpy(host_data, device_data, device_data_size * sizeof(int), cudaMemcpyDeviceToHost);
-    cout << "Rank " << rank << ", size " << device_data_size <<  " : " << message << " ----------------" << endl;
+    cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << endl;
     for (int i = 0; i < device_data_size / group; i++) {
         for (int j = 0; j < group; j++) {
-            cout << host_data[(i*group) + j] << " ";
+            cout << host_data[(i * group) + j] << " ";
         }
-        if(device_data_size <= 20) {
+        if (device_data_size <= 20) {
             cout << ", ";
-        }
-        else {
+        } else {
             cout << endl;
         }
     }
@@ -308,7 +309,7 @@ void show_device_variable(int *device_data, int device_data_size, int group, int
 void show_device_entity_variable(Entity *device_data, int device_data_size, int rank, string message) {
     Entity *host_data = (Entity *) malloc(device_data_size * sizeof(Entity));
     cudaMemcpy(host_data, device_data, device_data_size * sizeof(Entity), cudaMemcpyDeviceToHost);
-    cout << "Rank " << rank << ", size " << device_data_size <<  " : " << message << " ----------------" << endl;
+    cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << endl;
     for (int i = 0; i < device_data_size; i++) {
         cout << host_data[i].key << " " << host_data[i].value << endl;
     }
