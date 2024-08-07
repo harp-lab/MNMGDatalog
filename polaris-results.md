@@ -1,4 +1,115 @@
-### CUDA Aware MPI
+### CUDA AWARE MPI
+```shell
+cat polaris-job-semi.output
+ALL TO ALL COMMUNICATION METHOD: SORTING
+------------------------------------------------------------------------------------
+CC tc_semi_naive.cu -o tc_semi_naive.out -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+| 147,892 | 40 | 31 | 884,179,859 |   3.5895 |   0.0066 |   2.3282 |   0.0001 |   0.0108 |   0.0234 |   0.9396 |   0.2355 |   0.0453 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+| 147,892 | 32 | 31 | 884,179,859 |   3.7066 |   0.0061 |   2.6991 |   0.0001 |   0.0113 |   0.0273 |   0.6561 |   0.2503 |   0.0563 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+| 147,892 | 24 | 31 | 884,179,859 |   4.0434 |   0.0060 |   3.0114 |   0.0001 |   0.0133 |   0.0289 |   0.6248 |   0.2858 |   0.0731 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+| 147,892 | 16 | 31 | 884,179,859 |   4.3631 |   0.0058 |   3.2963 |   0.0001 |   0.0141 |   0.0352 |   0.6127 |   0.2892 |   0.1097 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 1
+| 147,892 | 8 | 31 | 884,179,859 |   5.8811 |   0.0058 |   4.4054 |   0.0001 |   0.0181 |   0.0514 |   0.6958 |   0.4778 |   0.2267 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+| 165,435 | 40 | 606 | 871,365,688 |  14.4023 |   0.0063 |   2.4100 |   0.0001 |   0.0754 |   0.1631 |   8.2689 |   3.4090 |   0.0696 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+| 165,435 | 32 | 606 | 871,365,688 |  12.8989 |   0.0062 |   2.2323 |   0.0001 |   0.0580 |   0.2308 |   7.0039 |   3.2777 |   0.0900 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+| 165,435 | 24 | 606 | 871,365,688 |  14.4830 |   0.0059 |   2.6193 |   0.0001 |   0.0733 |   0.2947 |   7.0013 |   4.3594 |   0.1291 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+| 165,435 | 16 | 606 | 871,365,688 |  16.8489 |   0.0058 |   2.9738 |   0.0001 |   0.1175 |   0.2891 |   6.3202 |   7.0012 |   0.1411 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 1
+| 165,435 | 8 | 606 | 871,365,688 |  24.6041 |   0.0058 |   4.2029 |   0.0001 |   0.3359 |   0.3662 |   7.4710 |  11.9541 |   0.2681 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+| 409,593 | 40 | 247 | 1,669,750,513 |  10.9886 |   0.0060 |   4.1074 |   0.0001 |   0.0731 |   0.1669 |   4.5448 |   1.9960 |   0.0944 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+| 409,593 | 32 | 247 | 1,669,750,513 |  11.9148 |   0.0058 |   5.0603 |   0.0001 |   0.0910 |   0.1803 |   4.4714 |   1.9907 |   0.1151 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+| 409,593 | 24 | 247 | 1,669,750,513 |  12.7124 |   0.0058 |   5.0807 |   0.0001 |   0.1204 |   0.2085 |   4.3480 |   2.7910 |   0.1580 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+| 409,593 | 16 | 247 | 1,669,750,513 |  14.7175 |   0.0059 |   4.5346 |   0.0001 |   0.2153 |   0.2100 |   3.6511 |   5.8495 |   0.2511 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 1
+| 409,593 | 8 | 247 | 1,669,750,513 |  21.5418 |   0.0057 |   4.9985 |   0.0001 |   0.3624 |   0.2788 |   3.1876 |  12.2240 |   0.4847 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+| 552,020 | 40 | 520 | 910,070,918 |  12.9395 |   0.0058 |   1.8092 |   0.0001 |   0.0961 |   0.2246 |   7.7405 |   3.0099 |   0.0534 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+| 552,020 | 32 | 520 | 910,070,918 |  13.4633 |   0.0059 |   3.1651 |   0.0001 |   0.1157 |   0.2693 |   6.7527 |   3.0920 |   0.0626 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+| 552,020 | 24 | 520 | 910,070,918 |  13.4392 |   0.0060 |   2.2155 |   0.0001 |   0.1455 |   0.3062 |   6.6650 |   4.0133 |   0.0876 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+| 552,020 | 16 | 520 | 910,070,918 |  16.0113 |   0.0057 |   2.7551 |   0.0004 |   0.1725 |   0.3212 |   6.1335 |   6.5045 |   0.1183 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1
+| 552,020 | 8 | 520 | 910,070,918 |  25.1876 |   0.0057 |   4.1365 |   0.0003 |   0.4068 |   0.4147 |   6.1069 |  13.8924 |   0.2242 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+| 1,049,866 | 40 | 31 | 1,911,754,892 |   6.6325 |   0.0059 |   5.3236 |   0.0003 |   0.0148 |   0.0372 |   0.8395 |   0.3138 |   0.0973 | data/com-dblpungraph.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+| 1,049,866 | 32 | 31 | 1,911,754,892 |   8.4715 |   0.0058 |   7.0062 |   0.0004 |   0.0152 |   0.0412 |   0.8976 |   0.3838 |   0.1213 | data/com-dblpungraph.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+| 1,049,866 | 24 | 31 | 1,911,754,892 |   8.0681 |   0.0058 |   6.2336 |   0.0001 |   0.0186 |   0.0488 |   1.0661 |   0.5295 |   0.1656 | data/com-dblpungraph.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+| 1,049,866 | 16 | 31 | 1,911,754,892 |   9.0817 |   0.0059 |   7.0558 |   0.0004 |   0.0182 |   0.0660 |   1.1278 |   0.5579 |   0.2497 | data/com-dblpungraph.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 1
+| 1,049,866 | 8 | 31 | 1,911,754,892 |  11.0856 |   0.0060 |   7.1329 |   0.0003 |   0.0232 |   0.1135 |   1.5496 |   1.7820 |   0.4780 | data/com-dblpungraph.bin_tc.bin |
+ALL TO ALL COMMUNICATION METHOD: TWO PASS
+------------------------------------------------------------------------------------
+CC tc_semi_naive.cu -o tc_semi_naive.out -lm
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+| 147,892 | 40 | 31 | 884,179,859 |   2.7943 |   0.0173 |   1.8058 |   0.0001 |   0.0101 |   0.0981 |   0.5883 |   0.2292 |   0.0454 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+| 147,892 | 32 | 31 | 884,179,859 |   3.5995 |   0.0058 |   2.4680 |   0.0001 |   0.0107 |   0.1028 |   0.7052 |   0.2507 |   0.0562 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+| 147,892 | 24 | 31 | 884,179,859 |   3.8322 |   0.0057 |   2.6461 |   0.0001 |   0.0120 |   0.1189 |   0.6898 |   0.2853 |   0.0744 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+| 147,892 | 16 | 31 | 884,179,859 |   4.4681 |   0.0056 |   3.2259 |   0.0001 |   0.0130 |   0.1526 |   0.6541 |   0.3075 |   0.1092 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_147892.bin 1 0
+| 147,892 | 8 | 31 | 884,179,859 |   5.1550 |   0.0056 |   3.4644 |   0.0001 |   0.0202 |   0.2187 |   0.7635 |   0.4544 |   0.2281 | data/data_147892.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 0
+| 165,435 | 40 | 606 | 871,365,688 |  13.1711 |   0.0057 |   2.1537 |   0.0001 |   0.0627 |   0.1562 |   7.4870 |   3.2346 |   0.0712 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 0
+| 165,435 | 32 | 606 | 871,365,688 |  12.9238 |   0.0058 |   2.2739 |   0.0001 |   0.0505 |   0.2135 |   7.1079 |   3.1809 |   0.0912 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 0
+| 165,435 | 24 | 606 | 871,365,688 |  14.1979 |   0.0057 |   2.5473 |   0.0001 |   0.0517 |   0.3411 |   7.0951 |   4.0458 |   0.1110 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 0
+| 165,435 | 16 | 606 | 871,365,688 |  17.2057 |   0.0056 |   3.3558 |   0.0001 |   0.1186 |   0.3719 |   6.5232 |   6.6954 |   0.1350 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_165435.bin 1 0
+| 165,435 | 8 | 606 | 871,365,688 |  23.2433 |   0.0056 |   3.1472 |   0.0001 |   0.2859 |   0.5233 |   6.1073 |  12.8890 |   0.2849 | data/data_165435.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 0
+| 409,593 | 40 | 247 | 1,669,750,513 |  12.7820 |   0.0057 |   5.0853 |   0.0001 |   0.0731 |   0.3682 |   5.0474 |   2.1045 |   0.0978 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 0
+| 409,593 | 32 | 247 | 1,669,750,513 |  11.3596 |   0.0058 |   4.6055 |   0.0001 |   0.0908 |   0.4087 |   4.0746 |   2.0575 |   0.1167 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 0
+| 409,593 | 24 | 247 | 1,669,750,513 |  13.1191 |   0.0057 |   5.4294 |   0.0001 |   0.1229 |   0.4710 |   4.0795 |   2.8532 |   0.1574 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 0
+| 409,593 | 16 | 247 | 1,669,750,513 |  14.7679 |   0.0057 |   4.0677 |   0.0001 |   0.1726 |   0.6298 |   3.5806 |   6.0572 |   0.2543 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/data_409593.bin 1 0
+| 409,593 | 8 | 247 | 1,669,750,513 |  20.5643 |   0.0057 |   3.8855 |   0.0001 |   0.3754 |   0.7559 |   3.1720 |  11.9399 |   0.4298 | data/data_409593.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+| 552,020 | 40 | 520 | 910,070,918 |  12.0652 |   0.0057 |   2.3209 |   0.0001 |   0.0920 |   0.2812 |   6.4309 |   2.8811 |   0.0533 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+| 552,020 | 32 | 520 | 910,070,918 |  12.4674 |   0.0058 |   2.0564 |   0.0001 |   0.1129 |   0.3465 |   6.7260 |   3.1545 |   0.0653 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+| 552,020 | 24 | 520 | 910,070,918 |  13.3421 |   0.0057 |   2.8848 |   0.0001 |   0.1295 |   0.4192 |   5.9851 |   3.8244 |   0.0933 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+| 552,020 | 16 | 520 | 910,070,918 |  17.6168 |   0.0057 |   4.4952 |   0.0003 |   0.1830 |   0.4706 |   5.5066 |   6.8340 |   0.1213 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+| 552,020 | 8 | 520 | 910,070,918 |  25.4008 |   0.0056 |   4.0586 |   0.0003 |   0.4382 |   0.6330 |   5.5208 |  14.4744 |   0.2699 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 0
+| 1,049,866 | 40 | 31 | 1,911,754,892 |   8.1044 |   0.0058 |   6.5628 |   0.0003 |   0.0137 |   0.2237 |   0.8938 |   0.3089 |   0.0954 | data/com-dblpungraph.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 0
+| 1,049,866 | 32 | 31 | 1,911,754,892 |   8.3758 |   0.0058 |   6.6459 |   0.0003 |   0.0152 |   0.2488 |   0.9825 |   0.3568 |   0.1205 | data/com-dblpungraph.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 24 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 0
+| 1,049,866 | 24 | 31 | 1,911,754,892 |   8.1608 |   0.0059 |   6.1017 |   0.0002 |   0.0192 |   0.3177 |   1.0643 |   0.4904 |   0.1615 | data/com-dblpungraph.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 0
+| 1,049,866 | 16 | 31 | 1,911,754,892 |  10.2900 |   0.0058 |   7.6431 |   0.0003 |   0.0234 |   0.4163 |   1.2838 |   0.6800 |   0.2372 | data/com-dblpungraph.bin_tc.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_semi_naive.out data/com-dblpungraph.bin 1 0
+| 1,049,866 | 8 | 31 | 1,911,754,892 |  11.7276 |   0.0061 |   7.1506 |   0.0003 |   0.0384 |   0.6177 |   1.8008 |   1.6433 |   0.4704 | data/com-dblpungraph.bin_tc.bin |
+```
+
+### CUDA Aware MPI OLD
 ```shell
 cat cudaawarempi.output
 NUM_OF_NODES= 10 TOTAL_NUM_RANKS= 40 RANKS_PER_NODE= 4 THREADS_PER_RANK= 1

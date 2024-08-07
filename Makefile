@@ -66,6 +66,9 @@ runpolarissemi: buildpolarissemi testpolarissemi
 
 runsemi: buildsemi testsemi
 
+cleanoutput:
+	rm -f data/*_tc.bin*
+
 clean:
 	rm -f *.out
 	rm -f *.cobaltlog

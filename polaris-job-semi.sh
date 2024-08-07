@@ -1,7 +1,7 @@
 #!/bin/sh
 #PBS -l select=10:system=polaris
 #PBS -l place=scatter
-#PBS -l walltime=0:55:00
+#PBS -l walltime=2:55:00
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
@@ -32,32 +32,47 @@ echo "--------------------------------------------------------------------------
 make buildpolarissemi
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> p2p-Gnutella31 $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_147892.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
 
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> usroad $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_165435.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
 
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> fe_ocean $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_409593.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
 
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> vsp_finan $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/vsp_finan512_scagr7-2c_rlfddd.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
 
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
 
 echo "ALL TO ALL COMMUNICATION METHOD: TWO PASS"
@@ -66,30 +81,45 @@ METHOD=0
 make buildpolarissemi
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> p2p-Gnutella31 $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_147892.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
 
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> usroad $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_165435.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
 
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> fe_ocean $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_409593.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
 
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> vsp_finan $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/vsp_finan512_scagr7-2c_rlfddd.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
 
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
+  for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissemi MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    make cleanoutput
+  done
 done
