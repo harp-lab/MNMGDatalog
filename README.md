@@ -245,7 +245,7 @@ arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bi
 | 1,049,866 | 16 | 31 | 1,911,754,892 |   9.3032 |   0.0057 |   7.2439 |   0.0004 |   0.0188 |   0.0649 |   1.1467 |   0.5758 |   0.2470 | data/com-dblpungraph.bin_tc.bin |
 | 1,049,866 | 8 | 31 | 1,911,754,892 |  11.5592 |   0.0060 |   7.4375 |   0.0003 |   0.0259 |   0.1120 |   1.6437 |   1.8105 |   0.5233 | data/com-dblpungraph.bin_tc.bin |
 
-### CPU MPI and Two pass method
+### Traditional MPI and Two pass method
 
 | # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -276,7 +276,7 @@ arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bi
 | 1,049,866 | 8 | 31 | 1,911,754,892 |  13.8682 |   0.7001 |   7.3139 |   0.0003 |   0.0225 |   0.6343 |   3.3221 |   1.3204 |   0.5545 | data/com-dblpungraph.bin_tc.bin |
 
 
-### CPU MPI and Sort method
+### Traditional MPI and Sort method
 
 | # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -306,6 +306,32 @@ arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bi
 | 1,049,866 | 16 | 31 | 1,911,754,892 |   9.6457 |   0.7046 |   6.2971 |   0.0004 |   0.0213 |   0.0646 |   1.7288 |   0.5799 |   0.2490 | data/com-dblpungraph.bin_tc.bin |
 | 1,049,866 | 8 | 31 | 1,911,754,892 |  12.8488 |   0.6959 |   6.7516 |   0.0003 |   0.0231 |   0.1107 |   3.3234 |   1.3819 |   0.5619 | data/com-dblpungraph.bin_tc.bin |
 
+
+### Utility program for chart generation
+- To parse Polaris results, use [`parse_results.py`](parse_results.py) program.
+- To generate charts, create a virtual environment, install necessary packages, and use [`generate_graphs.py`](generate_graphs.py) program.
+```shell
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python generate_graphs.py
+```
+
+### Results visualization
+#### CUDA AWARE MPI: Two pass vs sort 
+![alt Two pass vs sort approach in CUDA AWARE MPI](drawing/total_time/cuda_aware_mpi_pass_vs_sort.png)
+
+#### Traditional MPI: Two pass vs sort
+![alt Two pass vs sort approach in Traditional MPI](drawing/total_time/traditional_mpi_pass_vs_sort.png)
+
+#### CUDA AWARE MPI vs Traditional MPI (Two pass)
+![alt Two pass](drawing/total_time/cuda_aware_mpi_pass_vs_traditional_mpi_pass.png)
+
+#### CUDA AWARE MPI vs Traditional MPI (Sort)
+![alt Sort](drawing/total_time/cuda_aware_mpi_sort_vs_traditional_mpi_sort.png)
+
+#### Event Breakdown
+[drawing/breakdown](drawing/breakdown) has individual event breakdown results.
 
 ### References
 - [Polaris User Guides](https://docs.alcf.anl.gov/polaris/getting-started/)
