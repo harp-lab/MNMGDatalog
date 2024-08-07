@@ -25,8 +25,10 @@ def read_markdown_table(file_path, method):
 
     # Replace values in the 'Dataset' column
     df['Dataset'] = df['Dataset'].replace(replacement_dict)
-
-    return df
+    # Step 2: Group every five rows together and calculate the mean for numeric columns
+    df = df.reset_index(drop=True)
+    grouped = df.groupby(df.index // 5).agg({col: 'mean' if df[col].dtype != 'object' else 'first' for col in df.columns})
+    return grouped
 
 
 def show_line_chart(df, figure_name=None):
@@ -116,8 +118,8 @@ if __name__ == "__main__":
     warnings.simplefilter(action='ignore', category=FutureWarning)
     cam_two_pass_file = "drawing/cam_two_pass.md"
     cam_sort_file = "drawing/cam_sort.md"
-    mpi_cpu_two_pass_file = "drawing/mpi_cpu_two_pass.md"
-    mpi_cpu_sort_file = "drawing/mpi_cpu_sort.md"
+    mpi_cpu_two_pass_file = "drawing/traditional_two_pass.md"
+    mpi_cpu_sort_file = "drawing/traditional_sort.md"
 
     cam_sort_df = read_markdown_table(cam_sort_file, "CUDA Aware MPI - Sort")
     cam_two_pass_df = read_markdown_table(cam_two_pass_file, "CUDA Aware MPI - Two pass")
