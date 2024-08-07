@@ -334,9 +334,9 @@ void benchmark(int argc, char **argv) {
         output.communication_time = max_communication_time;
         output.merge_time = max_merge_time;
         output.finalization_time = max_finalization_time;
-        printf("| # Input | # Process | # Iterations | # TC | Total Time ");
-        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |\n");
-        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+//        printf("| # Input | # Process | # Iterations | # TC | Total Time ");
+//        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |\n");
+//        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
         printf("| %'d | %'d | %'d | %'d | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.total_time,
