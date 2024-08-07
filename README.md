@@ -196,12 +196,12 @@ arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bi
 
 ### Traditional MPI and Two pass method
 
-[See the table in drawing/mpi_cpu_two_pass.md](drawing/mpi_cpu_two_pass.md)
+[See the table in drawing/traditional_two_pass.md](drawing/traditional_two_pass.md)
 
 
 ### Traditional MPI and Sort method
 
-[See the table in drawing/mpi_cpu_sort.md](drawing/mpi_cpu_sort.md)
+[See the table in drawing/traditional_sort.md](drawing/traditional_sort.md)
 
 ### Utility program for chart generation
 - To parse Polaris results, use [`parse_results.py`](parse_results.py) program.
