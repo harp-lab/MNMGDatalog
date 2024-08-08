@@ -25,7 +25,7 @@ def read_markdown_table(file_path, method):
 
     # Replace values in the 'Dataset' column
     df['Dataset'] = df['Dataset'].replace(replacement_dict)
-    # Step 2: Group every five rows together and calculate the mean for numeric columns
+    # Group every five rows together and calculate the mean for numeric columns
     df = df.reset_index(drop=True)
     grouped = df.groupby(df.index // 5).agg({col: 'mean' if df[col].dtype != 'object' else 'first' for col in df.columns})
     return grouped
@@ -74,7 +74,7 @@ def show_line_chart(df, figure_name=None):
 def show_breakdown_line_chart(df, figure_name=None):
     # Loop through each dataset and method
     datasets = df['Dataset'].unique()
-    breakdown_columns = ['Total Time', 'Initialization', 'File I/O', 'Hashtable', 'Join', 'Buffer preparation',
+    breakdown_columns = ['Total Time', 'Initialization', 'Hashtable', 'Join', 'Buffer preparation',
                          'Communication', 'Merge', 'Finalization']
 
     # Loop through each dataset and create a separate figure
@@ -91,7 +91,8 @@ def show_breakdown_line_chart(df, figure_name=None):
         # Set titles and labels
         ax.set_title(f'{method}: {dataset}')
         ax.set_xlabel('Process Count')
-        ax.set_ylabel('Time (s)')
+        ax.set_ylabel('Time (Log scale)')
+        ax.set_yscale('log')
         ax.legend(loc='upper right')
         ax.grid(True)
 

@@ -7,8 +7,14 @@ def write_parsed_lines(lines, start_index, end_index, output_file):
     for i in range(start_index, end_index):
         line = lines[i]
         if re.match(pattern, line):
+            values = line.split("|")
+            total_time = float(values[5].strip())
+            file_io_time = float(values[7].strip())
+            total_time = total_time - file_io_time
+            values[5] = str(f" {total_time:8.4f} ")
+            line = "|".join(values)
             result.append(line)
-    header_lines = '''| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
+    header_lines = '''| # Input | # Process | # Iterations | # TC | Total Time | Initialization | (File I/O) | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 '''
     result = "".join(result)
