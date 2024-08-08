@@ -219,6 +219,13 @@ void benchmark(int argc, char **argv) {
         cudaFree(t_delta);
         checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
         cudaMemcpy(t_delta, t_delta_temp, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+
+        // Update t delta which is the only new facts which are not in t full and will be used in next iteration
+        t_delta_size = thrust::set_difference(thrust::device,
+                                              t_delta, t_delta + t_delta_size,
+                                              t_full, t_full + t_full_size,
+                                              t_delta, set_cmp()) - t_delta;
+
         // set union of two sets (sorted t full and t delta)
         int new_t_full_size = t_delta_size + t_full_size;
         checkCuda(cudaMalloc((void **) &new_t_full, new_t_full_size * sizeof(Entity)));
@@ -226,12 +233,6 @@ void benchmark(int argc, char **argv) {
                                             t_full, t_full + t_full_size,
                                             t_delta, t_delta + t_delta_size,
                                             new_t_full, set_cmp()) - new_t_full;
-
-        // Update t delta which is the only new facts which are not in t full and will be used in next iteration
-        t_delta_size = thrust::set_difference(thrust::device,
-                                              new_t_full, new_t_full + new_t_full_size,
-                                              t_full, t_full + t_full_size,
-                                              t_delta, set_cmp()) - t_delta;
         cudaFree(t_full);
         checkCuda(cudaMalloc((void **) &t_full, new_t_full_size * sizeof(Entity)));
         cudaMemcpy(t_full, new_t_full, new_t_full_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
@@ -312,7 +313,7 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = max_finalization_time + (end_time - start_time);
     MPI_Allreduce(&elapsed_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    total_time = max_initialization_time + max_fileio_time + max_hashtable_build_time + max_join_time +
+    total_time = max_initialization_time + max_hashtable_build_time + max_join_time +
                  max_buffer_preparation_time + max_communication_time + max_merge_time + max_finalization_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
