@@ -22,17 +22,17 @@ Compute Transitive Closure using CUDA and MPI for a given relation.
 
 ### Dataset
 
-| Dataset        | # Input     | Path                                   | # Iterations | # TC          | # TC / Iteration |
-|----------------|-------------|----------------------------------------|--------------|---------------|------------------|
-| com-dblp       | 1,049,866   | data/com-dblpungraph.bin               | 31           | 1,911,754,892 | 61,670,160       |
-| vsp_finan      | 552,020     | data/vsp_finan512_scagr7-2c_rlfddd.bin | 520          | 910,070,918   | 1,750,136        |
-| fe_ocean       | 409,593     | data/data_409593.bin                   | 247          | 1,669,750,513 | 6,760,526        |
-| usroad         | 165,435     | data/data_165435.bin                   | 606          | 871,365,688   | 1,437,840        |
-| p2p-Gnutella31 | 147,892     | data/data_147892.bin                   | 31           | 884,179,859   | 28,522,576       |
-| TG.cedge       | 23,874      | data/data_23874.bin                    | 58           | 481,121       | 8,295            |
-| OL.cedge       | 7,035       | data/data_7035.bin                     | 64           | 146,120       | 2,283            |
-| Small          | 10          | data/data_10.bin                       | 3            | 18            | 6                |
-| Extra small    | 5           | data/hipc_2019.bin                     | 3            | 9             | 3                |
+| Dataset        | # Input     | # Iterations | # TC          | # TC / Iteration | Path                                   |
+|----------------|-------------|--------------|---------------|------------------|----------------------------------------|
+| com-dblp       | 1,049,866   | 31           | 1,911,754,892 | 61,670,160       | data/com-dblpungraph.bin               |
+| vsp_finan      | 552,020     | 520          | 910,070,918   | 1,750,136        | data/vsp_finan512_scagr7-2c_rlfddd.bin |
+| fe_ocean       | 409,593     | 247          | 1,669,750,513 | 6,760,526        | data/data_409593.bin                   |
+| usroad         | 165,435     | 606          | 871,365,688   | 1,437,840        | data/data_165435.bin                   |
+| p2p-Gnutella31 | 147,892     | 31           | 884,179,859   | 28,522,576       | data/data_147892.bin                   |
+| TG.cedge       | 23,874      | 58           | 481,121       | 8,295            | data/data_23874.bin                    |
+| OL.cedge       | 7,035       | 64           | 146,120       | 2,283            | data/data_7035.bin                     |
+| Small          | 10          | 3            | 18            | 6                | data/data_10.bin                       |
+| Extra small    | 5           | 3            | 9             | 3                | data/hipc_2019.bin                     |
 
 ### Dataset Utility Program
 When using `MPI_File_read_at` and `MPI_File_write_at` at offset in MPI programs, this utility program becomes essential because these MPI functions operate directly on binary files. `MPI_File_read_at` reads binary data from a specified offset, and `MPI_File_write_at` writes binary data to a specified offset.
