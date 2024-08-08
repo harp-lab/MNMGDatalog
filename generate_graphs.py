@@ -20,7 +20,7 @@ def read_markdown_table(file_path, method):
 
     # Replacement mapping
     row_numbers = ["409,593", "165,435", "147,892", "1,049,866", "552,020"]
-    dataset_names = ["fe_ocean", "usroad", "p2p-Gnutella31", "com-dblp", "vsp_finan"]
+    dataset_names = ["fe_ocean, 247, 1669M", "usroad, 606, 871M", "p2p-Gnutella31, 31, 884M", "com-dblp, 31, 1911M", "vsp_finan, 520, 910M"]
     replacement_dict = dict(zip(row_numbers, dataset_names))
 
     # Replace values in the 'Dataset' column
