@@ -22,17 +22,17 @@ Compute Transitive Closure using CUDA and MPI for a given relation.
 
 ### Dataset
 
-| Dataset        | # Input   | Path                                   | 
-|----------------|-----------|----------------------------------------|
-| fe_ocean       | 4,09,593  | data/data_409593.bin                   |
-| usroad         | 1,65,435  | data/data_165435.bin                   |
-| p2p-Gnutella31 | 1,47,892  | data/data_147892.bin                   |
-| com-dblp       | 1,049,866 | data/com-dblpungraph.bin               |
-| vsp_finan      | 552,020   | data/vsp_finan512_scagr7-2c_rlfddd.bin |
-| TG.cedge       | 23,874    | data/data_23874.bin                    |
-| OL.cedge       | 7,035     | data/data_7035.bin                     |
-| Small          | 10        | data/data_10.bin                       |
-| Extra small    | 5         | data/hipc_2019.bin                     |
+| Dataset        | # Input     | Path                                   | # Iterations | # TC          | # TC / Iteration |
+|----------------|-------------|----------------------------------------|--------------|---------------|------------------|
+| com-dblp       | 1,049,866   | data/com-dblpungraph.bin               | 31           | 1,911,754,892 | 61,670,160       |
+| vsp_finan      | 552,020     | data/vsp_finan512_scagr7-2c_rlfddd.bin | 520          | 910,070,918   | 1,750,136        |
+| fe_ocean       | 409,593     | data/data_409593.bin                   | 247          | 1,669,750,513 | 6,760,526        |
+| usroad         | 165,435     | data/data_165435.bin                   | 606          | 871,365,688   | 1,437,840        |
+| p2p-Gnutella31 | 147,892     | data/data_147892.bin                   | 31           | 884,179,859   | 28,522,576       |
+| TG.cedge       | 23,874      | data/data_23874.bin                    | 58           | 481,121       | 8,295            |
+| OL.cedge       | 7,035       | data/data_7035.bin                     | 64           | 146,120       | 2,283            |
+| Small          | 10          | data/data_10.bin                       | 3            | 18            | 6                |
+| Extra small    | 5           | data/hipc_2019.bin                     | 3            | 9             | 3                |
 
 ### Dataset Utility Program
 When using `MPI_File_read_at` and `MPI_File_write_at` at offset in MPI programs, this utility program becomes essential because these MPI functions operate directly on binary files. `MPI_File_read_at` reads binary data from a specified offset, and `MPI_File_write_at` writes binary data to a specified offset.
@@ -143,8 +143,7 @@ arsho::polaris-login-02 { ~/mnmgJOIN }-> git reset --hard origin/main
 arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
-2055801.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov # nothing in queue
-2055814.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+2056945.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 
 arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -u $USER
 
