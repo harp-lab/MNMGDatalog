@@ -22,17 +22,23 @@ Compute Transitive Closure using CUDA and MPI for a given relation.
 
 ### Dataset
 
-| Dataset        | # Input     | # Iterations | # TC          | # TC / Iteration | Path                                   |
-|----------------|-------------|--------------|---------------|------------------|----------------------------------------|
-| com-dblp       | 1,049,866   | 31           | 1,911,754,892 | 61,670,160       | data/com-dblpungraph.bin               |
-| vsp_finan      | 552,020     | 520          | 910,070,918   | 1,750,136        | data/vsp_finan512_scagr7-2c_rlfddd.bin |
-| fe_ocean       | 409,593     | 247          | 1,669,750,513 | 6,760,526        | data/data_409593.bin                   |
-| usroad         | 165,435     | 606          | 871,365,688   | 1,437,840        | data/data_165435.bin                   |
-| p2p-Gnutella31 | 147,892     | 31           | 884,179,859   | 28,522,576       | data/data_147892.bin                   |
-| TG.cedge       | 23,874      | 58           | 481,121       | 8,295            | data/data_23874.bin                    |
-| OL.cedge       | 7,035       | 64           | 146,120       | 2,283            | data/data_7035.bin                     |
-| Small          | 10          | 3            | 18            | 6                | data/data_10.bin                       |
-| Extra small    | 5           | 3            | 9             | 3                | data/hipc_2019.bin                     |
+| Dataset        | # Input   | # Iterations | # TC          | # TC / Iteration | Path                                   |
+|----------------|-----------|--------------|---------------|------------------|----------------------------------------|
+| com-dblp       | 1,049,866 | 31           | 1,911,754,892 | 61,670,160       | data/com-dblpungraph.bin               |
+| vsp_finan      | 552,020   | 520          | 910,070,918   | 1,750,136        | data/vsp_finan512_scagr7-2c_rlfddd.bin |
+| fe_ocean       | 409,593   | 247          | 1,669,750,513 | 6,760,526        | data/data_409593.bin                   |
+| SF.cedge       | 223,001   | x            | x             | x                | data/data_223001.bin                   |
+| loc-Brightkite | 214,078   | x            | x             | x                | data/data_214078.bin                   |
+| usroad         | 165,435   | 606          | 871,365,688   | 1,437,840        | data/data_165435.bin                   |
+| fe_body        | 163,734   | x            | x             | x                | data/data_163734.bin                   |
+| p2p-Gnutella31 | 147,892   | 31           | 884,179,859   | 28,522,576       | data/data_147892.bin                   |
+| ego-Facebook   | 88,234    | x            | x             | x                | data/data_88234.bin                    |
+| CA-HepTh       | 51,971    | x            | x             | x                | data/data_51971.bin                    |
+| fe_sphere      | 49,152    | x            | x             | x                | data/data_49152.bin                    |
+| TG.cedge       | 23,874    | 58           | 481,121       | 8,295            | data/data_23874.bin                    |
+| OL.cedge       | 7,035     | 64           | 146,120       | 2,283            | data/data_7035.bin                     |
+| Small          | 10        | 3            | 18            | 6                | data/data_10.bin                       |
+| Extra small    | 5         | 3            | 9             | 3                | data/hipc_2019.bin                     |
 
 ### Dataset Utility Program
 When using `MPI_File_read_at` and `MPI_File_write_at` at offset in MPI programs, this utility program becomes essential because these MPI functions operate directly on binary files. `MPI_File_read_at` reads binary data from a specified offset, and `MPI_File_write_at` writes binary data to a specified offset.
@@ -48,6 +54,12 @@ python3 binary_file_utils.py txt_to_bin input_text_file output_binary_file
 # python3 binary_file_utils.py txt_to_bin data/data_409593.txt data/data_409593.bin
 # python3 binary_file_utils.py txt_to_bin data/vsp_finan512_scagr7-2c_rlfddd.mtx data/vsp_finan512_scagr7-2c_rlfddd.bin
 # python3 binary_file_utils.py txt_to_bin data/com-dblpungraph.txt data/com-dblpungraph.bin
+# python3 binary_file_utils.py txt_to_bin data/data_223001.txt data/data_223001.bin
+# python3 binary_file_utils.py txt_to_bin data/data_163734.txt data/data_163734.bin
+# python3 binary_file_utils.py txt_to_bin data/data_214078.txt data/data_214078.bin
+# python3 binary_file_utils.py txt_to_bin data/data_49152.txt data/data_49152.bin
+# python3 binary_file_utils.py txt_to_bin data/data_51971.txt data/data_51971.bin
+# python3 binary_file_utils.py txt_to_bin data/data_88234.txt data/data_88234.bin
 ```
 - To convert binary to text:
 ```shell
@@ -115,6 +127,9 @@ python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_238
 
 ### Run using Docker (`CUDA_AWARE_MPI` = 1)
 ```shell
+docker build -t mnmgjoindocker .
+docker run --rm --entrypoint=bash -it --gpus all -v $(pwd):/opt/mnmgjoin mnmgjoindocker
+
 mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx tc_semi_naive.cu -o tc_semi_naive.out
 
 # Two pass method
@@ -131,36 +146,25 @@ mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_
 ```
 
 ## Run in Polaris (Semi naive)
-The job script [polaris-job-semi.sh](polaris-job.sh) contains the multi node multi GPU configuration for Polaris.
+The job script [semi-merged.sh](semi-merged.sh) contains the multi node multi GPU configuration for Polaris.
 Change this file to change the number of nodes in `PBS -l select=10:system=polaris` (default 10).
-Also, change the data file as necessary.
+Also change the path of the source repository.
 Currently, it is spawning 4 ranks per node and sets 1 GPU per MPI rank.
 ```shell
 ssh arsho@polaris.alcf.anl.gov
-arsho::polaris-login-02 { ~ }-> cd mnmgJOIN
-arsho::polaris-login-02 { ~/mnmgJOIN }-> git fetch
-arsho::polaris-login-02 { ~/mnmgJOIN }-> git reset --hard origin/main
-arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x polaris-job-semi.sh
-arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
-arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub polaris-job-semi.sh 
-2056945.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
-
-arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -u $USER
-
-polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov: 
-                                                                 Req'd  Req'd   Elap
-Job ID               Username Queue    Jobname    SessID NDS TSK Memory Time  S Time
--------------------- -------- -------- ---------- ------ --- --- ------ ----- - -----
-2041991.polaris-pbs* arsho    small    polaris-j*    --   10 640    --  00:30 Q   -- 
-arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -Qf small
-Queue: small
-    queue_type = Execution
-    Priority = 150
-    total_jobs = 40
-    state_count = Transit:0 Queued:27 Held:13 Waiting:0 Running:0 Exiting:0 Beg
-
-cat polaris-job-semi.out
-cat polaris-jop-semi.error
+cd mnmgJOIN/
+make clean
+git fetch
+git reset --hard origin/main
+chmod +x set_affinity_gpu_polaris.sh
+chmod +x semi-merged.sh
+rm semi-merged.output 
+rm semi-merged.error 
+qsub semi-merged.sh 
+qstat -u $USER
+qstat -Qf small
+cat semi-merged.error
+cat semi-merged.output
 # Manage disk quota limit of 50GB in Polaris /home directory
 # Check quota
 myquota

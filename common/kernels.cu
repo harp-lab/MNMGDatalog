@@ -344,3 +344,27 @@ __global__ void reverse_t_full(int *data, int data_rows, Entity *input_data) {
         data[(i * 2) + 1] = input_data[i].key;
     }
 }
+
+__global__ void get_int_ar_from_entity_ar(int *data, int data_rows, Entity *input_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= data_rows) return;
+
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < data_rows; i += stride) {
+        data[i * 2] = input_data[i].key;
+        data[(i * 2) + 1] = input_data[i].value;
+    }
+}
+
+__global__ void reverse_entity_ar(Entity *input_data, int data_rows, Entity *output_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= data_rows) return;
+
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < data_rows; i += stride) {
+        int key = input_data[i].key;
+        int value = input_data[i].value;
+        output_data[i].key = value;
+        output_data[i].value = key;
+    }
+}

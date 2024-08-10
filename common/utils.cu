@@ -72,6 +72,14 @@ struct is_equal {
     }
 };
 
+// Predicate to check if key and value are equal
+struct is_key_equal_value {
+    __host__ __device__
+    bool operator()(const Entity& e) {
+        return e.key == e.value;
+    }
+};
+
 
 struct cmp {
     __host__ __device__
@@ -287,32 +295,36 @@ void show_variable_entity(Entity *host_data, int data_size, int rank, string mes
     cout << endl;
 }
 
-void show_device_variable(int *device_data, int device_data_size, int group, int rank, string message) {
+void show_device_variable(int *device_data, int device_data_size, int group, int rank, string message, int size_only) {
     int *host_data = (int *) malloc(device_data_size * sizeof(int));
     cudaMemcpy(host_data, device_data, device_data_size * sizeof(int), cudaMemcpyDeviceToHost);
     cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << endl;
-    for (int i = 0; i < device_data_size / group; i++) {
-        for (int j = 0; j < group; j++) {
-            cout << host_data[(i * group) + j] << " ";
+    if(size_only != 1){
+        for (int i = 0; i < device_data_size / group; i++) {
+            for (int j = 0; j < group; j++) {
+                cout << host_data[(i * group) + j] << " ";
+            }
+            if (device_data_size <= 20) {
+                cout << ", ";
+            } else {
+                cout << endl;
+            }
         }
-        if (device_data_size <= 20) {
-            cout << ", ";
-        } else {
-            cout << endl;
-        }
+        cout << endl;
     }
-    cout << endl;
     free(host_data);
 }
 
 // show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table");
-void show_device_entity_variable(Entity *device_data, int device_data_size, int rank, string message) {
+void show_device_entity_variable(Entity *device_data, int device_data_size, int rank, string message, int size_only) {
     Entity *host_data = (Entity *) malloc(device_data_size * sizeof(Entity));
     cudaMemcpy(host_data, device_data, device_data_size * sizeof(Entity), cudaMemcpyDeviceToHost);
     cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << endl;
-    for (int i = 0; i < device_data_size; i++) {
-        cout << host_data[i].key << " " << host_data[i].value << endl;
+    if(size_only != 1) {
+        for (int i = 0; i < device_data_size; i++) {
+            cout << host_data[i].key << " " << host_data[i].value << endl;
+        }
+        cout << endl;
     }
-    cout << endl;
     free(host_data);
 }
