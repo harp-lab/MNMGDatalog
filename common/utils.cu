@@ -15,7 +15,7 @@ struct Output {
     int input_rows;
     int hashtable_rows;
     int iterations;
-    int output_size;
+    long long output_size;
     double load_factor;
     double reverse_time;
     int hashtable_build_rate;
