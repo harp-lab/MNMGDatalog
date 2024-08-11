@@ -78,11 +78,12 @@ void benchmark(int argc, char **argv) {
     setlocale(LC_ALL, "");
     double start_time, end_time, elapsed_time;
     double max_fileio_time = 0.0, max_initialization_time = 0.0, max_hashtable_build_time = 0.0, max_finalization_time = 0.0;
-    double max_join_time = 0.0, max_merge_time = 0.0;
+    double max_join_time = 0.0, max_merge_time = 0.0, max_deduplication_time = 0.0;
     double max_buffer_preparation_time = 0.0, max_communication_time = 0.0;
     double buffer_preparation_time = 0.0, communication_time = 0.0;
     double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
-    double join_time = 0.0, merge_time = 0.0;
+    double join_time = 0.0, merge_time = 0.0, deduplication_time = 0.0;
+    double initialization_time = 0.0, finalization_time = 0.0;
     double file_io_time = 0.0;
     double total_time = 0.0, max_total_time = 0.0;
     int total_rank, rank;
@@ -146,8 +147,7 @@ void benchmark(int argc, char **argv) {
     create_entity_ar<<<grid_size, block_size>>>(local_data, row_size, local_data_device);
     int iterations = 0;
     end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    MPI_Allreduce(&elapsed_time, &max_initialization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    initialization_time = end_time - start_time;
     int input_relation_size = 0;
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
@@ -164,13 +164,17 @@ void benchmark(int argc, char **argv) {
     int t_delta_size = input_relation_size;
     checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
     cudaMemcpy(t_delta, input_relation, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    initialization_time += elapsed_time;
+    start_time = MPI_Wtime();
     thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
                                    t_delta, t_delta + t_delta_size,
                                    is_equal())) - t_delta;
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    merge_time += elapsed_time;
+    deduplication_time += elapsed_time;
     start_time = MPI_Wtime();
     Entity *hash_table;
     double load_factor = 0.4;
@@ -189,18 +193,21 @@ void benchmark(int argc, char **argv) {
 
     // T_FULL is input relation join t delta projected by key != value
     // sg(x, y): - edge(p, x), edge(p, y), x != y.
-
-    double base_join_time = 0;
+    double base_join_time = 0.0;
     int base_join_size = 0;
     Entity *base_join_result = get_join(grid_size, block_size, hash_table, hash_table_rows, t_delta, t_delta_size,
                                         &base_join_size,
                                         &base_join_time);
     join_time += base_join_time;
 
+    start_time = MPI_Wtime();
     Entity *new_end = thrust::remove_if(thrust::device, base_join_result,
                                         base_join_result + base_join_size,
                                         is_key_equal_value());
     base_join_size = new_end - base_join_result;
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    deduplication_time += elapsed_time;
 
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
@@ -212,15 +219,25 @@ void benchmark(int argc, char **argv) {
                                                    &buffer_preparation_time_temp, &communication_time_temp);
     buffer_preparation_time += buffer_preparation_time_temp;
     communication_time += communication_time_temp;
+
+    start_time = MPI_Wtime();
     t_delta_size = t_delta_size_temp;
     cudaFree(t_delta);
     checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
     cudaMemcpy(t_delta, t_delta_temp_base, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    initialization_time += elapsed_time;
 
+    start_time = MPI_Wtime();
     // Deduplicate scattered facts
     thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device, t_delta, t_delta + t_delta_size, is_equal())) - t_delta;
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    deduplication_time += elapsed_time;
 
+    start_time = MPI_Wtime();
     Entity *t_full;
     checkCuda(cudaMalloc((void **) &t_full, t_delta_size * sizeof(Entity)));
     cudaMemcpy(t_full, t_delta, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
@@ -228,16 +245,24 @@ void benchmark(int argc, char **argv) {
     int global_t_full_size;
     int t_full_size = t_delta_size;
     MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    merge_time += elapsed_time;
+
 
     while (true) {
         // tmp(b, x): - edge(a, x), sg(a, b).
-        double first_join_time = 0;
+        double first_join_time = 0.0;
         int first_join_size = 0;
         Entity *first_join_result = get_join(grid_size, block_size, hash_table, hash_table_rows, t_delta, t_delta_size,
                                              &first_join_size,
                                              &first_join_time);
-        reverse_entity_ar<<<grid_size, block_size>>>(first_join_result, first_join_size, first_join_result);
         join_time += first_join_time;
+        start_time = MPI_Wtime();
+        reverse_entity_ar<<<grid_size, block_size>>>(first_join_result, first_join_size, first_join_result);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        join_time += elapsed_time;
 
         // Scatter the new facts among relevant processes
         buffer_preparation_time_temp = 0.0;
@@ -254,12 +279,18 @@ void benchmark(int argc, char **argv) {
         communication_time += communication_time_temp;
 
         // sg(x, y): - tmp(b, x), edge(b, y).
-        double second_join_time = 0;
+        double second_join_time = 0.0;
         int second_join_size = 0;
         Entity *second_join_result = get_join(grid_size, block_size, hash_table, hash_table_rows,
                                               distributed_first_join_result, distributed_first_join_size,
                                               &second_join_size, &second_join_time);
+        join_time += second_join_time;
+        start_time = MPI_Wtime();
         reverse_entity_ar<<<grid_size, block_size>>>(second_join_result, second_join_size, second_join_result);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        join_time += elapsed_time;
+
         // Scatter the new facts among relevant processes
         buffer_preparation_time_temp = 0.0;
         communication_time_temp = 0.0;
@@ -273,6 +304,7 @@ void benchmark(int argc, char **argv) {
                                                                     &communication_time_temp);
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
+        start_time = MPI_Wtime();
         // Deduplicate scattered facts
         thrust::stable_sort(thrust::device, distributed_second_join_result,
                             distributed_second_join_result + distributed_second_join_size, set_cmp());
@@ -280,14 +312,14 @@ void benchmark(int argc, char **argv) {
                                                        distributed_second_join_result,
                                                        distributed_second_join_result + distributed_second_join_size,
                                                        is_equal())) - distributed_second_join_result;
-
         t_delta_size = distributed_second_join_size;
-
-
         cudaFree(t_delta);
         checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
         cudaMemcpy(t_delta, distributed_second_join_result, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
-
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        deduplication_time += elapsed_time;
+        start_time = MPI_Wtime();
         // Update t delta which is the only new facts which are not in t full and will be used in next iteration
         t_delta_size = thrust::set_difference(thrust::device,
                                               t_delta, t_delta + t_delta_size,
@@ -306,14 +338,13 @@ void benchmark(int argc, char **argv) {
         checkCuda(cudaMalloc((void **) &t_full, new_t_full_size * sizeof(Entity)));
         cudaMemcpy(t_full, new_t_full, new_t_full_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
         t_full_size = new_t_full_size;
-        cudaFree(distributed_first_join_result);
-        cudaFree(distributed_second_join_result);
-        cudaFree(new_t_full);
-
         // Check if the global t full size has changed in this iteration
         int old_global_t_full_size = global_t_full_size;
         MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
+        cudaFree(distributed_first_join_result);
+        cudaFree(distributed_second_join_result);
+        cudaFree(new_t_full);
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
@@ -322,7 +353,9 @@ void benchmark(int argc, char **argv) {
         }
     }
 
+    MPI_Allreduce(&initialization_time, &max_initialization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&join_time, &max_join_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&deduplication_time, &max_deduplication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&merge_time, &max_merge_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&buffer_preparation_time, &max_buffer_preparation_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&communication_time, &max_communication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
@@ -348,7 +381,7 @@ void benchmark(int argc, char **argv) {
     }
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    MPI_Allreduce(&elapsed_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    finalization_time += elapsed_time;
 
     // Write the t full to an offset of the output file
     start_time = MPI_Wtime();
@@ -379,10 +412,12 @@ void benchmark(int argc, char **argv) {
     free(t_full_displacements);
     free(local_data_host);
     end_time = MPI_Wtime();
-    elapsed_time = max_finalization_time + (end_time - start_time);
-    MPI_Allreduce(&elapsed_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    elapsed_time = end_time - start_time;
+    finalization_time += elapsed_time;
+    MPI_Allreduce(&finalization_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     total_time = max_initialization_time + max_hashtable_build_time + max_join_time +
-                 max_buffer_preparation_time + max_communication_time + max_merge_time + max_finalization_time;
+                 max_buffer_preparation_time + max_communication_time + max_merge_time + max_deduplication_time +
+                 max_finalization_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     if (rank == 0) {
@@ -402,15 +437,16 @@ void benchmark(int argc, char **argv) {
         output.buffer_preparation_time = max_buffer_preparation_time;
         output.communication_time = max_communication_time;
         output.merge_time = max_merge_time;
+        output.deduplication_time = max_deduplication_time;
         output.finalization_time = max_finalization_time;
-        printf("| # Input | # Process | # Iterations | # SG | Total Time ");
-        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |\n");
-        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
-        printf("| %'d | %'d | %'d | %'d | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
+//        printf("| # Input | # Process | # Iterations | # SG | Total Time ");
+//        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
+//        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        printf("| %'d | %'d | %'d | %'d | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.total_time,
                output.initialization_time, output.fileio_time, output.hashtable_build_time, output.join_time,
-               output.buffer_preparation_time, output.communication_time, output.merge_time, output.finalization_time,
+               output.buffer_preparation_time, output.communication_time, output.deduplication_time, output.merge_time, output.finalization_time,
                output.output_file_name);
     }
     MPI_Finalize();
@@ -423,6 +459,7 @@ int main(int argc, char **argv) {
 // METHOD 0 = two pass method, 1 = sorting method
 // make runsg DATA_FILE=data/data_10.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/hipc_2019.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
+// make runsg DATA_FILE=data/data_7035.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/data_163734.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0

@@ -101,7 +101,20 @@ In case of unfounded HCA device please contact your system administrator.
 
 ```
 
-
+### Bin file utility program
+```shell
+# python3 binary_file_utils.py txt_to_bin data/data_147892.txt data/data_147892.bin
+# python3 binary_file_utils.py txt_to_bin data/data_165435.txt data/data_165435.bin
+# python3 binary_file_utils.py txt_to_bin data/data_409593.txt data/data_409593.bin
+# python3 binary_file_utils.py txt_to_bin data/vsp_finan512_scagr7-2c_rlfddd.mtx data/vsp_finan512_scagr7-2c_rlfddd.bin
+# python3 binary_file_utils.py txt_to_bin data/com-dblpungraph.txt data/com-dblpungraph.bin
+# python3 binary_file_utils.py txt_to_bin data/data_223001.txt data/data_223001.bin
+# python3 binary_file_utils.py txt_to_bin data/data_163734.txt data/data_163734.bin
+# python3 binary_file_utils.py txt_to_bin data/data_214078.txt data/data_214078.bin
+# python3 binary_file_utils.py txt_to_bin data/data_49152.txt data/data_49152.bin
+# python3 binary_file_utils.py txt_to_bin data/data_51971.txt data/data_51971.bin
+# python3 binary_file_utils.py txt_to_bin data/data_88234.txt data/data_88234.bin
+```
 
 ### Run container with privilege root
 ```

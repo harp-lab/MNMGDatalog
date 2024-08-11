@@ -29,6 +29,7 @@ struct Output {
     double buffer_preparation_time;
     double communication_time;
     double merge_time;
+    double deduplication_time;
     double finalization_time;
 };
 

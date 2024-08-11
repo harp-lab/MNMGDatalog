@@ -47,36 +47,22 @@ The utility program supports two main operations: converting text to binary (`tx
 - To convert text to binary:
 ```shell
 python3 binary_file_utils.py txt_to_bin input_text_file output_binary_file
-# example usage:
 # python3 binary_file_utils.py txt_to_bin data/data_23874.txt data/data_23874.bin
-# python3 binary_file_utils.py txt_to_bin data/data_147892.txt data/data_147892.bin
-# python3 binary_file_utils.py txt_to_bin data/data_165435.txt data/data_165435.bin
-# python3 binary_file_utils.py txt_to_bin data/data_409593.txt data/data_409593.bin
-# python3 binary_file_utils.py txt_to_bin data/vsp_finan512_scagr7-2c_rlfddd.mtx data/vsp_finan512_scagr7-2c_rlfddd.bin
-# python3 binary_file_utils.py txt_to_bin data/com-dblpungraph.txt data/com-dblpungraph.bin
-# python3 binary_file_utils.py txt_to_bin data/data_223001.txt data/data_223001.bin
-# python3 binary_file_utils.py txt_to_bin data/data_163734.txt data/data_163734.bin
-# python3 binary_file_utils.py txt_to_bin data/data_214078.txt data/data_214078.bin
-# python3 binary_file_utils.py txt_to_bin data/data_49152.txt data/data_49152.bin
-# python3 binary_file_utils.py txt_to_bin data/data_51971.txt data/data_51971.bin
-# python3 binary_file_utils.py txt_to_bin data/data_88234.txt data/data_88234.bin
 ```
 - To convert binary to text:
 ```shell
 python3 binary_file_utils.py bin_to_txt input_binary_file output_text_file
-# python3 binary_file_utils.py bin_to_txt data/data_10.bin_tc.bin data/data_10_tc.txt
 # python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_23874_tc.txt
-# python3 binary_file_utils.py bin_to_txt data/hipc_2019.bin_tc.bin data/hipc_2019_tc.txt
 ```
 ### Local run instructions
-#### Semi naive evaluation
-- Run the `tc_semi_naive.cu` program to generate transitive closure for a given data file. 
-- Command like arguments: 
+- Command like arguments:
   - `NPROCS=<n>` to set the number of processes
   - `DATA_FILE=<BINARY DATA FILE>` to set the binary datafile path
   - `CUDA_AWARE_MPI=<0/1>` to use CUDA AWARE MPI. Set it to `1` if system supports CUDA AWARE MPI, otherwise `0`.
-  - `METHOD=<0/1>` to use two pass approach (0) or sorting technique (1) for all to all communication. 
+  - `METHOD=<0/1>` to use two pass approach (0) or sorting technique (1) for all to all communication.
 
+#### Transitive Closure (TC) semi naive evaluation
+- Run the `tc_semi_naive.cu` program to generate transitive closure for a given data file.
 ```shell
 # Using two pass method for communication
 make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
@@ -101,8 +87,35 @@ It generated `data/data_23874.bin_tc.bin` file that contains all paths of the tr
 python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_23874_tc.txt
 ```
 
-### Results (Semi Naive) 
-#### Local machine (`CUDA_AWARE_MPI` = 0, Two pass method)
+#### Same Generation (SG)
+- Run the `sg.cu` program to generate same generation graph for a given data file.
+```shell
+# Using two pass method for communication
+make runsg DATA_FILE=data/data_7035.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+nvcc sg.cu -o sg.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda
+mpirun -np 8 ./sg.out data/data_7035.bin 0 0
+| # Input | # Process | # Iterations | # SG | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 7,035 | 8 | 56 | 285,431 |   0.5466 |   0.0059 |   0.0372 |   0.0007 |   0.1709 |   0.1655 |   0.0447 |   0.0651 |   0.0928 |   0.0011 | data/data_7035.bin_sg.bin |
+
+# Using sorting method for communication
+make runsg DATA_FILE=data/data_7035.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
+nvcc sg.cu -o sg.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda
+mpirun -np 8 ./sg.out data/data_7035.bin 0 1
+| # Input | # Process | # Iterations | # SG | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 7,035 | 8 | 56 | 285,431 |   0.7510 |   0.0016 |   0.0431 |   0.0007 |   0.1653 |   0.3822 |   0.0474 |   0.0626 |   0.0900 |   0.0012 | data/data_7035.bin_sg.bin |
+```
+It generated `data/data_7035.bin_sg.bin` file that contains all paths of the transitive closure for the input relation.
+- Convert the generated binary to text file using `binary_file_utils.py`.
+```shell
+python3 binary_file_utils.py bin_to_txt data/data_7035.bin_sg.bin data/data_7035_sg.txt
+```
+
+
+
+### Results 
+#### Transitive Closure Local machine (`CUDA_AWARE_MPI` = 0, Two pass method)
 | # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 23,874 | 2 | 58 | 481,121 |   0.1196 |   0.0003 |   0.0042 |   0.0002 |   0.0184 |   0.0257 |   0.0075 |   0.0607 |   0.0025 | data/data_23874.bin_tc.bin |
@@ -130,22 +143,40 @@ python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_238
 docker build -t mnmgjoindocker .
 docker run --rm --entrypoint=bash -it --gpus all -v $(pwd):/opt/mnmgjoin mnmgjoindocker
 
+# TC
 mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx tc_semi_naive.cu -o tc_semi_naive.out
 
-# Two pass method
+## Two pass method
 mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1 0
 | # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 23874 | 4 | 58 | 481121 |   0.6453 |   0.1964 |   0.0252 |   0.0004 |   0.0297 |   0.0398 |   0.1983 |   0.1530 |   0.0025 | data/data_23874.bin_tc.bin |
 
-# Sort method
+## Sort method
 mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1 1
 | # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 23874 | 4 | 58 | 481121 |   0.7154 |   0.2117 |   0.0389 |   0.0004 |   0.0289 |   0.1017 |   0.1901 |   0.1411 |   0.0027 | data/data_23874.bin_tc.bin |
+
+# SG
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx sg.cu -o sg.out
+
+## Two pass method
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./sg.out data/data_7035.bin 1 0
+| # Input | # Process | # Iterations | # SG | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 7035 | 4 | 56 | 285431 |   0.7188 |   0.2156 |   0.0387 |   0.0006 |   0.0852 |   0.0703 |   0.2406 |   0.0466 |   0.0584 |   0.0016 | data/data_7035.bin_sg.bin |
+
+## Sort method
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./sg.out data/data_7035.bin 1 1
+| # Input | # Process | # Iterations | # SG | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 7035 | 4 | 56 | 285431 |   0.8495 |   0.2040 |   0.0294 |   0.0003 |   0.0820 |   0.1951 |   0.2500 |   0.0438 |   0.0721 |   0.0021 | data/data_7035.bin_sg.bin |
 ```
 
-## Run in Polaris (Semi naive)
+## Run in Polaris 
+
+### Transitive Closure Computation (TC)
 The job script [semi-merged.sh](semi-merged.sh) contains the multi node multi GPU configuration for Polaris.
 Change this file to change the number of nodes in `PBS -l select=10:system=polaris` (default 10).
 Also change the path of the source repository.
@@ -186,9 +217,49 @@ arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bi
 arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1 1
 ```
 
+### Same Generation (SG)
+The job script [sg-merged.sh](sg-merged.sh) contains the multi node multi GPU configuration for Polaris.
+Change this file to change the number of nodes in `PBS -l select=10:system=polaris` (default 10).
+Also change the path of the source repository.
+Currently, it is spawning 4 ranks per node and sets 1 GPU per MPI rank.
+```shell
+ssh arsho@polaris.alcf.anl.gov
+cd mnmgJOIN/
+make clean
+git fetch
+git reset --hard origin/main
+chmod +x set_affinity_gpu_polaris.sh
+chmod +x sg-merged.sh
+rm sg-merged.output 
+rm sg-merged.error 
+qsub sg-merged.sh 
+qstat -u $USER
+qstat -Qf small
+cat sg-merged.error
+cat sg-merged.output
+# Manage disk quota limit of 50GB in Polaris /home directory
+# Check quota
+myquota
+# Check large folders
+du -h --max-depth=1 | sort -hr
+# Delete large folders
+rm -rf ./local_join
+# Delete the generated bin files
+make clean
 
-## Performance evaluation on Polaris 
+# Interactive 1 node run tc
+ssh arsho@polaris.alcf.anl.gov
+qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
+cd mnmgJOIN
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+CC sg.cu -o sg_interactive.out
+arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./sg_interactive.out data/data_165435.bin 1 0
+arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./sg_interactive.out data/data_165435.bin 1 1
+```
 
+
+## TC Performance evaluation on Polaris
 
 ### CUDA AWARE MPI and Two pass method
 [See the table in drawing/cam_two_pass.md](drawing/cam_two_pass.md)
@@ -231,6 +302,9 @@ python generate_graphs.py
 
 #### Event Breakdown
 [drawing/breakdown](drawing/breakdown) has individual event breakdown results.
+
+
+
 
 ### References
 - [Polaris User Guides](https://docs.alcf.anl.gov/polaris/getting-started/)

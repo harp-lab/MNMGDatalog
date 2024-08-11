@@ -55,6 +55,12 @@ buildpolarissemi:
 testpolarissemi:
 	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SEMI).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
 
+buildpolarissg:
+	CC $(SRC_SG) -o $(TARGET_SG).out $(COMPILER_FLAGS)
+
+testpolarissg:
+	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SG).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
+
 run: build test
 
 runmpi: buildmpi testmpi
@@ -62,6 +68,8 @@ runmpi: buildmpi testmpi
 runpolaris: buildpolaris testpolaris
 
 runpolarissemi: buildpolarissemi testpolarissemi
+
+runpolarissg: buildpolarissg testpolarissg
 
 runsemi: buildsemi testsemi
 
@@ -77,6 +85,7 @@ clean: cleanoutput
 	rm -f data/*_output.bin*
 	rm -f data/*_output.txt*
 	rm -f data/*_tc.txt*
+	rm -f data/*_sg.txt*
 	rm -f data/*_converted.txt*
 	rm -f core.*
 	rm -f vgcore.*
