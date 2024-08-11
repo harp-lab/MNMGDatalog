@@ -19,7 +19,7 @@ NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
 
 start_time=$(date +"%Y-%m-%d %H:%M:%S")
 start_seconds=$(date +%s)
-echo "Job started at: $start_time"
+echo "Polaris job started at: $start_time"
 
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> JOB STARTED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 #echo "NUM_OF_NODES= ${NNODES} TOTAL_NUM_RANKS= ${NTOTRANKS} RANKS_PER_NODE= ${NRANKS_PER_NODE} THREADS_PER_RANK= ${NTHREADS}"
@@ -32,99 +32,117 @@ MPICH_GPU_SUPPORT_ENABLED=0
 echo "TRADITIONAL MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 make buildpolarissg
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_body >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+for i in {40..4..-8}; do
+  for j in {1..5}; do
+#    echo ">>>>>>>>>>>>> fe_body $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
+    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_163734.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    # rm -f data/*_sg.bin*
+  done
+done
+
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> p2p-Gnutella31 $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_147892.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> usroad $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_165435.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> fe_ocean $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_409593.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> vsp_finan $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/vsp_finan512_scagr7-2c_rlfddd.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-for i in {40..4..-8}; do
-  for j in {1..5}; do
-#    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
-    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
-  done
-done
+##echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#for i in {40..4..-8}; do
+#  for j in {1..5}; do
+##    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
+#    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+#    # rm -f data/*_sg.bin*
+#  done
+#done
 
 echo "TRADITIONAL MPI - TWO PASS"
 echo "------------------------------------------------------------------------------------"
 METHOD=0
-make buildpolarissg
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#make buildpolarissg
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_body >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+for i in {40..4..-8}; do
+  for j in {1..5}; do
+#    echo ">>>>>>>>>>>>> fe_body $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
+    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_163734.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    # rm -f data/*_sg.bin*
+  done
+done
+
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> p2p-Gnutella31 $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_147892.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> usroad $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_165435.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> fe_ocean $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_409593.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> vsp_finan $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/vsp_finan512_scagr7-2c_rlfddd.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-for i in {40..4..-8}; do
-  for j in {1..5}; do
-#    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
-    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
-  done
-done
+##echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#for i in {40..4..-8}; do
+#  for j in {1..5}; do
+##    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
+#    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+#    # rm -f data/*_sg.bin*
+#  done
+#done
 
 echo ""
 echo "===================================================================================="
@@ -141,103 +159,121 @@ METHOD=1
 echo "CUDA AWARE MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 make buildpolarissg
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_body >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+for i in {40..4..-8}; do
+  for j in {1..5}; do
+#    echo ">>>>>>>>>>>>> fe_body $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
+    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_163734.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    # rm -f data/*_sg.bin*
+  done
+done
+
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> p2p-Gnutella31 $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_147892.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> usroad $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_165435.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> fe_ocean $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_409593.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> vsp_finan $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/vsp_finan512_scagr7-2c_rlfddd.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-for i in {40..4..-8}; do
-  for j in {1..5}; do
-#    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
-    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
-  done
-done
+##echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#for i in {40..4..-8}; do
+#  for j in {1..5}; do
+##    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
+#    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+#    # rm -f data/*_sg.bin*
+#  done
+#done
 
 echo "CUDA AWARE MPI - TWO PASS"
 echo "------------------------------------------------------------------------------------"
 METHOD=0
-make buildpolarissg
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#make buildpolarissg
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_body >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+for i in {40..4..-8}; do
+  for j in {1..5}; do
+#    echo ">>>>>>>>>>>>> fe_body $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
+    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_163734.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+    # rm -f data/*_sg.bin*
+  done
+done
+
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on p2p-Gnutella31 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> p2p-Gnutella31 $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_147892.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on usroad >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> usroad $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_165435.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_ocean >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> fe_ocean $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/data_409593.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on vsp_finan >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
 #    echo ">>>>>>>>>>>>> vsp_finan $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
     make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/vsp_finan512_scagr7-2c_rlfddd.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
+    # rm -f data/*_sg.bin*
   done
 done
 
-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-for i in {40..4..-8}; do
-  for j in {1..5}; do
-#    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
-    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
-    rm -f data/*_sg.bin*
-  done
-done
+##echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on com-dblp >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+#for i in {40..4..-8}; do
+#  for j in {1..5}; do
+##    echo ">>>>>>>>>>>>> com-dblp $i MPI ranks, 4 ranks per node, 4 depth, 1 thread per rank >>>>>>>>>>>>"
+#    make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED}  NTOTRANKS=${i} NRANKS_PER_NODE=${NRANKS_PER_NODE} NDEPTH=${NDEPTH} DATA_FILE=data/com-dblpungraph.bin CUDA_AWARE_MPI=${CUDA_AWARE_MPI} METHOD=${METHOD}
+#    # rm -f data/*_sg.bin*
+#  done
+#done
 
 end_time=$(date +"%Y-%m-%d %H:%M:%S")
 end_seconds=$(date +%s)
-echo "Job ended at: $end_time"
+echo "Polaris job ended at: $end_time"
 
 # Calculate the duration
 duration=$((end_seconds - start_seconds))
