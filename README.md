@@ -22,23 +22,44 @@ Compute Transitive Closure using CUDA and MPI for a given relation.
 
 ### Dataset
 
+#### Transitive Closure (TC) datasets
+
 | Dataset        | # Input   | # Iterations | # TC          | # TC / Iteration | Path                                   |
 |----------------|-----------|--------------|---------------|------------------|----------------------------------------|
 | com-dblp       | 1,049,866 | 31           | 1,911,754,892 | 61,670,160       | data/com-dblpungraph.bin               |
 | vsp_finan      | 552,020   | 520          | 910,070,918   | 1,750,136        | data/vsp_finan512_scagr7-2c_rlfddd.bin |
 | fe_ocean       | 409,593   | 247          | 1,669,750,513 | 6,760,526        | data/data_409593.bin                   |
-| SF.cedge       | 223,001   | x            | x             | x                | data/data_223001.bin                   |
-| loc-Brightkite | 214,078   | x            | x             | x                | data/data_214078.bin                   |
 | usroad         | 165,435   | 606          | 871,365,688   | 1,437,840        | data/data_165435.bin                   |
-| fe_body        | 163,734   | x            | x             | x                | data/data_163734.bin                   |
 | p2p-Gnutella31 | 147,892   | 31           | 884,179,859   | 28,522,576       | data/data_147892.bin                   |
-| ego-Facebook   | 88,234    | x            | x             | x                | data/data_88234.bin                    |
-| CA-HepTh       | 51,971    | x            | x             | x                | data/data_51971.bin                    |
-| fe_sphere      | 49,152    | x            | x             | x                | data/data_49152.bin                    |
 | TG.cedge       | 23,874    | 58           | 481,121       | 8,295            | data/data_23874.bin                    |
 | OL.cedge       | 7,035     | 64           | 146,120       | 2,283            | data/data_7035.bin                     |
 | Small          | 10        | 3            | 18            | 6                | data/data_10.bin                       |
 | Extra small    | 5         | 3            | 9             | 3                | data/hipc_2019.bin                     |
+
+#### Same Generation (SG) datasets
+
+| Dataset        | # Input   | # Iterations | # SG          | # SG / Iteration  | Path                                   |
+|----------------|-----------|--------------|---------------|-------------------|----------------------------------------|
+| vsp_finan      | 552,020   | 513          | 864,761,518   | 1,685,748         | data/vsp_finan512_scagr7-2c_rlfddd.bin |
+| fe_ocean       | 409,593   | 77           | 65,941,441    | 856,380           | data/data_409593.bin                   |
+| usroad         | 165,435   | 588          | 3,137,407,481 | 5,335,060         | data/data_165435.bin                   |
+| fe_body        | 163,734   | 40           | 408,443,204   | 10,211,080        | data/data_163734.bin                   |
+| p2p-Gnutella31 | 147,892   | 20           | 3,700,737,910 | 185,036,895       | data/data_147892.bin                   |
+| OL.cedge       | 7,035     | 56           | 285,431       | 5,096             | data/data_7035.bin                     |
+| Small          | 10        | 2            | 11            | 5.5               | data/data_10.bin                       |
+| Extra small    | 5         | 3            | 4             | 1.33              | data/hipc_2019.bin                     |
+
+
+#### Additional datasets
+
+| Dataset        | # Input   | # Iterations | # SG    | # SG / Iteration | Path                                   |
+|----------------|-----------|--------------|---------|------------------|----------------------------------------|
+| ego-Facebook   | 88,234    | x            | x       | x                | data/data_88234.bin                    |
+| CA-HepTh       | 51,971    | x            | x       | x                | data/data_51971.bin                    |
+| fe_sphere      | 49,152    | x            | x       | x                | data/data_49152.bin                    |
+| SF.cedge       | 223,001   | x            | x       | x                | data/data_223001.bin                   |
+| loc-Brightkite | 214,078   | x            | x       | x                | data/data_214078.bin                   |
+
 
 ### Dataset Utility Program
 When using `MPI_File_read_at` and `MPI_File_write_at` at offset in MPI programs, this utility program becomes essential because these MPI functions operate directly on binary files. `MPI_File_read_at` reads binary data from a specified offset, and `MPI_File_write_at` writes binary data to a specified offset.
@@ -115,7 +136,10 @@ python3 binary_file_utils.py bin_to_txt data/data_7035.bin_sg.bin data/data_7035
 
 
 ### Results 
-#### Transitive Closure Local machine (`CUDA_AWARE_MPI` = 0, Two pass method)
+### Transitive Closure 
+
+#### Local machine (`CUDA_AWARE_MPI` = 0, Two pass method)
+
 | # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 23,874 | 2 | 58 | 481,121 |   0.1196 |   0.0003 |   0.0042 |   0.0002 |   0.0184 |   0.0257 |   0.0075 |   0.0607 |   0.0025 | data/data_23874.bin_tc.bin |
@@ -127,6 +151,7 @@ python3 binary_file_utils.py bin_to_txt data/data_7035.bin_sg.bin data/data_7035
 | 23,874 | 8 | 58 | 481,121 |   0.3950 |   0.0004 |   0.0119 |   0.0007 |   0.0595 |   0.0993 |   0.0236 |   0.1958 |   0.0037 | data/data_23874.bin_tc.bin |
 
 #### Local machine (`CUDA_AWARE_MPI` = 0, Sort method)
+
 | # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 23,874 | 2 | 58 | 481,121 |   0.1554 |   0.0003 |   0.0044 |   0.0001 |   0.0182 |   0.0580 |   0.0077 |   0.0641 |   0.0026 | data/data_23874.bin_tc.bin |
@@ -263,20 +288,65 @@ mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 ## TC Performance evaluation on Polaris
 
 ### CUDA AWARE MPI and Two pass method
-[See the table in drawing/cam_two_pass.md](drawing/cam_two_pass.md)
+[See the table](drawing/tc_cam_two_pass.md)
 
 ### CUDA AWARE MPI and Sort method
 
-[See the table in drawing/cam_sort.md](drawing/cam_sort.md)
+[See the table](drawing/tc_cam_sort.md)
 
 ### Traditional MPI and Two pass method
 
-[See the table in drawing/traditional_two_pass.md](drawing/traditional_two_pass.md)
+[See the table](drawing/tc_traditional_two_pass.md)
 
 
 ### Traditional MPI and Sort method
 
-[See the table in drawing/traditional_sort.md](drawing/traditional_sort.md)
+[See the table](drawing/tc_traditional_sort.md)
+
+### Utility program for chart generation
+- To parse Polaris results, use [`parse_results.py`](parse_results.py) program.
+- To generate charts, create a virtual environment, install necessary packages, and use [`generate_graphs.py`](generate_graphs.py) program.
+```shell
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python generate_graphs.py
+```
+
+### Results visualization (Transitive closure)
+#### CUDA AWARE MPI: Two pass vs sort 
+![alt Two pass vs sort approach in CUDA AWARE MPI](drawing/TC_total_time/cuda_aware_mpi_pass_vs_sort.png)
+
+#### Traditional MPI: Two pass vs sort
+![alt Two pass vs sort approach in Traditional MPI](drawing/TC_total_time/traditional_mpi_pass_vs_sort.png)
+
+#### CUDA AWARE MPI vs Traditional MPI (Two pass)
+![alt Two pass](drawing/TC_total_time/cuda_aware_mpi_pass_vs_traditional_mpi_pass.png)
+
+#### CUDA AWARE MPI vs Traditional MPI (Sort)
+![alt Sort](drawing/TC_total_time/cuda_aware_mpi_sort_vs_traditional_mpi_sort.png)
+
+#### Event Breakdown
+[drawing/TC_breakdown](drawing/TC_breakdown) has individual event breakdown results.
+
+
+## SG Performance evaluation on Polaris
+
+### CUDA AWARE MPI and Two pass method
+[See the table](drawing/SG_cam_two_pass.md)
+
+### CUDA AWARE MPI and Sort method
+
+[See the table](drawing/SG_cam_sort.md)
+
+### Traditional MPI and Two pass method
+
+[See the table](drawing/SG_traditional_two_pass.md)
+
+
+### Traditional MPI and Sort method
+
+[See the table](drawing/SG_traditional_sort.md)
 
 ### Utility program for chart generation
 - To parse Polaris results, use [`parse_results.py`](parse_results.py) program.
@@ -289,22 +359,20 @@ python generate_graphs.py
 ```
 
 ### Results visualization
-#### CUDA AWARE MPI: Two pass vs sort 
-![alt Two pass vs sort approach in CUDA AWARE MPI](drawing/total_time/cuda_aware_mpi_pass_vs_sort.png)
+#### CUDA AWARE MPI: Two pass vs sort
+![alt Two pass vs sort approach in CUDA AWARE MPI](drawing/SG_total_time/cuda_aware_mpi_pass_vs_sort.png)
 
 #### Traditional MPI: Two pass vs sort
-![alt Two pass vs sort approach in Traditional MPI](drawing/total_time/traditional_mpi_pass_vs_sort.png)
+![alt Two pass vs sort approach in Traditional MPI](drawing/SG_total_time/traditional_mpi_pass_vs_sort.png)
 
 #### CUDA AWARE MPI vs Traditional MPI (Two pass)
-![alt Two pass](drawing/total_time/cuda_aware_mpi_pass_vs_traditional_mpi_pass.png)
+![alt Two pass](drawing/SG_total_time/cuda_aware_mpi_pass_vs_traditional_mpi_pass.png)
 
 #### CUDA AWARE MPI vs Traditional MPI (Sort)
-![alt Sort](drawing/total_time/cuda_aware_mpi_sort_vs_traditional_mpi_sort.png)
+![alt Sort](drawing/SG_total_time/cuda_aware_mpi_sort_vs_traditional_mpi_sort.png)
 
 #### Event Breakdown
-[drawing/breakdown](drawing/breakdown) has individual event breakdown results.
-
-
+[drawing/SG_breakdown](drawing/SG_breakdown) has individual event breakdown results.
 
 
 ### References

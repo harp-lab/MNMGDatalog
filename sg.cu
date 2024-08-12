@@ -384,18 +384,18 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     finalization_time += elapsed_time;
-
-//    // Write the t full to an offset of the output file
-//    start_time = MPI_Wtime();
-//    MPI_File fh;
-//    MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
-//    int file_offset = t_full_displacements[rank] * sizeof(int);
-//    MPI_File_write_at(fh, file_offset, t_full_ar_host, t_full_size * total_columns, MPI_INT, MPI_STATUS_IGNORE);
-//    // Close the file and clean up
-//    MPI_File_close(&fh);
-//    end_time = MPI_Wtime();
-//    elapsed_time = end_time - start_time;
-//    file_io_time += elapsed_time;
+    // Comment out file write for polaris benchmark
+    // Write the t full to an offset of the output file
+    start_time = MPI_Wtime();
+    MPI_File fh;
+    MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+    int file_offset = t_full_displacements[rank] * sizeof(int);
+    MPI_File_write_at(fh, file_offset, t_full_ar_host, t_full_size * total_columns, MPI_INT, MPI_STATUS_IGNORE);
+    // Close the file and clean up
+    MPI_File_close(&fh);
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    file_io_time += elapsed_time;
     MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     start_time = MPI_Wtime();
@@ -440,9 +440,10 @@ void benchmark(int argc, char **argv) {
         output.merge_time = max_merge_time;
         output.deduplication_time = max_deduplication_time;
         output.finalization_time = max_finalization_time;
-//        printf("| # Input | # Process | # Iterations | # SG | Total Time ");
-//        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
-//        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        // Comment out next 3 prints for polaris benchmark
+        printf("| # Input | # Process | # Iterations | # SG | Total Time ");
+        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
+        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
         printf("| %'d | %'d | %'d | %'lld | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.total_time,
@@ -462,3 +463,4 @@ int main(int argc, char **argv) {
 // make runsg DATA_FILE=data/hipc_2019.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/data_7035.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/data_7035.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runsg DATA_FILE=data/data_7035.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
