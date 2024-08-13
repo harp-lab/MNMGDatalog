@@ -333,20 +333,20 @@ python generate_graphs.py
 ## SG Performance evaluation on Polaris
 
 ### CUDA AWARE MPI and Two pass method
-[See the table](drawing/SG_cam_two_pass.md)
+[See the table](drawing/sg_cam_two_pass.md)
 
 ### CUDA AWARE MPI and Sort method
 
-[See the table](drawing/SG_cam_sort.md)
+[See the table](drawing/sg_cam_sort.md)
 
 ### Traditional MPI and Two pass method
 
-[See the table](drawing/SG_traditional_two_pass.md)
+[See the table](drawing/sg_traditional_two_pass.md)
 
 
 ### Traditional MPI and Sort method
 
-[See the table](drawing/SG_traditional_sort.md)
+[See the table](drawing/sg_traditional_sort.md)
 
 ### Utility program for chart generation
 - To parse Polaris results, use [`parse_results.py`](parse_results.py) program.
@@ -358,7 +358,7 @@ pip install -r requirements.txt
 python generate_graphs.py
 ```
 
-### Results visualization
+### Results visualization (Same Generation)
 #### CUDA AWARE MPI: Two pass vs sort
 ![alt Two pass vs sort approach in CUDA AWARE MPI](drawing/SG_total_time/cuda_aware_mpi_pass_vs_sort.png)
 

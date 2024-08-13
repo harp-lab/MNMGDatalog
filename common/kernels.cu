@@ -169,14 +169,14 @@ void get_join_result(Entity *hash_table, int hash_table_row_size,
 
 __global__
 void get_join_result_size_entity(Entity *hash_table, long int hash_table_size,
-                          Entity *t_delta, long int reverse_relation_size,
+                          Entity *t_delta, long int t_delta_size,
                           int *join_result_size) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (index >= reverse_relation_size) return;
+    if (index >= t_delta_size) return;
 
     int stride = blockDim.x * gridDim.x;
 
-    for (int i = index; i < reverse_relation_size; i += stride) {
+    for (int i = index; i < t_delta_size; i += stride) {
         int key = t_delta[i].key;
         int current_size = 0;
         int position = get_position(key, hash_table_size);
@@ -194,11 +194,11 @@ void get_join_result_size_entity(Entity *hash_table, long int hash_table_size,
 
 __global__
 void get_join_result_entity(Entity *hash_table, int hash_table_size,
-                     Entity *t_delta, int reverse_relation_size, int *offset, Entity *join_result) {
+                     Entity *t_delta, int t_delta_size, int *offset, Entity *join_result) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (index >= reverse_relation_size) return;
+    if (index >= t_delta_size) return;
     int stride = blockDim.x * gridDim.x;
-    for (int i = index; i < reverse_relation_size; i += stride) {
+    for (int i = index; i < t_delta_size; i += stride) {
         int key = t_delta[i].key;
         int value = t_delta[i].value;
         int start_index = offset[i];

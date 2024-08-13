@@ -42,6 +42,15 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
                  int relation_size, int *join_result_size, double *compute_time) {
     double start_time, end_time, elapsed_time;
     start_time = MPI_Wtime();
+    if(hash_table_size == 0) {
+        Entity *join_result;
+        checkCuda(cudaMalloc((void **) &join_result, 0 * sizeof(Entity)));
+        *join_result_size = 0;
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        *compute_time = elapsed_time;
+        return join_result;
+    }
     int result_size;
     int *join_offset;
     Entity *join_result;
@@ -50,7 +59,7 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
 
     get_join_result_size_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
                                                            relation, relation_size, join_offset);
-    result_size = thrust::reduce(thrust::device, join_offset, join_offset + relation_size, 0);
+    result_size = thrust::reduce(thrust::device, join_offset, join_offset + relation_size, 0, thrust::plus<int>());
     thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
     checkCuda(cudaMalloc((void **) &join_result, result_size * sizeof(Entity)));
     get_join_result_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
@@ -129,6 +138,7 @@ void benchmark(int argc, char **argv) {
     // Reading specific portion from the file as char in parallel
     int offset = row_start * total_columns * sizeof(int);
     int *local_data_host = (int *) malloc(local_count * sizeof(int));
+    memset(local_data_host, 0, local_count * sizeof(int));
     MPI_File mpi_file_buffer;
     if (MPI_File_open(MPI_COMM_WORLD, input_file, MPI_MODE_RDONLY,
                       MPI_INFO_NULL, &mpi_file_buffer) != MPI_SUCCESS) {
@@ -286,6 +296,7 @@ void benchmark(int argc, char **argv) {
         Entity *second_join_result = get_join(grid_size, block_size, hash_table, hash_table_rows,
                                               distributed_first_join_result, distributed_first_join_size,
                                               &second_join_size, &second_join_time);
+
         join_time += second_join_time;
         start_time = MPI_Wtime();
         reverse_entity_ar<<<grid_size, block_size>>>(second_join_result, second_join_size, second_join_result);

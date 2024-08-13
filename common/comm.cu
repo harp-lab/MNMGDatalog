@@ -47,7 +47,8 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
     elapsed_time = end_time - start_time;
     comm_time += elapsed_time;
     start_time = MPI_Wtime();
-    int total_receive = thrust::reduce(receive_count_host, receive_count_host + total_rank, 0, thrust::plus<int>());
+    int total_receive = thrust::reduce(thrust::host, receive_count_host, receive_count_host + total_rank, 0,
+                                       thrust::plus<int>());
     thrust::exclusive_scan(receive_count_host, receive_count_host + total_rank, receive_displacements_host);
     Entity *receive_data;
     checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));

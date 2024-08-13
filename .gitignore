@@ -39,4 +39,6 @@ cmake-build-debug/*
 *.error
 data/*_tc.bin
 data/*_tc.txt
+data/*_sg.bin
+data/*_sg.txt
 venv/*
