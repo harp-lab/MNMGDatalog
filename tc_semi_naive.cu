@@ -29,13 +29,10 @@
 #include "common/utils.cu"
 #include "common/kernels.cu"
 #include "common/comm.cu"
+#include "common/join.cu"
 
 using namespace std;
 
-
-#define BLOCK_START(process_id, total_process, n) ((process_id)*(n)/(total_process))
-#define BLOCK_SIZE(process_id, total_process, n) \
-    (BLOCK_START(process_id + 1, total_process, n) - BLOCK_START(process_id, total_process, n))
 
 
 void benchmark(int argc, char **argv) {
@@ -180,26 +177,14 @@ void benchmark(int argc, char **argv) {
     MPI_Allreduce(&elapsed_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     while (true) {
-        start_time = MPI_Wtime();
-        int join_result_size;
-        int *join_offset;
-        Entity *join_result;
         Entity *new_t_full;
-        checkCuda(cudaMalloc((void **) &join_offset, t_delta_size * sizeof(int)));
-        checkCuda(cudaMemset(join_offset, 0, t_delta_size * sizeof(int)));
+        double temp_join_time = 0.0;
+        int join_result_size = 0;
+        Entity *join_result = get_join(grid_size, block_size, hash_table, hash_table_rows,
+                                       t_delta, t_delta_size,
+                                       &join_result_size, &temp_join_time);
 
-        get_join_result_size_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows,
-                                                               t_delta, t_delta_size, join_offset);
-        join_result_size = thrust::reduce(thrust::device, join_offset, join_offset + t_delta_size, 0);
-        thrust::exclusive_scan(thrust::device, join_offset, join_offset + t_delta_size, join_offset);
-        checkCuda(cudaMalloc((void **) &join_result, join_result_size * sizeof(Entity)));
-
-        get_join_result_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows,
-                                                          t_delta, t_delta_size, join_offset, join_result);
-        end_time = MPI_Wtime();
-        elapsed_time = end_time - start_time;
-        join_time += elapsed_time;
-
+        join_time += temp_join_time;
         // Scatter the new facts among relevant processes
         buffer_preparation_time_temp = 0.0;
         communication_time_temp = 0.0;
@@ -237,7 +222,6 @@ void benchmark(int argc, char **argv) {
         checkCuda(cudaMalloc((void **) &t_full, new_t_full_size * sizeof(Entity)));
         cudaMemcpy(t_full, new_t_full, new_t_full_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
         t_full_size = new_t_full_size;
-        cudaFree(join_offset);
         cudaFree(join_result);
         cudaFree(new_t_full);
         cudaFree(t_delta_temp);
@@ -335,10 +319,10 @@ void benchmark(int argc, char **argv) {
         output.communication_time = max_communication_time;
         output.merge_time = max_merge_time;
         output.finalization_time = max_finalization_time;
-//        printf("| # Input | # Process | # Iterations | # TC | Total Time ");
-//        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |\n");
-//        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
-        printf("| %'d | %'d | %'d | %'d | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
+        printf("| # Input | # Process | # Iterations | # TC | Total Time ");
+        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |\n");
+        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        printf("| %'d | %'d | %'d | %'lld | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.total_time,
                output.initialization_time, output.fileio_time, output.hashtable_build_time, output.join_time,

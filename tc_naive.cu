@@ -26,13 +26,10 @@
 #include "common/error_handler.cu"
 #include "common/utils.cu"
 #include "common/kernels.cu"
+#include "common/join.cu"
 
 using namespace std;
 
-
-#define BLOCK_START(process_id, total_process, n) ((process_id)*(n)/(total_process))
-#define BLOCK_SIZE(process_id, total_process, n) \
-    (BLOCK_START(process_id + 1, total_process, n) - BLOCK_START(process_id, total_process, n))
 
 pair<int *, long int> get_split_relation(int rank, int *local_data, long int local_count,
                                          int total_columns, int nprocs) {

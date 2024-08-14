@@ -30,47 +30,10 @@
 #include "common/utils.cu"
 #include "common/kernels.cu"
 #include "common/comm.cu"
+#include "common/join.cu"
 
 using namespace std;
 
-
-#define BLOCK_START(process_id, total_process, n) ((process_id)*(n)/(total_process))
-#define BLOCK_SIZE(process_id, total_process, n) \
-    (BLOCK_START(process_id + 1, total_process, n) - BLOCK_START(process_id, total_process, n))
-
-Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_table_size, Entity *relation,
-                 int relation_size, int *join_result_size, double *compute_time) {
-    double start_time, end_time, elapsed_time;
-    start_time = MPI_Wtime();
-    if(hash_table_size == 0) {
-        Entity *join_result;
-        checkCuda(cudaMalloc((void **) &join_result, 0 * sizeof(Entity)));
-        *join_result_size = 0;
-        end_time = MPI_Wtime();
-        elapsed_time = end_time - start_time;
-        *compute_time = elapsed_time;
-        return join_result;
-    }
-    int result_size;
-    int *join_offset;
-    Entity *join_result;
-    checkCuda(cudaMalloc((void **) &join_offset, relation_size * sizeof(int)));
-    checkCuda(cudaMemset(join_offset, 0, relation_size * sizeof(int)));
-
-    get_join_result_size_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
-                                                           relation, relation_size, join_offset);
-    result_size = thrust::reduce(thrust::device, join_offset, join_offset + relation_size, 0, thrust::plus<int>());
-    thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
-    checkCuda(cudaMalloc((void **) &join_result, result_size * sizeof(Entity)));
-    get_join_result_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
-                                                      relation, relation_size, join_offset, join_result);
-    cudaFree(join_offset);
-    *join_result_size = result_size;
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    *compute_time = elapsed_time;
-    return join_result;
-}
 
 
 void benchmark(int argc, char **argv) {

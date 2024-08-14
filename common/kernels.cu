@@ -168,56 +168,6 @@ void get_join_result(Entity *hash_table, int hash_table_row_size,
 
 
 __global__
-void get_join_result_size_entity(Entity *hash_table, long int hash_table_size,
-                          Entity *t_delta, long int t_delta_size,
-                          int *join_result_size) {
-    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (index >= t_delta_size) return;
-
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = index; i < t_delta_size; i += stride) {
-        int key = t_delta[i].key;
-        int current_size = 0;
-        int position = get_position(key, hash_table_size);
-        while (true) {
-            if (hash_table[position].key == key) {
-                current_size++;
-            } else if (hash_table[position].key == -1) {
-                break;
-            }
-            position = (position + 1) & (hash_table_size - 1);
-        }
-        join_result_size[i] = current_size;
-    }
-}
-
-__global__
-void get_join_result_entity(Entity *hash_table, int hash_table_size,
-                     Entity *t_delta, int t_delta_size, int *offset, Entity *join_result) {
-    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (index >= t_delta_size) return;
-    int stride = blockDim.x * gridDim.x;
-    for (int i = index; i < t_delta_size; i += stride) {
-        int key = t_delta[i].key;
-        int value = t_delta[i].value;
-        int start_index = offset[i];
-        int position = get_position(key, hash_table_size);
-        while (true) {
-            if (hash_table[position].key == key) {
-                join_result[start_index].key = hash_table[position].value;
-                join_result[start_index].value = value;
-                start_index++;
-            } else if (hash_table[position].key == -1) {
-                break;
-            }
-            position = (position + 1) & (hash_table_size - 1);
-        }
-    }
-}
-
-
-__global__
 void get_join_result_size_ar(Entity *hash_table, long int hash_table_row_size,
                              int *t_delta, long int relation_rows,
                              int *join_result_size) {

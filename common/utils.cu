@@ -3,6 +3,12 @@
 #include <stdlib.h>
 
 using namespace std;
+
+
+#define BLOCK_START(process_id, total_process, n) ((process_id)*(n)/(total_process))
+#define BLOCK_SIZE(process_id, total_process, n) \
+    (BLOCK_START(process_id + 1, total_process, n) - BLOCK_START(process_id, total_process, n))
+
 struct Entity {
     int key;
     int value;
