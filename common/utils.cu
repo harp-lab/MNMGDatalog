@@ -176,9 +176,9 @@ int *get_relation_from_file(const char *file_path, int total_rows, int total_col
     for (int i = 0; i < total_rows; i++) {
         for (int j = 0; j < total_columns; j++) {
             if (j != (total_columns - 1)) {
-                fscanf(data_file, "%d%c", &data[(i * total_columns) + j], &separator);
+                int tmp = fscanf(data_file, "%d%c", &data[(i * total_columns) + j], &separator);
             } else {
-                fscanf(data_file, "%d", &data[(i * total_columns) + j]);
+                int tmp = fscanf(data_file, "%d", &data[(i * total_columns) + j]);
             }
         }
     }
@@ -190,9 +190,9 @@ void get_relation_from_file_gpu(int *data, const char *file_path, int total_rows
     for (int i = 0; i < total_rows; i++) {
         for (int j = 0; j < total_columns; j++) {
             if (j != (total_columns - 1)) {
-                fscanf(data_file, "%d%c", &data[(i * total_columns) + j], &separator);
+                int tmp = fscanf(data_file, "%d%c", &data[(i * total_columns) + j], &separator);
             } else {
-                fscanf(data_file, "%d", &data[(i * total_columns) + j]);
+                int tmp = fscanf(data_file, "%d", &data[(i * total_columns) + j]);
             }
         }
     }

@@ -8,8 +8,8 @@ TARGET_SG = sg
 SRC_SG = $(TARGET_SG).cu
 
 
-COMPILER_FLAGS_LOCAL = -lm --extended-lambda
-COMPILER_FLAGS = -lm
+COMPILER_FLAGS_LOCAL = -lm -O3 --extended-lambda
+COMPILER_FLAGS = -lm -O3
 MPICC?=mpiCC
 MPIRUN?=mpirun
 DEBUG_FLAGS = -Og -Wall
@@ -59,7 +59,7 @@ buildpolarissg:
 	CC $(SRC_SG) -o $(TARGET_SG).out $(COMPILER_FLAGS)
 
 testpolarissg:
-	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SG).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
+	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SG).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
 
 run: build test
 

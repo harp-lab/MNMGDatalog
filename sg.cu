@@ -35,7 +35,6 @@
 using namespace std;
 
 
-
 void benchmark(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -66,9 +65,15 @@ void benchmark(int argc, char **argv) {
     // Should pass the input filename in command line argument
     const char *input_file;
     int comm_method = 0;
+    int job_run = 0;
     int cuda_aware_mpi = 0;
 
-    if (argc == 4) {
+    if (argc == 5) {
+        input_file = argv[1];
+        cuda_aware_mpi = atoi(argv[2]);
+        comm_method = atoi(argv[3]);
+        job_run = atoi(argv[4]);
+    } else if (argc == 4) {
         input_file = argv[1];
         cuda_aware_mpi = atoi(argv[2]);
         comm_method = atoi(argv[3]);
@@ -253,6 +258,14 @@ void benchmark(int argc, char **argv) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
 
+        // Deduplicate scattered facts
+        thrust::stable_sort(thrust::device, distributed_first_join_result,
+                            distributed_first_join_result + distributed_first_join_size, set_cmp());
+        distributed_first_join_size = (thrust::unique(thrust::device,
+                                                      distributed_first_join_result,
+                                                      distributed_first_join_result + distributed_first_join_size,
+                                                      is_equal())) - distributed_first_join_result;
+
         // sg(x, y): - tmp(b, x), edge(b, y).
         double second_join_time = 0.0;
         int second_join_size = 0;
@@ -288,6 +301,7 @@ void benchmark(int argc, char **argv) {
                                                        distributed_second_join_result,
                                                        distributed_second_join_result + distributed_second_join_size,
                                                        is_equal())) - distributed_second_join_result;
+
         t_delta_size = distributed_second_join_size;
         cudaFree(t_delta);
         checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
@@ -358,18 +372,21 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     finalization_time += elapsed_time;
-    // Comment out file write for polaris benchmark
-    // Write the t full to an offset of the output file
-    start_time = MPI_Wtime();
-    MPI_File fh;
-    MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
-    int file_offset = t_full_displacements[rank] * sizeof(int);
-    MPI_File_write_at(fh, file_offset, t_full_ar_host, t_full_size * total_columns, MPI_INT, MPI_STATUS_IGNORE);
-    // Close the file and clean up
-    MPI_File_close(&fh);
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    file_io_time += elapsed_time;
+
+    if(job_run == 0){
+        // Comment out file write for polaris benchmark
+        // Write the t full to an offset of the output file
+        start_time = MPI_Wtime();
+        MPI_File fh;
+        MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+        int file_offset = t_full_displacements[rank] * sizeof(int);
+        MPI_File_write_at(fh, file_offset, t_full_ar_host, t_full_size * total_columns, MPI_INT, MPI_STATUS_IGNORE);
+        // Close the file and clean up
+        MPI_File_close(&fh);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        file_io_time += elapsed_time;
+    }
     MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     start_time = MPI_Wtime();
@@ -414,15 +431,18 @@ void benchmark(int argc, char **argv) {
         output.merge_time = max_merge_time;
         output.deduplication_time = max_deduplication_time;
         output.finalization_time = max_finalization_time;
-        // Comment out next 3 prints for polaris benchmark
-        printf("| # Input | # Process | # Iterations | # SG | Total Time ");
-        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
-        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        if(job_run == 0){
+            // Comment out next 3 prints for polaris benchmark
+            printf("| # Input | # Process | # Iterations | # SG | Total Time ");
+            printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
+            printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        }
         printf("| %'d | %'d | %'d | %'lld | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.total_time,
                output.initialization_time, output.fileio_time, output.hashtable_build_time, output.join_time,
-               output.buffer_preparation_time, output.communication_time, output.deduplication_time, output.merge_time, output.finalization_time,
+               output.buffer_preparation_time, output.communication_time, output.deduplication_time, output.merge_time,
+               output.finalization_time,
                output.output_file_name);
     }
     MPI_Finalize();
@@ -433,6 +453,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 // METHOD 0 = two pass method, 1 = sorting method
+// JOB_RUN 0 = Single run, 1 = Polaris job
 // make runsg DATA_FILE=data/data_10.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/hipc_2019.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/data_7035.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
