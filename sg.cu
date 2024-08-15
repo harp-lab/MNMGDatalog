@@ -158,15 +158,14 @@ void benchmark(int argc, char **argv) {
     start_time = MPI_Wtime();
     Entity *hash_table;
     double load_factor = 0.4;
-    int hash_table_rows = (int) input_relation_size / load_factor;
+    int hash_table_rows = (int) t_delta_size / load_factor;
     hash_table_rows = pow(2, ceil(log(hash_table_rows) / log(2)));
     checkCuda(cudaMalloc((void **) &hash_table, hash_table_rows * sizeof(Entity)));
     Entity negative_entity;
     negative_entity.key = -1;
     negative_entity.value = -1;
     thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
-    build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, input_relation,
-                                                       input_relation_size);
+    build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, t_delta, t_delta_size);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     MPI_Allreduce(&elapsed_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
@@ -459,6 +458,5 @@ int main(int argc, char **argv) {
 // METHOD 0 = two pass method, 1 = sorting method
 // make runsg DATA_FILE=data/data_10.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/hipc_2019.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
-// make runsg DATA_FILE=data/data_7035.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/data_7035.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/data_7035.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1

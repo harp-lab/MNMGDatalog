@@ -1,9 +1,9 @@
-## Transitive closure using CUDA and MPI
+## Datalog Applications using CUDA and MPI
+This repository hosts code for Datalog applications like Transitive Closure (TC) and Same Generation (SG) optimized for multi-node, multi-GPU environments.
 
-Compute Transitive Closure using CUDA and MPI for a given relation.
 
-### Flowchart
-![alt flow chart](drawing/local_join.png)
+### Flowchart of Same Generation
+![alt flow chart](drawing/flowchart_sg.png)
 
 
 ### Requirements
@@ -206,15 +206,6 @@ qstat -u $USER
 qstat -Qf small
 cat tc-merged.error
 cat tc-merged.output
-# Manage disk quota limit of 50GB in Polaris /home directory
-# Check quota
-myquota
-# Check large folders
-du -h --max-depth=1 | sort -hr
-# Delete large folders
-rm -rf ./local_join
-# Delete the generated bin files
-make clean
 
 # Interactive 1 node run tc
 ssh arsho@polaris.alcf.anl.gov
@@ -243,16 +234,12 @@ chmod +x sg-merged.sh
 rm sg-merged.output 
 rm sg-merged.error 
 qsub sg-merged.sh 
-# 2064868.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
-#arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub sg-merged.sh 
-#2064877.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
-#arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub tc-merged.sh 
-#2064878.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 
 qstat -u $USER
 qstat -Qf small
 cat sg-merged.error
 cat sg-merged.output
+
 # Manage disk quota limit of 50GB in Polaris /home directory
 # Check quota
 myquota
