@@ -181,10 +181,10 @@ void benchmark(int argc, char **argv) {
     join_time += base_join_time;
 
     start_time = MPI_Wtime();
-    Entity *new_end = thrust::remove_if(thrust::device, base_join_result,
+    Entity *same_key_value_removed = thrust::remove_if(thrust::device, base_join_result,
                                         base_join_result + base_join_size,
                                         is_key_equal_value());
-    base_join_size = new_end - base_join_result;
+    base_join_size = same_key_value_removed - base_join_result;
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
@@ -258,13 +258,18 @@ void benchmark(int argc, char **argv) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
 
-        // Deduplicate scattered facts
+//        // Not necessary to deduplicate
+//        start_time = MPI_Wtime();
+//        // Deduplicate scattered facts
 //        thrust::stable_sort(thrust::device, distributed_first_join_result,
 //                            distributed_first_join_result + distributed_first_join_size, set_cmp());
 //        distributed_first_join_size = (thrust::unique(thrust::device,
 //                                                      distributed_first_join_result,
 //                                                      distributed_first_join_result + distributed_first_join_size,
 //                                                      is_equal())) - distributed_first_join_result;
+//        end_time = MPI_Wtime();
+//        elapsed_time = end_time - start_time;
+//        deduplication_time += elapsed_time;
 
         // sg(x, y): - tmp(b, x), edge(b, y).
         double second_join_time = 0.0;
@@ -453,7 +458,6 @@ int main(int argc, char **argv) {
     return 0;
 }
 // METHOD 0 = two pass method, 1 = sorting method
-// JOB_RUN 0 = Single run, 1 = Polaris job
 // make runsg DATA_FILE=data/data_10.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/hipc_2019.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsg DATA_FILE=data/data_7035.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0

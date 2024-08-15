@@ -258,7 +258,7 @@ chmod +x sg-merged.sh
 rm sg-merged.output 
 rm sg-merged.error 
 qsub sg-merged.sh 
-# 2064717.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+# 2064868.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 qstat -u $USER
 qstat -Qf small
 cat sg-merged.error

@@ -1,15 +1,11 @@
-TARGET = tc_naive
-SRC = $(TARGET).cu
-TARGET_MPI = tc_mpi
-SRC_MPI = $(TARGET_MPI).cpp
-TARGET_SEMI = tc_semi_naive
-SRC_SEMI = $(TARGET_SEMI).cu
+TARGET_TC = tc
+SRC_TC = $(TARGET_TC).cu
 TARGET_SG = sg
 SRC_SG = $(TARGET_SG).cu
 
 
-COMPILER_FLAGS_LOCAL = -lm -O3 --extended-lambda
 COMPILER_FLAGS = -lm -O3
+COMPILER_FLAGS_LOCAL = --extended-lambda
 MPICC?=mpiCC
 MPIRUN?=mpirun
 DEBUG_FLAGS = -Og -Wall
@@ -19,41 +15,23 @@ LDFLAGSLOCAL = -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/o
 MPIGTLFLAG = /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so
 
 
-build:
-	nvcc $(SRC) -o $(TARGET).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS)
+buildtc:
+	nvcc $(SRC_TC) -o $(TARGET_TC).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
-test:
-	${MPIRUN} -np $(NPROCS) ./$(TARGET).out $(DATA_FILE)
-
-buildsemi:
-	nvcc $(SRC_SEMI) -o $(TARGET_SEMI).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS_LOCAL)
-
-testsemi:
-	${MPIRUN} -np $(NPROCS) ./$(TARGET_SEMI).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
+testtc:
+	${MPIRUN} -np $(NPROCS) ./$(TARGET_TC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
 
 buildsg:
-	nvcc $(SRC_SG) -o $(TARGET_SG).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS_LOCAL)
+	nvcc $(SRC_SG) -o $(TARGET_SG).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
 testsg:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_SG).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
 
-buildmpi:
-	${MPICC} $(SRC_MPI) -o $(TARGET_MPI).out $(COMPILER_FLAGS)
+buildpolaristc:
+	CC $(SRC_TC) -o $(TARGET_TC).out $(COMPILER_FLAGS)
 
-testmpi:
-	${MPIRUN} -np $(NPROCS) ./$(TARGET_MPI).out $(DATA_FILE)
-
-buildpolaris:
-	CC $(SRC) -o $(TARGET).out $(COMPILER_FLAGS)
-
-testpolaris:
-	mpiexec -n ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET).out $(DATA_FILE)
-
-buildpolarissemi:
-	CC $(SRC_SEMI) -o $(TARGET_SEMI).out $(COMPILER_FLAGS)
-
-testpolarissemi:
-	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SEMI).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
+testpolaristc:
+	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_TC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
 
 buildpolarissg:
 	CC $(SRC_SG) -o $(TARGET_SG).out $(COMPILER_FLAGS)
@@ -61,17 +39,11 @@ buildpolarissg:
 testpolarissg:
 	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SG).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
 
-run: build test
-
-runmpi: buildmpi testmpi
-
-runpolaris: buildpolaris testpolaris
-
-runpolarissemi: buildpolarissemi testpolarissemi
+runpolaristc: buildpolaristc testpolaristc
 
 runpolarissg: buildpolarissg testpolarissg
 
-runsemi: buildsemi testsemi
+runtc: buildtc testtc
 
 runsg: buildsg testsg
 

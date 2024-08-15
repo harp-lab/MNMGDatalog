@@ -34,7 +34,6 @@
 using namespace std;
 
 
-
 void benchmark(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -54,6 +53,7 @@ void benchmark(int argc, char **argv) {
     double buffer_preparation_time = 0.0, communication_time = 0.0;
     double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
     double join_time = 0.0, merge_time = 0.0;
+    double deduplication_time = 0.0, max_deduplication_time = 0.0;;
     double file_io_time = 0.0;
     double total_time = 0.0, max_total_time = 0.0;
     int total_rank, rank;
@@ -64,9 +64,15 @@ void benchmark(int argc, char **argv) {
     // Should pass the input filename in command line argument
     const char *input_file;
     int comm_method = 0;
+    int job_run = 0;
     int cuda_aware_mpi = 0;
 
-    if (argc == 4) {
+    if (argc == 5) {
+        input_file = argv[1];
+        cuda_aware_mpi = atoi(argv[2]);
+        comm_method = atoi(argv[3]);
+        job_run = atoi(argv[4]);
+    } else if (argc == 4) {
         input_file = argv[1];
         cuda_aware_mpi = atoi(argv[2]);
         comm_method = atoi(argv[3]);
@@ -78,6 +84,8 @@ void benchmark(int argc, char **argv) {
     } else {
         input_file = "hipc_2019.bin";
     }
+    string output_file = string(input_file) + "_tc.bin";
+    const char *output_file_name = output_file.c_str();
 
     // READ THE FILE IN PARALLEL
     // Reading filesize in bytes
@@ -148,15 +156,18 @@ void benchmark(int argc, char **argv) {
     t_delta_size = (thrust::unique(thrust::device,
                                    t_delta, t_delta + t_delta_size,
                                    is_equal())) - t_delta;
-
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    deduplication_time += elapsed_time;
+    start_time = MPI_Wtime();
     // T_FULL is t delta with first column as key
     Entity *t_full;
     checkCuda(cudaMalloc((void **) &t_full, t_delta_size * sizeof(Entity)));
     cudaMemcpy(t_full, t_delta, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
 
-    int global_t_full_size;
-    int t_full_size = t_delta_size;
-    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    long long global_t_full_size;
+    long long  t_full_size = t_delta_size;
+    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     merge_time += elapsed_time;
@@ -204,7 +215,11 @@ void benchmark(int argc, char **argv) {
         cudaFree(t_delta);
         checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
         cudaMemcpy(t_delta, t_delta_temp, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        deduplication_time += elapsed_time;
 
+        start_time = MPI_Wtime();
         // Update t delta which is the only new facts which are not in t full and will be used in next iteration
         t_delta_size = thrust::set_difference(thrust::device,
                                               t_delta, t_delta + t_delta_size,
@@ -226,8 +241,8 @@ void benchmark(int argc, char **argv) {
         cudaFree(new_t_full);
         cudaFree(t_delta_temp);
         // Check if the global t full size has changed in this iteration
-        int old_global_t_full_size = global_t_full_size;
-        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        long long old_global_t_full_size = global_t_full_size;
+        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
@@ -237,6 +252,7 @@ void benchmark(int argc, char **argv) {
         }
     }
 
+    MPI_Allreduce(&deduplication_time, &max_deduplication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&join_time, &max_join_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&merge_time, &max_merge_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&buffer_preparation_time, &max_buffer_preparation_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
@@ -265,19 +281,19 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
     MPI_Allreduce(&elapsed_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
-    // Write the t full to an offset of the output file
-    start_time = MPI_Wtime();
-    MPI_File fh;
-    string output_file = string(input_file) + "_tc.bin";
-    const char *output_file_name = output_file.c_str();
-    MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
-    int file_offset = t_full_displacements[rank] * sizeof(int);
-    MPI_File_write_at(fh, file_offset, t_full_ar_host, t_full_size * total_columns, MPI_INT, MPI_STATUS_IGNORE);
-    // Close the file and clean up
-    MPI_File_close(&fh);
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    file_io_time += elapsed_time;
+    if (job_run == 0) {
+        // Write the t full to an offset of the output file
+        start_time = MPI_Wtime();
+        MPI_File fh;
+        MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+        int file_offset = t_full_displacements[rank] * sizeof(int);
+        MPI_File_write_at(fh, file_offset, t_full_ar_host, t_full_size * total_columns, MPI_INT, MPI_STATUS_IGNORE);
+        // Close the file and clean up
+        MPI_File_close(&fh);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        file_io_time += elapsed_time;
+    }
     MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     start_time = MPI_Wtime();
@@ -298,7 +314,8 @@ void benchmark(int argc, char **argv) {
     elapsed_time = max_finalization_time + (end_time - start_time);
     MPI_Allreduce(&elapsed_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     total_time = max_initialization_time + max_hashtable_build_time + max_join_time +
-                 max_buffer_preparation_time + max_communication_time + max_merge_time + max_finalization_time;
+                 max_buffer_preparation_time + max_communication_time + max_deduplication_time + max_merge_time +
+                 max_finalization_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     if (rank == 0) {
@@ -317,16 +334,20 @@ void benchmark(int argc, char **argv) {
         output.join_time = max_join_time;
         output.buffer_preparation_time = max_buffer_preparation_time;
         output.communication_time = max_communication_time;
+        output.deduplication_time = max_deduplication_time;
         output.merge_time = max_merge_time;
         output.finalization_time = max_finalization_time;
-        printf("| # Input | # Process | # Iterations | # TC | Total Time ");
-        printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |\n");
-        printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
-        printf("| %'d | %'d | %'d | %'lld | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
+        if (job_run == 0) {
+            printf("| # Input | # Process | # Iterations | # TC | Total Time ");
+            printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
+            printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        }
+        printf("| %'d | %'d | %'d | %'lld | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.total_time,
                output.initialization_time, output.fileio_time, output.hashtable_build_time, output.join_time,
-               output.buffer_preparation_time, output.communication_time, output.merge_time, output.finalization_time,
+               output.buffer_preparation_time, output.communication_time, output.deduplication_time, output.merge_time,
+               output.finalization_time,
                output.output_file_name);
     }
     MPI_Finalize();
@@ -337,8 +358,8 @@ int main(int argc, char **argv) {
     return 0;
 }
 // METHOD 0 = two pass method, 1 = sorting method
-// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
-// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
-// make runsemi DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
-// make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1 METHOD=1
-// make runsemi DATA_FILE=data/data_147892.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runtc DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runtc DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
+// make runtc DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runtc DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1 METHOD=1
+// make runtc DATA_FILE=data/data_147892.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0

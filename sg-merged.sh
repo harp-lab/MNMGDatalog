@@ -29,9 +29,9 @@ CUDA_AWARE_MPI=0
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
 MPICH_GPU_SUPPORT_ENABLED=0
+make buildpolarissg
 echo "TRADITIONAL MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
-make buildpolarissg
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_body >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
@@ -89,7 +89,6 @@ done
 echo "TRADITIONAL MPI - TWO PASS"
 echo "------------------------------------------------------------------------------------"
 METHOD=0
-#make buildpolarissg
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_body >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
@@ -156,9 +155,9 @@ MPICH_GPU_SUPPORT_ENABLED=1
 CUDA_AWARE_MPI=1
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
+make buildpolarissg
 echo "CUDA AWARE MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
-make buildpolarissg
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_body >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
@@ -216,7 +215,6 @@ done
 echo "CUDA AWARE MPI - TWO PASS"
 echo "------------------------------------------------------------------------------------"
 METHOD=0
-#make buildpolarissg
 #echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on fe_body >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 for i in {40..4..-8}; do
   for j in {1..5}; do
