@@ -15,6 +15,7 @@ def write_parsed_lines(application, lines, start_index, end_index, output_file):
         "Join",
         "Buffer preparation",
         "Communication",
+        "Deduplication",
         "Merge",
         "Finalization",
         "Output"
@@ -22,7 +23,6 @@ def write_parsed_lines(application, lines, start_index, end_index, output_file):
 
     if application.lower() == "sg":
         headers[3] = "# SG"
-        headers.insert(-3, "Deduplication")
     header_line = "| " + " | ".join(headers) + " |\n"
     separator_line = "| " + " | ".join(["---"] * len(headers)) + " |\n"
     result = []
@@ -57,16 +57,16 @@ def separate_files(result_file, application="TC"):
     traditional_pass_line_index = lines.index(traditional_pass_line)
     cam_sort_line_index = lines.index(cam_sort_line)
     cam_pass_line_index = lines.index(cam_pass_line)
-    write_parsed_lines(application, lines, traditional_sort_line_index, traditional_pass_line_index, traditional_sort_file)
+    write_parsed_lines(application, lines, traditional_sort_line_index, traditional_pass_line_index,
+                       traditional_sort_file)
     write_parsed_lines(application, lines, traditional_pass_line_index, cam_sort_line_index, traditional_pass_file)
     write_parsed_lines(application, lines, cam_sort_line_index, cam_pass_line_index, cam_sort_file)
     write_parsed_lines(application, lines, cam_pass_line_index, lines_length, cam_pass_file)
 
 
 if __name__ == "__main__":
-    tc_result_file = "semi-merged-results.md"
+    tc_result_file = "tc-merged-results.md"
     separate_files(tc_result_file, application="TC")
 
     sg_result_file = "sg-merged-results.md"
     separate_files(sg_result_file, application="SG")
-

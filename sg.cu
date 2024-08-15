@@ -258,18 +258,17 @@ void benchmark(int argc, char **argv) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
 
-//        // Not necessary to deduplicate
-//        start_time = MPI_Wtime();
-//        // Deduplicate scattered facts
-//        thrust::stable_sort(thrust::device, distributed_first_join_result,
-//                            distributed_first_join_result + distributed_first_join_size, set_cmp());
-//        distributed_first_join_size = (thrust::unique(thrust::device,
-//                                                      distributed_first_join_result,
-//                                                      distributed_first_join_result + distributed_first_join_size,
-//                                                      is_equal())) - distributed_first_join_result;
-//        end_time = MPI_Wtime();
-//        elapsed_time = end_time - start_time;
-//        deduplication_time += elapsed_time;
+        start_time = MPI_Wtime();
+        // Deduplicate scattered facts
+        thrust::stable_sort(thrust::device, distributed_first_join_result,
+                            distributed_first_join_result + distributed_first_join_size, set_cmp());
+        distributed_first_join_size = (thrust::unique(thrust::device,
+                                                      distributed_first_join_result,
+                                                      distributed_first_join_result + distributed_first_join_size,
+                                                      is_equal())) - distributed_first_join_result;
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        deduplication_time += elapsed_time;
 
         // sg(x, y): - tmp(b, x), edge(b, y).
         double second_join_time = 0.0;

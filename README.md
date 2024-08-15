@@ -83,23 +83,23 @@ python3 binary_file_utils.py bin_to_txt input_binary_file output_text_file
   - `METHOD=<0/1>` to use two pass approach (0) or sorting technique (1) for all to all communication.
 
 #### Transitive Closure (TC) semi naive evaluation
-- Run the `tc_semi_naive.cu` program to generate transitive closure for a given data file.
+- Run the `tc.cu` program to generate transitive closure for a given data file.
 ```shell
 # Using two pass method for communication
-make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
-nvcc tc_semi_naive.cu -o tc_semi_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda
-mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin 0 0
-| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
+ make runtc DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+nvcc tc.cu -o tc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
+mpirun -np 8 ./tc.out data/data_23874.bin 0 0
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 23,874 | 8 | 58 | 481,121 |   0.3950 |   0.0004 |   0.0119 |   0.0007 |   0.0595 |   0.0993 |   0.0236 |   0.1958 |   0.0037 | data/data_23874.bin_tc.bin |
+| 23,874 | 8 | 58 | 481,121 |   0.4023 |   0.0015 |   0.0332 |   0.0007 |   0.0877 |   0.0919 |   0.0267 |   0.0692 |   0.1207 |   0.0040 | data/data_23874.bin_tc.bin |
 
 # Using sorting method for communication
-make runsemi DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
-nvcc tc_semi_naive.cu -o tc_semi_naive.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda
-mpirun -np 8 ./tc_semi_naive.out data/data_23874.bin 0 1
-| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
+make runtc DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
+nvcc tc.cu -o tc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
+mpirun -np 8 ./tc.out data/data_23874.bin 0 1
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 23,874 | 8 | 58 | 481,121 |   0.4793 |   0.0008 |   0.0127 |   0.0007 |   0.0524 |   0.2016 |   0.0275 |   0.1799 |   0.0036 | data/data_23874.bin_tc.bin |
+| 23,874 | 8 | 58 | 481,121 |   0.4971 |   0.0018 |   0.0433 |   0.0006 |   0.0827 |   0.2010 |   0.0274 |   0.0652 |   0.1147 |   0.0036 | data/data_23874.bin_tc.bin |
 
 ```
 It generated `data/data_23874.bin_tc.bin` file that contains all paths of the transitive closure for the input relation.
@@ -113,19 +113,20 @@ python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_238
 ```shell
 # Using two pass method for communication
 make runsg DATA_FILE=data/data_7035.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
-nvcc sg.cu -o sg.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda
+nvcc sg.cu -o sg.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
 mpirun -np 8 ./sg.out data/data_7035.bin 0 0
 | # Input | # Process | # Iterations | # SG | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 7,035 | 8 | 56 | 285,431 |   0.5466 |   0.0059 |   0.0372 |   0.0007 |   0.1709 |   0.1655 |   0.0447 |   0.0651 |   0.0928 |   0.0011 | data/data_7035.bin_sg.bin |
+| 7,035 | 8 | 56 | 285,431 |   0.5489 |   0.0031 |   0.0635 |   0.0007 |   0.1703 |   0.1664 |   0.0504 |   0.0645 |   0.0922 |   0.0013 | data/data_7035.bin_sg.bin |
+
 
 # Using sorting method for communication
 make runsg DATA_FILE=data/data_7035.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
-nvcc sg.cu -o sg.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda
+nvcc sg.cu -o sg.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
 mpirun -np 8 ./sg.out data/data_7035.bin 0 1
 | # Input | # Process | # Iterations | # SG | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 7,035 | 8 | 56 | 285,431 |   0.7510 |   0.0016 |   0.0431 |   0.0007 |   0.1653 |   0.3822 |   0.0474 |   0.0626 |   0.0900 |   0.0012 | data/data_7035.bin_sg.bin |
+| 7,035 | 8 | 56 | 285,431 |   0.7463 |   0.0024 |   0.0510 |   0.0007 |   0.1615 |   0.3778 |   0.0509 |   0.0615 |   0.0903 |   0.0012 | data/data_7035.bin_sg.bin |
 ```
 It generated `data/data_7035.bin_sg.bin` file that contains all paths of the transitive closure for the input relation.
 - Convert the generated binary to text file using `binary_file_utils.py`.
@@ -169,40 +170,24 @@ docker build -t mnmgjoindocker .
 docker run --rm --entrypoint=bash -it --gpus all -v $(pwd):/opt/mnmgjoin mnmgjoindocker
 
 # TC
-mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx tc_semi_naive.cu -o tc_semi_naive.out
-
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx tc.cu -o tc.out -O3
 ## Two pass method
-mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1 0
-| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 23874 | 4 | 58 | 481121 |   0.6453 |   0.1964 |   0.0252 |   0.0004 |   0.0297 |   0.0398 |   0.1983 |   0.1530 |   0.0025 | data/data_23874.bin_tc.bin |
-
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc.out data/data_23874.bin 1 0
 ## Sort method
-mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc_semi_naive.out data/data_23874.bin 1 1
-| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 23874 | 4 | 58 | 481121 |   0.7154 |   0.2117 |   0.0389 |   0.0004 |   0.0289 |   0.1017 |   0.1901 |   0.1411 |   0.0027 | data/data_23874.bin_tc.bin |
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./tc.out data/data_23874.bin 1 1
 
 # SG
-mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx sg.cu -o sg.out
-
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx sg.cu -o sg.out -O3
 ## Two pass method
 mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./sg.out data/data_7035.bin 1 0
-| # Input | # Process | # Iterations | # SG | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 7035 | 4 | 56 | 285431 |   0.7188 |   0.2156 |   0.0387 |   0.0006 |   0.0852 |   0.0703 |   0.2406 |   0.0466 |   0.0584 |   0.0016 | data/data_7035.bin_sg.bin |
-
 ## Sort method
 mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./sg.out data/data_7035.bin 1 1
-| # Input | # Process | # Iterations | # SG | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 7035 | 4 | 56 | 285431 |   0.8495 |   0.2040 |   0.0294 |   0.0003 |   0.0820 |   0.1951 |   0.2500 |   0.0438 |   0.0721 |   0.0021 | data/data_7035.bin_sg.bin |
 ```
 
 ## Run in Polaris 
 
 ### Transitive Closure Computation (TC)
-The job script [semi-merged.sh](semi-merged.sh) contains the multi node multi GPU configuration for Polaris.
+The job script [tc-merged.sh](tc-merged.sh) contains the multi node multi GPU configuration for Polaris.
 Change this file to change the number of nodes in `PBS -l select=10:system=polaris` (default 10).
 Also change the path of the source repository.
 Currently, it is spawning 4 ranks per node and sets 1 GPU per MPI rank.
@@ -213,14 +198,14 @@ make clean
 git fetch
 git reset --hard origin/main
 chmod +x set_affinity_gpu_polaris.sh
-chmod +x semi-merged.sh
-rm semi-merged.output 
-rm semi-merged.error 
-qsub semi-merged.sh 
+chmod +x tc-merged.sh
+rm tc-merged.output 
+rm tc-merged.error 
+qsub tc-merged.sh 
 qstat -u $USER
 qstat -Qf small
-cat semi-merged.error
-cat semi-merged.output
+cat tc-merged.error
+cat tc-merged.output
 # Manage disk quota limit of 50GB in Polaris /home directory
 # Check quota
 myquota
@@ -259,6 +244,11 @@ rm sg-merged.output
 rm sg-merged.error 
 qsub sg-merged.sh 
 # 2064868.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+#arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub sg-merged.sh 
+#2064877.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+#arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub tc-merged.sh 
+#2064878.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+
 qstat -u $USER
 qstat -Qf small
 cat sg-merged.error
@@ -315,19 +305,19 @@ python generate_graphs.py
 
 ### Results visualization (Transitive closure)
 #### CUDA AWARE MPI: Two pass vs sort 
-![alt Two pass vs sort approach in CUDA AWARE MPI](drawing/TC_total_time/cuda_aware_mpi_pass_vs_sort.png)
+![alt Two pass vs sort approach in CUDA AWARE MPI](drawing/tc_total_time/cuda_aware_mpi_pass_vs_sort.png)
 
 #### Traditional MPI: Two pass vs sort
-![alt Two pass vs sort approach in Traditional MPI](drawing/TC_total_time/traditional_mpi_pass_vs_sort.png)
+![alt Two pass vs sort approach in Traditional MPI](drawing/tc_total_time/traditional_mpi_pass_vs_sort.png)
 
 #### CUDA AWARE MPI vs Traditional MPI (Two pass)
-![alt Two pass](drawing/TC_total_time/cuda_aware_mpi_pass_vs_traditional_mpi_pass.png)
+![alt Two pass](drawing/tc_total_time/cuda_aware_mpi_pass_vs_traditional_mpi_pass.png)
 
 #### CUDA AWARE MPI vs Traditional MPI (Sort)
-![alt Sort](drawing/TC_total_time/cuda_aware_mpi_sort_vs_traditional_mpi_sort.png)
+![alt Sort](drawing/tc_total_time/cuda_aware_mpi_sort_vs_traditional_mpi_sort.png)
 
 #### Event Breakdown
-[drawing/TC_breakdown](drawing/TC_breakdown) has individual event breakdown results.
+[drawing/TC_breakdown](drawing/tc_breakdown) has individual event breakdown results.
 
 
 ## SG Performance evaluation on Polaris
@@ -360,19 +350,19 @@ python generate_graphs.py
 
 ### Results visualization (Same Generation)
 #### CUDA AWARE MPI: Two pass vs sort
-![alt Two pass vs sort approach in CUDA AWARE MPI](drawing/SG_total_time/cuda_aware_mpi_pass_vs_sort.png)
+![alt Two pass vs sort approach in CUDA AWARE MPI](drawing/sg_total_time/cuda_aware_mpi_pass_vs_sort.png)
 
 #### Traditional MPI: Two pass vs sort
-![alt Two pass vs sort approach in Traditional MPI](drawing/SG_total_time/traditional_mpi_pass_vs_sort.png)
+![alt Two pass vs sort approach in Traditional MPI](drawing/sg_total_time/traditional_mpi_pass_vs_sort.png)
 
 #### CUDA AWARE MPI vs Traditional MPI (Two pass)
-![alt Two pass](drawing/SG_total_time/cuda_aware_mpi_pass_vs_traditional_mpi_pass.png)
+![alt Two pass](drawing/sg_total_time/cuda_aware_mpi_pass_vs_traditional_mpi_pass.png)
 
 #### CUDA AWARE MPI vs Traditional MPI (Sort)
-![alt Sort](drawing/SG_total_time/cuda_aware_mpi_sort_vs_traditional_mpi_sort.png)
+![alt Sort](drawing/sg_total_time/cuda_aware_mpi_sort_vs_traditional_mpi_sort.png)
 
 #### Event Breakdown
-[drawing/SG_breakdown](drawing/SG_breakdown) has individual event breakdown results.
+[drawing/sg_breakdown](drawing/sg_breakdown) has individual event breakdown results.
 
 
 ### References

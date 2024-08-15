@@ -63,7 +63,7 @@ def show_line_chart(df, figure_name=None, application=None):
         figure_path = os.path.join("drawing", "total_time", f"line_chart_{application}")
     else:
         # Define the directory path
-        directory = os.path.join("drawing", f"{application}_total_time")
+        directory = os.path.join("drawing", f"{application.lower()}_total_time")
         # Create the directory if it doesn't exist
         os.makedirs(directory, exist_ok=True)
         figure_path = os.path.join(directory, figure_name)
@@ -105,7 +105,7 @@ def show_breakdown_line_chart(df, figure_name=None, breakdown_columns=None, appl
             figure_path = os.path.join("drawing", "breakdown", f"{dataset}.png")
         else:
             # Define the directory path
-            directory = os.path.join("drawing", f"{application}_breakdown")
+            directory = os.path.join("drawing", f"{application.lower()}_breakdown")
             # Create the directory if it doesn't exist
             os.makedirs(directory, exist_ok=True)
             figure_path = os.path.join(directory, figure_name)
@@ -124,21 +124,18 @@ def generate_charts(application="TC"):
     mpi_cpu_two_pass_file = f"drawing/{application.lower()}_traditional_two_pass.md"
     mpi_cpu_sort_file = f"drawing/{application.lower()}_traditional_sort.md"
     replacement_dict = None
-    breakdown_columns = []
+    breakdown_columns = ['Total Time', 'Initialization', 'Hashtable', 'Join', 'Buffer preparation',
+                         'Communication', 'Deduplication', 'Merge', 'Finalization']
     if application == "TC":
         row_numbers = ["409,593", "165,435", "147,892", "1,049,866", "552,020"]
         dataset_names = ["fe_ocean, 247, 1669M", "usroad, 606, 871M", "p2p-Gnutella31, 31, 884M", "com-dblp, 31, 1911M",
                          "vsp_finan, 520, 910M"]
         replacement_dict = dict(zip(row_numbers, dataset_names))
-        breakdown_columns = ['Total Time', 'Initialization', 'Hashtable', 'Join', 'Buffer preparation',
-                             'Communication', 'Merge', 'Finalization']
     elif application == "SG":
         row_numbers = ["409,593", "165,435", "147,892", "163,734", "552,020"]
         dataset_names = ["fe_ocean, 77, 65M", "usroad, 588, 3137M", "p2p-Gnutella31, 20, 3700M", "fe_body, 40, 408M",
                          "vsp_finan, 513, 864M"]
         replacement_dict = dict(zip(row_numbers, dataset_names))
-        breakdown_columns = ['Total Time', 'Initialization', 'Hashtable', 'Join', 'Buffer preparation',
-                             'Communication', 'Deduplication', 'Merge', 'Finalization']
 
     cam_sort_df = read_markdown_table(cam_sort_file, "CUDA Aware MPI - Sort", replacement_dict)
     cam_two_pass_df = read_markdown_table(cam_two_pass_file, "CUDA Aware MPI - Two pass", replacement_dict)
@@ -170,5 +167,5 @@ def generate_charts(application="TC"):
 
 if __name__ == "__main__":
     warnings.simplefilter(action='ignore', category=FutureWarning)
-    # generate_charts(application="TC")
+    generate_charts(application="TC")
     generate_charts(application="SG")
