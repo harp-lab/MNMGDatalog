@@ -5,8 +5,8 @@
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
-#PBS -o semi-merged-extra.output
-#PBS -e semi-merged-extra.error
+#PBS -o semi-merged.output
+#PBS -e semi-merged.error
 
 cd ${PBS_O_WORKDIR}
 
@@ -30,6 +30,7 @@ CUDA_AWARE_MPI=0
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
 MPICH_GPU_SUPPORT_ENABLED=0
+JOB_RUN=1
 echo "TRADITIONAL MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 make buildpolarissemi

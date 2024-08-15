@@ -259,12 +259,12 @@ void benchmark(int argc, char **argv) {
         communication_time += communication_time_temp;
 
         // Deduplicate scattered facts
-        thrust::stable_sort(thrust::device, distributed_first_join_result,
-                            distributed_first_join_result + distributed_first_join_size, set_cmp());
-        distributed_first_join_size = (thrust::unique(thrust::device,
-                                                      distributed_first_join_result,
-                                                      distributed_first_join_result + distributed_first_join_size,
-                                                      is_equal())) - distributed_first_join_result;
+//        thrust::stable_sort(thrust::device, distributed_first_join_result,
+//                            distributed_first_join_result + distributed_first_join_size, set_cmp());
+//        distributed_first_join_size = (thrust::unique(thrust::device,
+//                                                      distributed_first_join_result,
+//                                                      distributed_first_join_result + distributed_first_join_size,
+//                                                      is_equal())) - distributed_first_join_result;
 
         // sg(x, y): - tmp(b, x), edge(b, y).
         double second_join_time = 0.0;
