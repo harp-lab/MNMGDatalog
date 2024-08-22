@@ -116,6 +116,29 @@ struct set_cmp {
     }
 };
 
+struct minimum_by_value {
+    __host__ __device__
+    Entity operator()(const Entity& a, const Entity& b) const {
+        return (a.value < b.value) ? a : b;
+    }
+};
+
+struct minimum_value {
+    __host__ __device__
+    int operator()(const int a, const int b) const {
+        return (a < b) ? a : b;
+    }
+};
+
+// Define a unary operation that extracts the key
+struct get_key {
+    __host__ __device__
+    int operator()(const Entity& e) const {
+        return e.key;
+    }
+};
+
+
 __device__ int get_position(int key, int hash_table_row_size) {
     key ^= key >> 16;
     key *= 0x85ebca6b;
@@ -335,3 +358,6 @@ void show_device_entity_variable(Entity *device_data, int device_data_size, int 
     }
     free(host_data);
 }
+
+// show_device_entity_variable(local_data, local_data_size, rank, "local_data", 1);
+// show_device_variable(local_data_temp_device, local_count, 2, rank, "local data temp device", 0);

@@ -221,17 +221,17 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
     return receive_data;
 }
 
-Entity *get_split_relation(int rank, Entity *local_data_device,
-                           int row_size, int total_columns, int total_rank,
+Entity *get_split_relation(int rank, Entity *data_device,
+                           int data_size, int total_columns, int total_rank,
                            int grid_size, int block_size, int cuda_aware_mpi, int *size, int method,
                            double *buffer_preparation_time,
                            double *communication_time) {
     if (method == 0) {
-        return get_split_relation_pass_method(rank, local_data_device, row_size,
+        return get_split_relation_pass_method(rank, data_device, data_size,
                                               total_columns, total_rank, grid_size, block_size, cuda_aware_mpi, size,
                                               buffer_preparation_time, communication_time);
     } else {
-        return get_split_relation_sort_method(rank, local_data_device, row_size,
+        return get_split_relation_sort_method(rank, data_device, data_size,
                                               total_columns, total_rank, grid_size, block_size, cuda_aware_mpi, size,
                                               buffer_preparation_time, communication_time);
     }

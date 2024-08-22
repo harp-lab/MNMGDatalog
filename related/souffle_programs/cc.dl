@@ -1,0 +1,21 @@
+.decl edge(x:number, y:number)
+.decl reachable(x: number, y: number)
+.decl component(x: number, component_id: number)
+.decl unique_component(component_id: number)
+
+.input edge
+
+// Ensure edges are bidirectional by adding reverse edges
+edge(x, y) :- edge(y, x).
+// Calculate reachability using transitive closure
+reachable(x, y) :- edge(x, y).
+reachable(x, y) :- reachable(x, z), edge(z, y).
+// Find the minimum component for each reachable pair
+component(x, component_id) :- reachable(x, _), component_id = min y : reachable(x, y).
+// Count number of components
+unique_component(component_id) :- component(_, component_id).
+
+.printsize unique_component
+//.printsize reachable
+//.output reachable(IO=stdout, delimiter=",")
+//.output unique_component(IO=stdout, delimiter=",")

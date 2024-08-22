@@ -362,6 +362,7 @@ python generate_graphs.py
 - [Blog on MPI](https://www.codeproject.com/Articles/896437/A-Gentle-Introduction-to-the-Message-Passing-Inter)
 - [MPI all to all](https://mpi.deino.net/mpi_functions/MPI_Alltoall.html)
 - [Thrust: The C++ Parallel Algorithms Library](https://nvidia.github.io/cccl/thrust/)
+- [Thrust reduce by key docs](https://nvidia.github.io/cccl/thrust/api/function_group__reductions_1ga561f079073556701066513f648f413d6.html)
 - [SO question on CudaFree](https://stackoverflow.com/questions/13100615/cudafree-is-not-freeing-memory)
 - [SO question on CudaMemset](https://stackoverflow.com/questions/62055890/does-cudamalloc-initialize-the-array-to-0)
 - [NVHPC MPI docs](https://docs.nvidia.com/hpc-sdk//compilers/hpc-compilers-user-guide/index.html#mpi-use)

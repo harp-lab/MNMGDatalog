@@ -9,6 +9,9 @@ def display_time(time_start, time_end, message):
     time_took = time_end - time_start
     print(f"Debug: {message}: {time_took:.6f}s")
 
+def get_symmetric_edges(edges):
+    return get_union(edges, edges.rename(columns={'column 1': 'column 2', 'column 2': 'column 1'}))
+
 
 def get_join(relation_1, relation_2, column_names=['column 1', 'column 2']):
     return relation_1.merge(relation_2, on=column_names[0],
@@ -29,64 +32,56 @@ def get_union(relation_1, relation_2):
                        ignore_index=True).drop_duplicates()
 
 
-def get_dataset(filename, column_names=['column 1', 'column 2'],
-                rows=None):
-    if rows != None:
-        nrows = rows
-    else:
-        nrows = int(re.search('\d+|$', filename).group())
-    return cudf.read_csv(filename, sep='\t', header=None,
-                         names=column_names, nrows=nrows)
-
-
-def get_sg(dataset):
-    COLUMN_NAMES = ['column 1', 'column 2']
-    rows = int(re.search('\d+|$', dataset).group())
-    start_time_outer = time.perf_counter()
-    relation_1 = get_dataset(dataset, COLUMN_NAMES, rows)
+def get_transitive_closure(dataset, column_names):
+    relation_1 = dataset
     relation_2 = relation_1.copy()
-    # sg(x, y): - edge(p, x), edge(p, y), x != y.
-    temp_result = get_projection(get_join(relation_1, relation_2,
-                                          COLUMN_NAMES), COLUMN_NAMES, remove_same_val=True)
-    i = 0
-    relation_2 = temp_result
+    relation_2.columns = column_names[::-1]
+    t_full = relation_1
+    iterations = 0
     while True:
-        # tmp(b-, x): - edge(a, x), sg(a, b).
-        temp_projection = get_projection(get_join(relation_2, relation_1,
-                                                  COLUMN_NAMES), COLUMN_NAMES)
-        # sg(x, y): - tmp(b, x), edge(b, y).
-        temp_projection_2 = get_projection(get_join(temp_projection, relation_1,
-                                                    COLUMN_NAMES), COLUMN_NAMES)
-        relation_2 = temp_projection_2
-        previous_result_size = len(temp_result)
-        temp_result = get_union(temp_result, relation_2)
-        current_result_size = len(temp_result)
-        if previous_result_size == current_result_size:
-            i += 1
+        join_result = get_projection(get_join(relation_2, relation_1, column_names), column_names)
+        old_t_full_size = len(t_full)
+        t_full = get_union(t_full, join_result)
+        t_full_size = len(t_full)
+        if old_t_full_size == t_full_size:
+            iterations += 1
             break
-        i += 1
-        del temp_projection
-        del temp_projection_2
+        del relation_2
+        relation_2 = join_result
+        relation_2.columns = column_names[::-1]
+        iterations += 1
+        del join_result
+    return t_full, iterations
+
+
+def get_cc(dataset_path, column_names = ['column 1', 'column 2']):
+    dataset = cudf.read_csv(dataset_path, sep='\t', header=None, names=column_names)
+    start_time_outer = time.perf_counter()
+    row_size = len(dataset)
+    dataset = get_symmetric_edges(dataset)
+    reachable, iterations = get_transitive_closure(dataset, column_names)
+    component = reachable.groupby('column 1')['column 2'].min().reset_index()
+    component.columns = ['column 1', 'component_id']
+    unique_component = component['component_id'].drop_duplicates().reset_index(drop=True)
     end_time_outer = time.perf_counter()
     time_took = end_time_outer - start_time_outer
     time_took = f"{time_took:.6f}"
-    print(temp_result)
-    return rows, int(i), len(temp_result), time_took
+    return row_size, iterations, len(unique_component), time_took
 
 
 def generate_benchmark(datasets=None):
     result = []
-    print("| Dataset | # Input | # Iterations | # SG | Time (s) |")
+    print("| Dataset | # Input | # Iterations | # CC | Time (s) |")
     print("| --- | --- | --- | --- | --- |")
     for key, dataset in datasets.items():
         time_took = []
         record = None
         try:
             # Omit the warm-up round timing
-            warm_up = get_sg(dataset)
+            warm_up = get_cc(dataset)
             for i in range(REPEAT):
                 try:
-                    record = get_sg(dataset)
+                    record = get_cc(dataset)
                     time_took.append(float(record[3]))
                 except Exception as ex:
                     print(str(ex))
@@ -100,14 +95,14 @@ def generate_benchmark(datasets=None):
         except Exception as ex:
             print(f"Error in {key}. Message: {str(ex)}")
     print("\n")
-    with open('sg.json', 'w') as f:
+    with open('cc.json', 'w') as f:
         json.dump(result, f)
 
 
 if __name__ == "__main__":
     generate_benchmark(datasets={
-        # "hipc": "data/data_5.txt",
-        "data_10": "data/data_10.txt",
+        "hipc": "data/data_5.txt",
+        "dummy": "data/dummy.facts",
         # "OL.cedge": "data/data_7035.txt",
         # "fe_body": "data/data_163734.txt",
         # "loc-Brightkite": "data/data_214078.txt",
