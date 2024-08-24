@@ -5,9 +5,7 @@
 - Extract the downloaded file.
 - Remove the meta data lines and make it tab separated in place using `sed`:
 ```shell
-sed -i '1,17d' edge.facts
-sed -i 's/ \+/\t/g' edge.facts
-sed -i -e '1,17d' -e 's/ \+/\t/g' edge.facts
+sed -i -e '1,17d' -e 's/ \+/\t/g' flickr.mtx
 ```
 
 ## Related Souffle Programs

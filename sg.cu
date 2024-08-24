@@ -357,7 +357,7 @@ void benchmark(int argc, char **argv) {
     // Reverse the t_full as we stored it in reverse order initially
     int *t_full_ar;
     checkCuda(cudaMalloc((void **) &t_full_ar, t_full_size * total_columns * sizeof(int)));
-    get_int_ar_from_entity_ar<<<grid_size, block_size>>>(t_full_ar, t_full_size, t_full);
+    get_int_ar_from_entity_ar<<<grid_size, block_size>>>(t_full, t_full_size, t_full_ar);
 
     // Copy t full to host for file write
     int *t_full_ar_host = (int *) malloc(t_full_size * total_columns * sizeof(int));

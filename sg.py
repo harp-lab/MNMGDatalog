@@ -51,7 +51,7 @@ def get_sg(dataset):
     i = 0
     relation_2 = temp_result
     while True:
-        # tmp(b-, x): - edge(a, x), sg(a, b).
+        # tmp(b, x): - edge(a, x), sg(a, b).
         temp_projection = get_projection(get_join(relation_2, relation_1,
                                                   COLUMN_NAMES), COLUMN_NAMES)
         # sg(x, y): - tmp(b, x), edge(b, y).

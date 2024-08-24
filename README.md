@@ -1,5 +1,9 @@
 ## Datalog Applications using CUDA and MPI
-This repository hosts code for Datalog applications like Transitive Closure (TC) and Same Generation (SG) optimized for multi-node, multi-GPU environments.
+
+This repository hosts code for Datalog applications optimized for multi-node, multi-GPU environments:
+- Transitive Closure (TC)
+- Same Generation (SG)
+- Connected Components (CC)
 
 
 ### Flowchart of Same Generation
@@ -60,7 +64,7 @@ This repository hosts code for Datalog applications like Transitive Closure (TC)
 | SF.cedge       | 223,001   | x            | x       | x                | data/data_223001.bin                   |
 | loc-Brightkite | 214,078   | x            | x       | x                | data/data_214078.bin                   |
 
-
+## Utility Programs
 ### Dataset Utility Program
 When using `MPI_File_read_at` and `MPI_File_write_at` at offset in MPI programs, this utility program becomes essential because these MPI functions operate directly on binary files. `MPI_File_read_at` reads binary data from a specified offset, and `MPI_File_write_at` writes binary data to a specified offset.
 The utility program provides the necessary functionality to convert between text and binary formats.
@@ -75,6 +79,17 @@ python3 binary_file_utils.py txt_to_bin input_text_file output_binary_file
 python3 binary_file_utils.py bin_to_txt input_binary_file output_text_file
 # python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_23874_tc.txt
 ```
+
+### Chart Generation Utility Program
+- To parse Polaris results, use [`parse_results.py`](parse_results.py) program.
+- To generate charts, create a virtual environment, install necessary packages, and use [`generate_graphs.py`](generate_graphs.py) program.
+```shell
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python generate_graphs.py
+```
+
 ### Local run instructions
 - Command like arguments:
   - `NPROCS=<n>` to set the number of processes
@@ -135,36 +150,31 @@ python3 binary_file_utils.py bin_to_txt data/data_7035.bin_sg.bin data/data_7035
 ```
 
 
+#### Connected Component (CC)
+- Run the `cc.cu` program to generate connected components for a given data file.
+```shell
+# Using two pass method for communication
+make runcc DATA_FILE=data/dummy.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0 
+nvcc cc.cu -o cc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
+mpirun -np 8 ./cc.out data/dummy.bin 0 0
+| # Input | # Process | # Iterations | # CC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 6 | 8 | 2 | 3 |   0.0372 |   0.0017 |   0.0416 |   0.0006 |   0.0033 |   0.0084 |   0.0074 |   0.0076 |   0.0053 |   0.0029 | data/dummy.bin_cc.bin |
 
-### Results 
-### Transitive Closure 
-
-#### Local machine (`CUDA_AWARE_MPI` = 0, Two pass method)
-
-| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 23,874 | 2 | 58 | 481,121 |   0.1196 |   0.0003 |   0.0042 |   0.0002 |   0.0184 |   0.0257 |   0.0075 |   0.0607 |   0.0025 | data/data_23874.bin_tc.bin |
-| 23,874 | 3 | 58 | 481,121 |   0.1692 |   0.0003 |   0.0054 |   0.0003 |   0.0252 |   0.0368 |   0.0102 |   0.0889 |   0.0022 | data/data_23874.bin_tc.bin |
-| 23,874 | 4 | 58 | 481,121 |   0.2297 |   0.0003 |   0.0072 |   0.0004 |   0.0341 |   0.0568 |   0.0127 |   0.1156 |   0.0028 | data/data_23874.bin_tc.bin |
-| 23,874 | 5 | 58 | 481,121 |   0.2585 |   0.0003 |   0.0078 |   0.0004 |   0.0395 |   0.0620 |   0.0171 |   0.1290 |   0.0023 | data/data_23874.bin_tc.bin |
-| 23,874 | 6 | 58 | 481,121 |   0.2854 |   0.0003 |   0.0105 |   0.0005 |   0.0410 |   0.0688 |   0.0196 |   0.1416 |   0.0030 | data/data_23874.bin_tc.bin |
-| 23,874 | 7 | 58 | 481,121 |   0.3473 |   0.0004 |   0.0101 |   0.0007 |   0.0514 |   0.0848 |   0.0244 |   0.1721 |   0.0034 | data/data_23874.bin_tc.bin |
-| 23,874 | 8 | 58 | 481,121 |   0.3950 |   0.0004 |   0.0119 |   0.0007 |   0.0595 |   0.0993 |   0.0236 |   0.1958 |   0.0037 | data/data_23874.bin_tc.bin |
-
-#### Local machine (`CUDA_AWARE_MPI` = 0, Sort method)
-
-| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Merge | Finalization | Output |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 23,874 | 2 | 58 | 481,121 |   0.1554 |   0.0003 |   0.0044 |   0.0001 |   0.0182 |   0.0580 |   0.0077 |   0.0641 |   0.0026 | data/data_23874.bin_tc.bin |
-| 23,874 | 3 | 58 | 481,121 |   0.2148 |   0.0002 |   0.0058 |   0.0003 |   0.0236 |   0.0835 |   0.0100 |   0.0890 |   0.0023 | data/data_23874.bin_tc.bin |
-| 23,874 | 4 | 58 | 481,121 |   0.2810 |   0.0004 |   0.0085 |   0.0004 |   0.0309 |   0.1134 |   0.0138 |   0.1109 |   0.0027 | data/data_23874.bin_tc.bin |
-| 23,874 | 5 | 58 | 481,121 |   0.3220 |   0.0005 |   0.0134 |   0.0005 |   0.0349 |   0.1300 |   0.0177 |   0.1222 |   0.0028 | data/data_23874.bin_tc.bin |
-| 23,874 | 6 | 58 | 481,121 |   0.3820 |   0.0003 |   0.0096 |   0.0005 |   0.0419 |   0.1590 |   0.0241 |   0.1427 |   0.0040 | data/data_23874.bin_tc.bin |
-| 23,874 | 7 | 58 | 481,121 |   0.4512 |   0.0004 |   0.0114 |   0.0006 |   0.0520 |   0.1873 |   0.0292 |   0.1672 |   0.0032 | data/data_23874.bin_tc.bin |
-| 23,874 | 8 | 58 | 481,121 |   0.5179 |   0.0006 |   0.0221 |   0.0007 |   0.0577 |   0.2112 |   0.0319 |   0.1890 |   0.0046 | data/data_23874.bin_tc.bin |
-
-
-### Run using Docker (`CUDA_AWARE_MPI` = 1)
+# Using sorting method for communication
+make runcc DATA_FILE=data/dummy.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
+nvcc cc.cu -o cc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
+mpirun -np 8 ./cc.out data/dummy.bin 0 1
+| # Input | # Process | # Iterations | # CC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 6 | 8 | 2 | 3 |   0.0512 |   0.0016 |   0.0412 |   0.0006 |   0.0032 |   0.0175 |   0.0122 |   0.0078 |   0.0053 |   0.0032 | data/dummy.bin_cc.bin |
+```
+It generated `data/dummy.bin_cc.bin` file that contains all paths of the transitive closure for the input relation.
+- Convert the generated binary to text file using `binary_file_utils.py`.
+```shell
+python3 binary_file_utils.py bin_to_txt data/dummy.bin_cc.bin data/dummy_cc.txt
+```
+## Run using Docker (`CUDA_AWARE_MPI` = 1)
 ```shell
 docker build -t mnmgjoindocker .
 docker run --rm --entrypoint=bash -it --gpus all -v $(pwd):/opt/mnmgjoin mnmgjoindocker
@@ -182,9 +192,17 @@ mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_
 mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./sg.out data/data_7035.bin 1 0
 ## Sort method
 mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./sg.out data/data_7035.bin 1 1
+
+# CC
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx cc.cu -o cc.out -O3
+## Two pass method
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./cc.out data/dummy.bin 1 0
+## Sort method
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./cc.out data/dummy.bin 1 1
 ```
 
-## Run in Polaris 
+
+## Run in Polaris
 
 ### Transitive Closure Computation (TC)
 The job script [tc-merged.sh](tc-merged.sh) contains the multi node multi GPU configuration for Polaris.
@@ -240,17 +258,7 @@ qstat -Qf small
 cat sg-merged.error
 cat sg-merged.output
 
-# Manage disk quota limit of 50GB in Polaris /home directory
-# Check quota
-myquota
-# Check large folders
-du -h --max-depth=1 | sort -hr
-# Delete large folders
-rm -rf ./local_join
-# Delete the generated bin files
-make clean
-
-# Interactive 1 node run tc
+# Interactive 1 node run sg
 ssh arsho@polaris.alcf.anl.gov
 qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
 cd mnmgJOIN
@@ -261,7 +269,20 @@ mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 | 7,035 | 4 | 56 | 285,431 |   1.6210 |   0.5389 |   1.3432 |   0.0001 |   0.0091 |   0.0106 |   1.0314 |   0.0060 |   0.0243 |   0.0006 | data/data_7035.bin_sg.bin |
 ```
 
+#### Polaris disk quota manage
+Manage disk quota limit of 50GB in Polaris `/home` directory:
+```
+# Check quota
+myquota
+# Check large folders
+du -h --max-depth=1 | sort -hr
+# Delete large folders
+rm -rf ./local_join
+# Delete the generated bin files
+make clean
+```
 
+## Results 
 ## TC Performance evaluation on Polaris
 
 ### CUDA AWARE MPI and Two pass method
@@ -279,16 +300,6 @@ mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 ### Traditional MPI and Sort method
 
 [See the table](drawing/tc_traditional_sort.md)
-
-### Utility program for chart generation
-- To parse Polaris results, use [`parse_results.py`](parse_results.py) program.
-- To generate charts, create a virtual environment, install necessary packages, and use [`generate_graphs.py`](generate_graphs.py) program.
-```shell
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python generate_graphs.py
-```
 
 ### Results visualization (Transitive closure)
 #### CUDA AWARE MPI: Two pass vs sort 
@@ -324,16 +335,6 @@ python generate_graphs.py
 ### Traditional MPI and Sort method
 
 [See the table](drawing/sg_traditional_sort.md)
-
-### Utility program for chart generation
-- To parse Polaris results, use [`parse_results.py`](parse_results.py) program.
-- To generate charts, create a virtual environment, install necessary packages, and use [`generate_graphs.py`](generate_graphs.py) program.
-```shell
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python generate_graphs.py
-```
 
 ### Results visualization (Same Generation)
 #### CUDA AWARE MPI: Two pass vs sort
