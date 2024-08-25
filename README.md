@@ -229,6 +229,7 @@ cat tc-merged.output
 ssh arsho@polaris.alcf.anl.gov
 qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
 cd mnmgJOIN
+chmod +x set_affinity_gpu_polaris.sh
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
 CC tc_semi_naive.cu -o tc_semi_naive_interactive.out
@@ -262,12 +263,53 @@ cat sg-merged.output
 ssh arsho@polaris.alcf.anl.gov
 qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
 cd mnmgJOIN
+chmod +x set_affinity_gpu_polaris.sh
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
 CC sg.cu -o sg_interactive.out
 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_7035.bin 1 0
 | 7,035 | 4 | 56 | 285,431 |   1.6210 |   0.5389 |   1.3432 |   0.0001 |   0.0091 |   0.0106 |   1.0314 |   0.0060 |   0.0243 |   0.0006 | data/data_7035.bin_sg.bin |
 ```
+
+
+### Connected Component (CC)
+The job script [cc-merged.sh](cc-merged.sh) contains the multi node multi GPU configuration for Polaris.
+Change this file to change the number of nodes in `PBS -l select=10:system=polaris` (default 10).
+Also change the path of the source repository.
+Currently, it is spawning 4 ranks per node and sets 1 GPU per MPI rank.
+```shell
+ssh arsho@polaris.alcf.anl.gov
+cd mnmgJOIN/
+make clean
+git fetch
+git reset --hard origin/main
+chmod +x set_affinity_gpu_polaris.sh
+chmod +x cc-merged.sh
+rm cc-merged.output 
+rm cc-merged.error 
+qsub cc-merged.sh 
+
+qstat -u $USER
+qstat -Qf small
+cat cc-merged.error
+cat cc-merged.output
+
+# Interactive 1 node run sg
+ssh arsho@polaris.alcf.anl.gov
+qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
+cd mnmgJOIN
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+chmod +x set_affinity_gpu_polaris.sh
+CC cc.cu -o cc_interactive.out
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/dummy.bin 1 0
+| # Input | # Process | # Iterations | # CC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 6 | 4 | 2 | 3 |   1.0691 |   0.5286 |   1.3805 |   0.0001 |   0.0002 |   0.0006 |   0.5381 |   0.0007 |   0.0005 |   0.0003 | data/dummy.bin_cc.bin |
+
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/flickr.bin 1 0
+```
+
 
 #### Polaris disk quota manage
 Manage disk quota limit of 50GB in Polaris `/home` directory:

@@ -128,11 +128,11 @@ void benchmark(int argc, char **argv) {
     // Ensure edges are bidirectional by adding reverse edges
     int *local_data_reverse_temp_device;
     checkCuda(cudaMalloc((void **) &local_data_reverse_temp_device, local_count * sizeof(int)));
-    get_reverse_ar<<<grid_size, block_size>>>(local_data_temp_device, local_count, local_data_reverse_temp_device);
+    get_reverse_ar<<<grid_size, block_size>>>(local_data_temp_device, row_size, local_data_reverse_temp_device);
 
     // Create Entity array from GPU buffers
     Entity *local_data;
-    int local_data_size = row_size * 2;
+    int local_data_size = local_count;
     checkCuda(cudaMalloc((void **) &local_data, local_data_size * sizeof(Entity)));
     create_entity_ar_with_offset<<<grid_size, block_size>>>(local_data_temp_device, row_size, local_data, 0);
     create_entity_ar_with_offset<<<grid_size, block_size>>>(local_data_reverse_temp_device, row_size,
