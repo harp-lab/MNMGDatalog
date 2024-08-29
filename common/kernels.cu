@@ -352,3 +352,42 @@ __global__ void create_entity_ar_with_offset(int *input_data, int data_rows, Ent
         output_data[i + offset].value = input_data[(i * 2) + 1];
     }
 }
+
+__global__ void same_key_value_entity_ar(Entity *input_data, int data_rows, Entity *output_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= data_rows) return;
+
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < data_rows; i += stride) {
+        int key = input_data[i].key;
+        output_data[i].key = key;
+        output_data[i].value = key;
+    }
+}
+
+__global__ void duplicate_entity_with_reverse(Entity *input_data, int data_rows, Entity *output_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= data_rows) return;
+
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < data_rows; i += stride) {
+        int key = input_data[i].key;
+        int value = input_data[i].value;
+        output_data[i*2].key = key;
+        output_data[i*2].value = value;
+        output_data[(i*2) + 1].key = value;
+        output_data[(i*2) + 1].value = key;
+    }
+}
+
+__global__ void replace_key_by_value(Entity *input_data, int data_rows, Entity *output_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= data_rows) return;
+
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < data_rows; i += stride) {
+        int value = input_data[i].value;
+        output_data[i].key = value;
+        output_data[i].value = 0;
+    }
+}

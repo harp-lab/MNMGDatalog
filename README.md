@@ -160,6 +160,15 @@ mpirun -np 8 ./cc.out data/dummy.bin 0 0
 | # Input | # Process | # Iterations | # CC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 6 | 8 | 2 | 3 |   0.0372 |   0.0017 |   0.0416 |   0.0006 |   0.0033 |   0.0084 |   0.0074 |   0.0076 |   0.0053 |   0.0029 | data/dummy.bin_cc.bin |
+# Dataset: loc-Brightkite https://snap.stanford.edu/data/loc-Brightkite.html
+make runcc DATA_FILE=data/data_214078.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+nvcc cc.cu -o cc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
+mpirun -np 8 ./cc.out data/data_214078.bin 0 0
+| # Input | # Process | # Iterations | # CC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 214,078 | 8 | 12 | 547 |   0.1461 |   0.0017 |   0.0866 |   0.0031 |   0.0344 |   0.0326 |   0.0199 |   0.0066 |   0.0455 |   0.0023 | data/data_214078.bin_cc.bin |
+
+
 
 # Using sorting method for communication
 make runcc DATA_FILE=data/dummy.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
@@ -288,7 +297,7 @@ chmod +x cc-merged.sh
 rm cc-merged.output 
 rm cc-merged.error 
 qsub cc-merged.sh 
-
+2074247.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 qstat -u $USER
 qstat -Qf small
 cat cc-merged.error

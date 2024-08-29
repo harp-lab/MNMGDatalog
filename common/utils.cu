@@ -79,10 +79,19 @@ struct is_equal {
     }
 };
 
+struct is_equal_key {
+    __host__ __device__
+    bool operator()(const Entity &lhs, const Entity &rhs) {
+        if (lhs.key == rhs.key)
+            return true;
+        return false;
+    }
+};
+
 // Predicate to check if key and value are equal
 struct is_key_equal_value {
     __host__ __device__
-    bool operator()(const Entity& e) {
+    bool operator()(const Entity &e) {
         return e.key == e.value;
     }
 };
@@ -118,7 +127,7 @@ struct set_cmp {
 
 struct minimum_by_value {
     __host__ __device__
-    Entity operator()(const Entity& a, const Entity& b) const {
+    Entity operator()(const Entity &a, const Entity &b) const {
         return (a.value < b.value) ? a : b;
     }
 };
@@ -133,7 +142,7 @@ struct minimum_value {
 // Define a unary operation that extracts the key
 struct get_key {
     __host__ __device__
-    int operator()(const Entity& e) const {
+    int operator()(const Entity &e) const {
         return e.key;
     }
 };
@@ -329,7 +338,7 @@ void show_device_variable(int *device_data, int device_data_size, int group, int
     int *host_data = (int *) malloc(device_data_size * sizeof(int));
     cudaMemcpy(host_data, device_data, device_data_size * sizeof(int), cudaMemcpyDeviceToHost);
     cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << endl;
-    if(size_only != 1){
+    if (size_only != 1) {
         for (int i = 0; i < device_data_size / group; i++) {
             for (int j = 0; j < group; j++) {
                 cout << host_data[(i * group) + j] << " ";
@@ -350,7 +359,7 @@ void show_device_entity_variable(Entity *device_data, int device_data_size, int 
     Entity *host_data = (Entity *) malloc(device_data_size * sizeof(Entity));
     cudaMemcpy(host_data, device_data, device_data_size * sizeof(Entity), cudaMemcpyDeviceToHost);
     cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << endl;
-    if(size_only != 1) {
+    if (size_only != 1) {
         for (int i = 0; i < device_data_size; i++) {
             cout << host_data[i].key << " " << host_data[i].value << endl;
         }
