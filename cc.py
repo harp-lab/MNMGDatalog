@@ -101,8 +101,9 @@ def generate_benchmark(datasets=None):
 
 if __name__ == "__main__":
     generate_benchmark(datasets={
-        "hipc": "data/data_5.txt",
-        "dummy": "data/dummy.facts",
+        # "hipc": "data/data_5.txt",
+        # "dummy": "data/dummy.facts",
+        "dummy": "data/web-Stanford.facts",
         # "OL.cedge": "data/data_7035.txt",
         # "fe_body": "data/data_163734.txt",
         # "loc-Brightkite": "data/data_214078.txt",

@@ -18,10 +18,11 @@ struct Output {
     int block_size;
     int grid_size;
     int total_rank;
-    int input_rows;
+    unsigned long input_rows;
     int hashtable_rows;
     int iterations;
     long long output_size;
+    long long output_size_secondary;
     double load_factor;
     double reverse_time;
     int hashtable_build_rate;

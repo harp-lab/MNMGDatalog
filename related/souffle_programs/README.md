@@ -6,6 +6,8 @@
 - Remove the meta data lines and make it tab separated in place using `sed`:
 ```shell
 sed -i -e '1,17d' -e 's/ \+/\t/g' flickr.mtx
+# Delete first 4 lines of snap datasets, DO NOT OPEN THE FILES WITH TEXT EDITOR
+sed -i -e '1,4d' web-BerkStan.txt
 ```
 
 ## Related Souffle Programs
