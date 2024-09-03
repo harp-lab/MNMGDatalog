@@ -18,7 +18,7 @@ NTHREADS=1                     # Number of software threads per rank to launch (
 NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
 
 
-run_test() {
+run_single_dataset() {
   local cuda_aware_mpi=$1
   local method=$2
   local data_file=$3
@@ -39,6 +39,23 @@ run_test() {
   done
 }
 
+run_benchmark() {
+  local cuda_aware_mpi=$1
+  local method=$2
+  local mpi_gpu_support_enabled=$3
+
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/as-skitter.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # fe_body
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # usroad
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # fe_ocean
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+}
+
 
 start_time=$(date +"%Y-%m-%d %H:%M:%S")
 start_seconds=$(date +%s)
@@ -54,32 +71,12 @@ MPICH_GPU_SUPPORT_ENABLED=0
 make buildpolariscc
 echo "TRADITIONAL MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/flickr.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# fe_body
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# usroad
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# fe_ocean
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# vsp_finan
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
 
 echo "TRADITIONAL MPI - TWO PASS"
 echo "------------------------------------------------------------------------------------"
 METHOD=0
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/flickr.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# fe_body
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# usroad
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# fe_ocean
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# vsp_finan
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
 
 
 echo ""
@@ -97,32 +94,12 @@ METHOD=1
 make buildpolariscc
 echo "CUDA AWARE MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/flickr.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# fe_body
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# usroad
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# fe_ocean
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# vsp_finan
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
 
 echo "CUDA AWARE MPI - TWO PASS"
 echo "------------------------------------------------------------------------------------"
 METHOD=0
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/flickr.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# fe_body
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# usroad
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# fe_ocean
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-# vsp_finan
-run_test ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
 
 end_time=$(date +"%Y-%m-%d %H:%M:%S")
 end_seconds=$(date +%s)
