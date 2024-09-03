@@ -2,7 +2,7 @@ TARGET_TC = tc
 SRC_TC = $(TARGET_TC).cu
 TARGET_SG = sg
 SRC_SG = $(TARGET_SG).cu
-TARGET_CC = cc
+TARGET_CC = wcc
 SRC_CC = $(TARGET_CC).cu
 
 
@@ -29,10 +29,10 @@ buildsg:
 testsg:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_SG).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
 
-buildcc:
+buildwcc:
 	nvcc $(SRC_CC) -o $(TARGET_CC).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
-testcc:
+testwcc:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_CC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
 
 buildpolaristc:
@@ -47,25 +47,25 @@ buildpolarissg:
 testpolarissg:
 	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SG).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
 
-buildpolariscc:
+buildpolariswcc:
 	CC $(SRC_CC) -o $(TARGET_CC).out $(COMPILER_FLAGS)
 
-testpolariscc:
+testpolariswcc:
 	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_CC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
 
 runpolaristc: buildpolaristc testpolaristc
 
 runpolarissg: buildpolarissg testpolarissg
 
-runpolariscc: buildpolariscc testpolariscc
+runpolariswcc: buildpolariswcc testpolariswcc
 
 runtc: buildtc testtc
 
 runsg: buildsg testsg
 
-runcc: buildcc testcc
+runwcc: buildwcc testwcc
 
-all: buildtc buildsg buildcc
+all: buildtc buildsg buildwcc
 
 cleanoutput:
 	rm -f data/*_tc.bin*

@@ -5,8 +5,8 @@
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
-#PBS -o cc-merged.output
-#PBS -e cc-merged.error
+#PBS -o wcc-merged.output
+#PBS -e wcc-merged.error
 
 cd ${PBS_O_WORKDIR}
 
@@ -24,10 +24,10 @@ run_single_dataset() {
   local data_file=$3
   local mpi_gpu_support_enabled=$4
 
-  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> CC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> WCC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
   for i in {40..4..-8}; do
     for j in {1..5}; do
-      make testpolariscc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
+      make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
         NTOTRANKS=${i} \
         NRANKS_PER_NODE=${NRANKS_PER_NODE} \
         NDEPTH=${NDEPTH} \
@@ -44,6 +44,7 @@ run_benchmark() {
   local method=$2
   local mpi_gpu_support_enabled=$3
 
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/flickr.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/as-skitter.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
@@ -68,7 +69,7 @@ CUDA_AWARE_MPI=0
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
 MPICH_GPU_SUPPORT_ENABLED=0
-make buildpolariscc
+make buildpolariswcc
 echo "TRADITIONAL MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
@@ -91,7 +92,7 @@ MPICH_GPU_SUPPORT_ENABLED=1
 CUDA_AWARE_MPI=1
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
-make buildpolariscc
+make buildpolariswcc
 echo "CUDA AWARE MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
