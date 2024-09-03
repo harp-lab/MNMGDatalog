@@ -120,9 +120,9 @@ void benchmark(int argc, char **argv) {
     // Scatter larger blocks among processes (non-uniform)
     int total_columns = 2;
     unsigned long total_rows = filesize / (sizeof(int) * total_columns);
-    long long row_start = BLOCK_START(rank, total_rank, total_rows);
-    long long row_size = BLOCK_SIZE(rank, total_rank, total_rows);
-    long long local_count = row_size * total_columns;
+    int row_start = BLOCK_START(rank, total_rank, total_rows);
+    int row_size = BLOCK_SIZE(rank, total_rank, total_rows);
+    int local_count = row_size * total_columns;
 
     // Reading specific portion from the file as char in parallel
     long long offset = row_start * total_columns * sizeof(int);
@@ -150,7 +150,7 @@ void benchmark(int argc, char **argv) {
     // Create Entity array from GPU buffers, edge + reverse_edge
     // edge(x, y) :- edge(y, x)
     Entity *edge;
-    long long edge_size = local_count;
+    long edge_size = local_count;
     checkCuda(cudaMalloc((void **) &edge, edge_size * sizeof(Entity)));
     create_entity_ar_with_offset<<<grid_size, block_size>>>(edge_temp_device, row_size, edge, 0);
     create_entity_ar_with_offset<<<grid_size, block_size>>>(edge_reverse_temp_device, row_size,
@@ -173,7 +173,7 @@ void benchmark(int argc, char **argv) {
     // cc(x, x) :- edge(x, _)
     start_time = MPI_Wtime();
     Entity *cc_base;
-    int cc_base_size = edge_size;
+    long cc_base_size = edge_size;
     checkCuda(cudaMalloc((void **) &cc_base, cc_base_size * sizeof(Entity)));
     same_key_value_entity_ar<<<grid_size, block_size>>>(edge, cc_base_size, cc_base);
     end_time = MPI_Wtime();
@@ -529,6 +529,7 @@ int main(int argc, char **argv) {
 // METHOD 0 = two pass method, 1 = sorting method
 // make runcc DATA_FILE=data/dummy.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runcc DATA_FILE=data/dummy.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runcc DATA_FILE=data/flickr.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runcc DATA_FILE=data/data_214078.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runcc DATA_FILE=data/data_214078.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
 // make runcc DATA_FILE=data/web-Stanford.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0

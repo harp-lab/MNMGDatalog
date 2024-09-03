@@ -1,5 +1,5 @@
 Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
-                                       int row_size, int total_columns, int total_rank,
+                                       long row_size, int total_columns, int total_rank,
                                        int grid_size, int block_size, int cuda_aware_mpi,
                                        int *size,
                                        double *buffer_preparation_time,
@@ -107,7 +107,7 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
 }
 
 Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
-                                       int row_size, int total_columns, int total_rank,
+                                       long row_size, int total_columns, int total_rank,
                                        int grid_size, int block_size, int cuda_aware_mpi, int *size,
                                        double *buffer_preparation_time,
                                        double *communication_time) {
@@ -115,7 +115,7 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
     double prep_time = 0.0, comm_time = 0.0;
     start_time = MPI_Wtime();
     int mpi_error;
-    thrust::device_vector <uint8_t> row_mapping(row_size);
+    thrust::device_vector<uint8_t> row_mapping(row_size);
 
     thrust::transform(
             thrust::device, local_data_device,
@@ -128,7 +128,7 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
     thrust::stable_sort_by_key(thrust::device, row_mapping.begin(), row_mapping.end(), local_data_device);
 
     thrust::device_vector<int> unique_rank_row_count(total_rank);
-    thrust::device_vector <uint8_t> unique_rank(total_rank);
+    thrust::device_vector<uint8_t> unique_rank(total_rank);
 
     auto unique_rank_range = thrust::reduce_by_key(
             thrust::device, row_mapping.begin(), row_mapping.end(),
@@ -138,7 +138,7 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
     unique_rank_row_count.resize(total_unique_rank);
     unique_rank.resize(total_unique_rank);
     thrust::host_vector<int> unique_rank_row_count_host(unique_rank_row_count);
-    thrust::host_vector <uint8_t> unique_rank_host(unique_rank);
+    thrust::host_vector<uint8_t> unique_rank_host(unique_rank);
     thrust::host_vector<int> send_count_host(total_rank);
     for (int i = 0; i < total_unique_rank; i++) {
         send_count_host[unique_rank_host[i]] = unique_rank_row_count_host[i];
@@ -222,7 +222,7 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
 }
 
 Entity *get_split_relation(int rank, Entity *data_device,
-                           int data_size, int total_columns, int total_rank,
+                           long data_size, int total_columns, int total_rank,
                            int grid_size, int block_size, int cuda_aware_mpi, int *size, int method,
                            double *buffer_preparation_time,
                            double *communication_time) {

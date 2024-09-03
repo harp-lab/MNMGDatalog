@@ -353,7 +353,7 @@ __global__ void create_entity_ar_with_offset(int *input_data, int data_rows, Ent
     }
 }
 
-__global__ void same_key_value_entity_ar(Entity *input_data, int data_rows, Entity *output_data) {
+__global__ void same_key_value_entity_ar(Entity *input_data, long data_rows, Entity *output_data) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= data_rows) return;
 
@@ -365,7 +365,7 @@ __global__ void same_key_value_entity_ar(Entity *input_data, int data_rows, Enti
     }
 }
 
-__global__ void duplicate_entity_with_reverse(Entity *input_data, int data_rows, Entity *output_data) {
+__global__ void duplicate_entity_with_reverse(Entity *input_data, long data_rows, Entity *output_data) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= data_rows) return;
 
