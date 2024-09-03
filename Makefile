@@ -6,7 +6,8 @@ TARGET_CC = wcc
 SRC_CC = $(TARGET_CC).cu
 
 
-COMPILER_FLAGS = -lm -O3
+#COMPILER_FLAGS = -lm -O3
+COMPILER_FLAGS = -lm
 COMPILER_FLAGS_LOCAL = --extended-lambda
 MPICC?=mpiCC
 MPIRUN?=mpirun
