@@ -8,6 +8,23 @@
 sed -i -e '1,17d' -e 's/ \+/\t/g' flickr.mtx
 # Delete first 4 lines of snap datasets, DO NOT OPEN THE FILES WITH TEXT EDITOR
 sed -i -e '1,4d' web-BerkStan.txt
+qsub wcc-merged.sh 
+2080785.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+arsho::polaris-login-02 { ~/mnmgJOIN }-> cat wcc-merged.error
+/usr/bin/ld: warning: /var/tmp/pbs.2080785.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov/pgcudafatQ9CEj_OwpP6J9.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+=>> PBS: job killed: walltime 3627 exceeded limit 3599
+x3005c0s25b1n0.hsn.cm.polaris.alcf.anl.gov: rank 12 died from signal 15
+make: *** [Makefile:55: testpolariswcc] Error 143
+arsho::polaris-login-02 { ~/mnmgJOIN }-> cat wcc-merged.output
+Polaris job started at: 2024-09-03 17:09:34
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> JOB STARTED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+CC wcc.cu -o wcc.out -lm
+TRADITIONAL MPI - SORTING
+------------------------------------------------------------------------------------
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> WCC on data/flickr.bin >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 40 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/flickr.bin 0 1 1
+
 ```
 
 ## Related Souffle Programs

@@ -193,7 +193,7 @@ python3 binary_file_utils.py bin_to_txt data/data_7035.bin_sg.bin data/data_7035
 
 ```shell
 # Using two pass method for communication
-make runcc DATA_FILE=data/dummy.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0 
+make runwcc DATA_FILE=data/dummy.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0 
 nvcc wcc.cu -o cc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
 mpirun -np 8 ./cc.out data/dummy.bin 0 0
 | # Input | # Process | # Iterations | # CC (# Largest WCC) | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
@@ -201,7 +201,7 @@ mpirun -np 8 ./cc.out data/dummy.bin 0 0
 | 6 | 8 | 4 | 3 (3) |   0.0478 |   0.0014 |   0.0373 |   0.0007 |   0.0060 |   0.0087 |   0.0074 |   0.0143 |   0.0075 |   0.0017 | data/dummy.bin_cc.bin |
 
 # Dataset: roadNet-CA https://snap.stanford.edu/data/roadNet-CA.html
-make runcc DATA_FILE=data/roadNet-CA.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+make runwcc DATA_FILE=data/roadNet-CA.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 nvcc wcc.cu -o cc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
 mpirun -np 8 ./cc.out data/roadNet-CA.bin 0 0
 | # Input | # Process | # Iterations | # CC (# Nodes in largest WCC) | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
@@ -210,7 +210,7 @@ mpirun -np 8 ./cc.out data/roadNet-CA.bin 0 0
 
 
 # Using sorting method for communication
-make runcc DATA_FILE=data/dummy.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
+make runwcc DATA_FILE=data/dummy.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
 ```
 
 It generated `data/dummy.bin_cc.bin` file that contains all paths of the transitive closure for the input relation.
@@ -279,11 +279,16 @@ ssh arsho@polaris.alcf.anl.gov
 qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
 cd mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
+## Traditional MPI
+CC tc.cu -o tc_interactive.out
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 0
+
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
-CC tc_semi_naive.cu -o tc_semi_naive_interactive.out
-arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1 0
-arsho::x3101c0s19b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris_semi.sh ./tc_semi_naive_interactive.out data/data_165435.bin 1 1
+## CUDA-AWARE-MPI
+CC tc.cu -o tc_interactive.out
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 1 0
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 1 1
 ```
 
 ### Same Generation (SG)
@@ -315,6 +320,10 @@ ssh arsho@polaris.alcf.anl.gov
 qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
 cd mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
+## Traditional MPI
+CC sg.cu -o sg_interactive.out
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_7035.bin 0 0
+## CUDA-AWARE-MPI
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
 CC sg.cu -o sg_interactive.out
@@ -350,9 +359,13 @@ cat cc-merged.output
 ssh arsho@polaris.alcf.anl.gov
 qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
 cd mnmgJOIN
+chmod +x set_affinity_gpu_polaris.sh
+## Traditional MPI
+CC wcc.cu -o cc_interactive.out
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/flickr.bin 0 0
+## CUDA-AWARE-MPI
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
-chmod +x set_affinity_gpu_polaris.sh
 CC wcc.cu -o cc_interactive.out
 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/dummy.bin 1 0
 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/flickr.bin 1 0
@@ -406,6 +419,15 @@ du -h --max-depth=1 | sort -hr
 rm -rf ./local_join
 # Delete the generated bin files
 make clean
+```
+
+#### Polaris resize terminal window
+For long command, terminal may show only the last portion. To fix that use `resize`:
+```shell
+resize
+COLUMNS=185;
+LINES=47;
+export COLUMNS LINES;
 ```
 
 ## Results

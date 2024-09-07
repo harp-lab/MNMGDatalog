@@ -25,18 +25,26 @@ run_single_dataset() {
   local mpi_gpu_support_enabled=$4
 
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> WCC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-  for i in {40..4..-8}; do
-    for j in {1..5}; do
-      make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
-        NTOTRANKS=${i} \
-        NRANKS_PER_NODE=${NRANKS_PER_NODE} \
-        NDEPTH=${NDEPTH} \
-        DATA_FILE=${data_file} \
-        CUDA_AWARE_MPI=${cuda_aware_mpi} \
-        METHOD=${method} \
-        JOB_RUN=${JOB_RUN}
-    done
-  done
+        make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
+          NTOTRANKS=4 \
+          NRANKS_PER_NODE=${NRANKS_PER_NODE} \
+          NDEPTH=${NDEPTH} \
+          DATA_FILE=${data_file} \
+          CUDA_AWARE_MPI=${cuda_aware_mpi} \
+          METHOD=${method} \
+          JOB_RUN=${JOB_RUN}
+#  for i in {40..4..-8}; do
+#    for j in {1..5}; do
+#      make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
+#        NTOTRANKS=${i} \
+#        NRANKS_PER_NODE=${NRANKS_PER_NODE} \
+#        NDEPTH=${NDEPTH} \
+#        DATA_FILE=${data_file} \
+#        CUDA_AWARE_MPI=${cuda_aware_mpi} \
+#        METHOD=${method} \
+#        JOB_RUN=${JOB_RUN}
+#    done
+#  done
 }
 
 run_benchmark() {
