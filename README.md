@@ -345,15 +345,15 @@ make clean
 git fetch
 git reset --hard origin/main
 chmod +x set_affinity_gpu_polaris.sh
-chmod +x cc-merged.sh
-rm cc-merged.output 
-rm cc-merged.error 
-qsub cc-merged.sh 
-2080326.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+chmod +x wcc-merged.sh
+rm wcc-merged.output 
+rm wcc-merged.error 
+qsub wcc-merged.sh 
+2084089.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 qstat -u $USER
 qstat -Qf small
-cat cc-merged.error
-cat cc-merged.output
+cat wcc-merged.error
+cat wcc-merged.output
 
 # Interactive 1 node run sg
 ssh arsho@polaris.alcf.anl.gov
