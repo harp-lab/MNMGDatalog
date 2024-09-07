@@ -33,7 +33,7 @@ run_single_dataset() {
 #          CUDA_AWARE_MPI=${cuda_aware_mpi} \
 #          METHOD=${method} \
 #          JOB_RUN=${JOB_RUN}
-  for i in {40..4..-8}; do
+  for i in {16..4..-8}; do
     for j in {1..5}; do
       make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
         NTOTRANKS=${i} \
