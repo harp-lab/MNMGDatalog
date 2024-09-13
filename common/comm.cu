@@ -1,5 +1,5 @@
 Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
-                                       long row_size, int total_columns, int total_rank,
+                                       int row_size, int total_columns, int total_rank,
                                        int grid_size, int block_size, int cuda_aware_mpi,
                                        int *size,
                                        double *buffer_preparation_time,
@@ -107,7 +107,7 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
 }
 
 Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
-                                       long row_size, int total_columns, int total_rank,
+                                       int row_size, int total_columns, int total_rank,
                                        int grid_size, int block_size, int cuda_aware_mpi, int *size,
                                        double *buffer_preparation_time,
                                        double *communication_time) {
@@ -222,7 +222,7 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
 }
 
 Entity *get_split_relation(int rank, Entity *data_device,
-                           long data_size, int total_columns, int total_rank,
+                           int data_size, int total_columns, int total_rank,
                            int grid_size, int block_size, int cuda_aware_mpi, int *size, int method,
                            double *buffer_preparation_time,
                            double *communication_time) {

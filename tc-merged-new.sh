@@ -1,12 +1,12 @@
 #!/bin/sh
 #PBS -l select=10:system=polaris
 #PBS -l place=scatter
-#PBS -l walltime=0:59:59
+#PBS -l walltime=2:59:00
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
-#PBS -o wcc-merged.output
-#PBS -e wcc-merged.error
+#PBS -o tc-merged-new.output
+#PBS -e tc-merged-new.error
 
 cd ${PBS_O_WORKDIR}
 
@@ -17,25 +17,16 @@ NDEPTH=4                       # Number of hardware threads per rank (i.e. spaci
 NTHREADS=1                     # Number of software threads per rank to launch (i.e. OMP_NUM_THREADS)
 NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
 
-
 run_single_dataset() {
   local cuda_aware_mpi=$1
   local method=$2
   local data_file=$3
   local mpi_gpu_support_enabled=$4
 
-  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> WCC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-#        make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
-#          NTOTRANKS=4 \
-#          NRANKS_PER_NODE=${NRANKS_PER_NODE} \
-#          NDEPTH=${NDEPTH} \
-#          DATA_FILE=${data_file} \
-#          CUDA_AWARE_MPI=${cuda_aware_mpi} \
-#          METHOD=${method} \
-#          JOB_RUN=${JOB_RUN}
-  for i in {32..4..-8}; do
+  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+  for i in {40..4..-8}; do
     for j in {1..5}; do
-      make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
+      make testpolaristc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
         NTOTRANKS=${i} \
         NRANKS_PER_NODE=${NRANKS_PER_NODE} \
         NDEPTH=${NDEPTH} \
@@ -52,7 +43,8 @@ run_benchmark() {
   local method=$2
   local mpi_gpu_support_enabled=$3
 
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/flickr.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+
 #  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/as-skitter.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 #  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 #  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
@@ -66,6 +58,8 @@ run_benchmark() {
 }
 
 
+
+
 start_time=$(date +"%Y-%m-%d %H:%M:%S")
 start_seconds=$(date +%s)
 echo "Polaris job started at: $start_time"
@@ -77,7 +71,7 @@ CUDA_AWARE_MPI=0
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
 MPICH_GPU_SUPPORT_ENABLED=0
-make buildpolariswcc
+make buildpolaristc
 echo "TRADITIONAL MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
@@ -100,7 +94,7 @@ MPICH_GPU_SUPPORT_ENABLED=1
 CUDA_AWARE_MPI=1
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
-make buildpolariswcc
+make buildpolaristc
 echo "CUDA AWARE MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}

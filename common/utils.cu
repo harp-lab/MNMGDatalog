@@ -18,7 +18,7 @@ struct Output {
     int block_size;
     int grid_size;
     int total_rank;
-    unsigned long input_rows;
+    int input_rows;
     int hashtable_rows;
     int iterations;
     long long output_size;
