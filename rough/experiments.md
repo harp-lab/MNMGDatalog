@@ -1,3 +1,42 @@
+### Debugging WCC memoery leak
+```shell
+nvcc wcc.cu -o wcc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda -g
+mpirun -np 8 valgrind ./wcc.out data/flickr.bin 0 0
+
+```
+
+
+```shell
+cat tc-merged-new.error
+MPICH ERROR [Rank 10] [job id 574596a4-9f66-4e0c-bb8f-b964b5cc374a] [Fri Sep 13 19:01:03 2024] [x3005c0s19b0n0] - Abort(1009328399) (rank 10 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14cd9bc76a00, scnts=0x225b9c0, sdispls=0x217b4d0, dtype=0x4c00083e, rbuf=0x14cd9bd62c00, rcnts=0x22802b0, rdispls=0x22919f0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14cd9bc76a00, scnts=0x225b9c0, sdispls=0x217b4d0, dtype=0x4c00083e, rbuf=0x14cd9bd62c00, rcnts=0x22802b0, rdispls=0x22919f0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+x3005c0s19b0n0.hsn.cm.polaris.alcf.anl.gov: rank 10 exited with code 255
+x3005c0s19b0n0.hsn.cm.polaris.alcf.anl.gov: rank 8 died from signal 15
+make: *** [Makefile:43: testpolaristc] Error 255
+MPICH ERROR [Rank 10] [job id 8802b7a7-eaa3-4282-9731-faa2de106c4e] [Fri Sep 13 19:01:13 2024] [x3005c0s19b0n0] - Abort(405348623) (rank 10 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x148223c76a00, scnts=0x385dee0, sdispls=0x385ae60, dtype=0x4c00083e, rbuf=0x148223d62c00, rcnts=0x38457a0, rdispls=0x384dff0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+```
+
 ### Transitive Closure
 
 #### Local machine (`CUDA_AWARE_MPI` = 0, Two pass method)

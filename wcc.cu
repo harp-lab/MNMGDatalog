@@ -511,7 +511,7 @@ void benchmark(int argc, char **argv) {
             printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
             printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
         }
-        printf("| %'lu | %'d | %'d | %'lld (%'lld) | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
+        printf("| %'d | %'d | %'d | %'lld (%'lld) | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.output_size_secondary, output.total_time,
                output.initialization_time, output.fileio_time, output.hashtable_build_time, output.join_time,
