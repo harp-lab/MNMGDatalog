@@ -236,7 +236,8 @@ void benchmark(int argc, char **argv) {
 
     start_time = MPI_Wtime();
     long long global_t_delta_size = 0;
-    MPI_Allreduce(&t_delta_size, &global_t_delta_size, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+    long long t_delta_size_temp = t_delta_size;
+    MPI_Allreduce(&t_delta_size_temp, &global_t_delta_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     initialization_time += elapsed_time;
@@ -257,6 +258,8 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     hashtable_build_time += elapsed_time;
+
+    cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size << ", global_t_delta_size: " << global_t_delta_size << endl;
 
     while (true) {
         Entity *new_cc;
@@ -332,8 +335,9 @@ void benchmark(int argc, char **argv) {
         // Update cc
         cc_size = new_cc_size;
         cudaMemcpy(cc, new_cc, cc_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+        long long t_delta_size_temp_loop = t_delta_size;
         long long old_global_t_delta_size = global_t_delta_size;
-        MPI_Allreduce(&t_delta_size, &global_t_delta_size, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(&t_delta_size_temp_loop, &global_t_delta_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
         cudaFree(distributed_join_result);
         cudaFree(new_cc);
@@ -342,6 +346,7 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
+        cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size << ", global_t_delta_size: " << global_t_delta_size << endl;
         if (old_global_t_delta_size == global_t_delta_size) {
             break;
         }

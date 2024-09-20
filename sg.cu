@@ -223,7 +223,7 @@ void benchmark(int argc, char **argv) {
 
     long long global_t_full_size;
     long long t_full_size = t_delta_size;
-    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     merge_time += elapsed_time;
@@ -333,7 +333,7 @@ void benchmark(int argc, char **argv) {
         t_full_size = new_t_full_size;
         // Check if the global t full size has changed in this iteration
         long long old_global_t_full_size = global_t_full_size;
-        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
         cudaFree(distributed_first_join_result);
         cudaFree(distributed_second_join_result);

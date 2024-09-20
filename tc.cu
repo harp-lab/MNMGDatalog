@@ -166,8 +166,10 @@ void benchmark(int argc, char **argv) {
     cudaMemcpy(t_full, t_delta, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
 
     long long global_t_full_size;
-    long long  t_full_size = t_delta_size;
-    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+    long long t_full_size = t_delta_size;
+    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
+//    cout << "Rank: " << rank << ", iterations: " << iterations << ", t_full_size: " << t_full_size << ", global_t_full_size: " << global_t_full_size << endl;
+
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     merge_time += elapsed_time;
@@ -227,7 +229,7 @@ void benchmark(int argc, char **argv) {
                                               t_delta, set_cmp()) - t_delta;
 
         // set union of two sets (sorted t full and t delta)
-        int new_t_full_size = t_delta_size + t_full_size;
+        long new_t_full_size = t_delta_size + t_full_size;
         checkCuda(cudaMalloc((void **) &new_t_full, new_t_full_size * sizeof(Entity)));
         new_t_full_size = thrust::set_union(thrust::device,
                                             t_full, t_full + t_full_size,
@@ -242,7 +244,8 @@ void benchmark(int argc, char **argv) {
         cudaFree(t_delta_temp);
         // Check if the global t full size has changed in this iteration
         long long old_global_t_full_size = global_t_full_size;
-        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
+//        cout << "Rank: " << rank << ", iterations: " << iterations << ", t_full_size: " << t_full_size << ", global_t_full_size: " << global_t_full_size << endl;
         iterations++;
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;

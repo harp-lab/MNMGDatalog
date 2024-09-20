@@ -1,3 +1,10 @@
+### Debugging locally
+```shell
+nvcc wcc.cu -o wcc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda -g -O1
+mpirun -np 22 --oversubscribe ./wcc.out data/flickr.bin 0 0
+```
+
+
 ### Debugging WCC memoery leak
 ```shell
 nvcc wcc.cu -o wcc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda -g -O1
