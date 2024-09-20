@@ -1,8 +1,8 @@
 ### Debugging WCC memoery leak
 ```shell
-nvcc wcc.cu -o wcc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda -g
+nvcc wcc.cu -o wcc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda -g -O1
 mpirun -np 8 valgrind ./wcc.out data/flickr.bin 0 0
-
+mpirun -np 1 valgrind --leak-check=full --track-origins=yes ./wcc.out data/dummy.bin 0 0
 ```
 
 

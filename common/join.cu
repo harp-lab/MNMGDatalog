@@ -1,6 +1,6 @@
 __global__
-void get_join_result_size_entity(Entity *hash_table, long int hash_table_size,
-                                 Entity *t_delta, long int t_delta_size,
+void get_join_result_size_entity(Entity *hash_table, int hash_table_size,
+                                 Entity *t_delta, int t_delta_size,
                                  int *join_result_size) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= t_delta_size) return;
@@ -84,8 +84,8 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
 
 
 __global__
-void get_join_result_size_with_reverse_entity(Entity *hash_table, long int hash_table_size,
-                                              Entity *t_delta, long int t_delta_size,
+void get_join_result_size_with_reverse_entity(Entity *hash_table,int hash_table_size,
+                                              Entity *t_delta, int t_delta_size,
                                               int *join_result_size) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= t_delta_size) return;

@@ -125,7 +125,7 @@ void benchmark(int argc, char **argv) {
     int local_count = row_size * total_columns;
 
     // Reading specific portion from the file as char in parallel
-    long long offset = row_start * total_columns * sizeof(int);
+    int offset = row_start * total_columns * sizeof(int);
     int *edge_host = (int *) malloc(local_count * sizeof(int));
     MPI_File mpi_file_buffer;
     if (MPI_File_open(MPI_COMM_WORLD, input_file, MPI_MODE_RDONLY,
