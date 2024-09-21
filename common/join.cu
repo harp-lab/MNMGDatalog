@@ -154,12 +154,12 @@ Entity *get_join_with_reverse(int grid_size, int block_size, Entity *hash_table,
     checkCuda(cudaMalloc((void **) &join_offset, relation_size * sizeof(int)));
     checkCuda(cudaMemset(join_offset, 0, relation_size * sizeof(int)));
 
-    get_join_result_size_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
+    get_join_result_size_with_reverse_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
                                                            relation, relation_size, join_offset);
     result_size = thrust::reduce(thrust::device, join_offset, join_offset + relation_size, 0, thrust::plus<int>());
     thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
     checkCuda(cudaMalloc((void **) &join_result, result_size * sizeof(Entity)));
-    get_join_result_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
+    get_join_result_with_reverse_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
                                                       relation, relation_size, join_offset, join_result);
     cudaFree(join_offset);
     *join_result_size = result_size;
