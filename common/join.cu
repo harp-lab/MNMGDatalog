@@ -59,6 +59,7 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         *compute_time = elapsed_time;
+        cout << "Empty hash table" << endl;
         return join_result;
     }
     int result_size;

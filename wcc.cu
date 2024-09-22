@@ -209,8 +209,8 @@ void benchmark(int argc, char **argv) {
     start_time = MPI_Wtime();
     thrust::stable_sort(thrust::device, distributed_edge, distributed_edge + distributed_edge_size, set_cmp());
     distributed_edge_size = (thrust::unique(thrust::device,
-                                distributed_edge, distributed_edge + distributed_edge_size,
-                                is_equal())) - distributed_edge;
+                                            distributed_edge, distributed_edge + distributed_edge_size,
+                                            is_equal())) - distributed_edge;
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
@@ -233,7 +233,7 @@ void benchmark(int argc, char **argv) {
     thrust::stable_sort(thrust::device, cc, cc + cc_size, set_cmp());
     cc_size = (thrust::unique(thrust::device,
                               cc, cc + cc_size,
-                                   is_equal_key())) - cc;
+                              is_equal_key())) - cc;
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
@@ -299,7 +299,8 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
     hashtable_build_time += elapsed_time;
 
-    cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size << ", global_t_delta_size: " << global_t_delta_size << endl;
+    cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size
+         << ", global_t_delta_size: " << global_t_delta_size << endl;
 
     while (true) {
         Entity *new_cc;
@@ -309,7 +310,9 @@ void benchmark(int argc, char **argv) {
                                        t_delta, t_delta_size,
                                        &join_result_size, &temp_join_time);
         join_time += temp_join_time;
-        //show_device_entity_variable(join_result_with_reverse, join_result_with_reverse_size, rank, "join_result_with_reverse", 0);
+        if (rank == 0)
+            cout << "Rank " << rank << ", iteration: " << iterations << " join_result_size: " << join_result_size
+                 << endl;
 
         // Scatter the join result with reverse among relevant processes
         buffer_preparation_time_temp = 0.0;
@@ -336,6 +339,10 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         deduplication_time += elapsed_time;
+        if (rank == 0)
+            cout << "Rank " << rank << ", iteration: " << iterations << " distributed_join_result_size: "
+                 << distributed_join_result_size
+                 << endl;
 
 
         // Set union of two sets (sorted cc and distributed join result)
@@ -360,6 +367,9 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         deduplication_time += elapsed_time;
+        if (rank == 0)
+            cout << "Rank " << rank << ", iteration: " << iterations << " new_cc_size: " << new_cc_size
+                 << endl;
 
         // Update t delta which is the only new facts which are not in cc and will be used in next iteration
         start_time = MPI_Wtime();
@@ -387,7 +397,9 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
-        cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size << ", global_t_delta_size: " << global_t_delta_size << endl;
+        if (rank == 0)
+            cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size
+                 << ", global_t_delta_size: " << global_t_delta_size << endl;
         //show_device_entity_variable(cc, cc_size, rank, "cc", 0);
         if (old_global_t_delta_size == global_t_delta_size) {
             break;
@@ -442,7 +454,8 @@ void benchmark(int argc, char **argv) {
     long long total_unique_component = thrust::distance(component_sizes, reduce_end.second);
     // Find the largest component size
     long long max_component_size_current_rank = thrust::reduce(thrust::device,
-                                                               component_sizes, component_sizes + total_unique_component, -1,
+                                                               component_sizes,
+                                                               component_sizes + total_unique_component, -1,
                                                                thrust::maximum<int>());
     long long max_component_size = 0;
     MPI_Allreduce(&max_component_size_current_rank, &max_component_size, 1, MPI_LONG_LONG_INT, MPI_MAX, MPI_COMM_WORLD);
