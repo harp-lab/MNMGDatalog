@@ -299,8 +299,8 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
     hashtable_build_time += elapsed_time;
 
-    cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size
-         << ", global_t_delta_size: " << global_t_delta_size << endl;
+//    cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size
+//         << ", global_t_delta_size: " << global_t_delta_size << endl;
 
     while (true) {
         Entity *new_cc;
@@ -308,7 +308,7 @@ void benchmark(int argc, char **argv) {
         int join_result_size = 0;
         Entity *join_result = get_join(grid_size, block_size, hash_table, hash_table_rows,
                                        t_delta, t_delta_size,
-                                       &join_result_size, &temp_join_time);
+                                       &join_result_size, &temp_join_time, rank, iterations);
         join_time += temp_join_time;
         if (rank == 0)
             cout << "Rank " << rank << ", iteration: " << iterations << " join_result_size: " << join_result_size
@@ -339,10 +339,10 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         deduplication_time += elapsed_time;
-        if (rank == 0)
-            cout << "Rank " << rank << ", iteration: " << iterations << " distributed_join_result_size: "
-                 << distributed_join_result_size
-                 << endl;
+//        if (rank == 0)
+//            cout << "Rank " << rank << ", iteration: " << iterations << " distributed_join_result_size: "
+//                 << distributed_join_result_size
+//                 << endl;
 
 
         // Set union of two sets (sorted cc and distributed join result)
@@ -367,10 +367,10 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         deduplication_time += elapsed_time;
-        if (rank == 0)
-            cout << "Rank " << rank << ", iteration: " << iterations << " new_cc_size: " << new_cc_size
-                 << endl;
-
+//        if (rank == 0)
+//            cout << "Rank " << rank << ", iteration: " << iterations << " new_cc_size: " << new_cc_size
+//                 << endl;
+//
         // Update t delta which is the only new facts which are not in cc and will be used in next iteration
         start_time = MPI_Wtime();
         Entity *t_delta_temp;
@@ -397,9 +397,9 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
-        if (rank == 0)
-            cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size
-                 << ", global_t_delta_size: " << global_t_delta_size << endl;
+//        if (rank == 0)
+//            cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size
+//                 << ", global_t_delta_size: " << global_t_delta_size << endl;
         //show_device_entity_variable(cc, cc_size, rank, "cc", 0);
         if (old_global_t_delta_size == global_t_delta_size) {
             break;
