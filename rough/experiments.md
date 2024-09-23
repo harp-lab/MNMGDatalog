@@ -1,3 +1,21 @@
+### After fixing hashtable
+```shell
+cat tc-merged-new.output
+Traditional MPI - Sorting: works
+Traditional MPI - Two pass: works
+CAM - Sorting:
+data_147892.bin does not work
+data_165435.bin does not work for 8, 16
+data_409593.bin does not work
+data/vsp_finan512_scagr7-2c_rlfddd.bin does not work
+CAM - Two pass
+data_147892.bin does not work for 16, 24, 32, 40
+data_165435.bin does not work
+data_409593.bin does not work
+data/vsp_finan512_scagr7-2c_rlfddd.bin does not work
+```
+
+
 ### Debugging locally
 ```shell
 mpiexec --np 20 ./cc_interactive.out data/flickr.bin 0 0

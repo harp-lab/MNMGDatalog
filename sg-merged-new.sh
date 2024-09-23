@@ -23,7 +23,7 @@ run_single_dataset() {
   local data_file=$3
   local mpi_gpu_support_enabled=$4
 
-  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SG on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
   for i in {40..4..-8}; do
     for j in {1..5}; do
       make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \

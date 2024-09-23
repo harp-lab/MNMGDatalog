@@ -450,6 +450,18 @@ rm -rf ./local_join
 # Delete the generated bin files
 make clean
 ```
+#### Polaris submit all jobs
+```shell
+arsho::polaris-login-02 { ~/mnmgJOIN }-> chmod +x set_affinity_gpu_polaris.sh
+arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub wcc-merged.sh
+2095171.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub tc-merged-new.sh 
+2095168.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+arsho::polaris-login-02 { ~/mnmgJOIN }-> qsub sg-merged-new.sh
+2095169.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+arsho::polaris-login-02 { ~/mnmgJOIN }-> qstat -u $USER
+```
+
 
 #### Polaris resize terminal window
 For long command, terminal may show only the last portion. To fix that use `resize`:
