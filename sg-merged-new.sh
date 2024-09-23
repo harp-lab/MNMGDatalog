@@ -5,8 +5,8 @@
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
-#PBS -o tc-merged-new.output
-#PBS -e tc-merged-new.error
+#PBS -o sg-merged-new.output
+#PBS -e sg-merged-new.error
 
 cd ${PBS_O_WORKDIR}
 
@@ -26,7 +26,7 @@ run_single_dataset() {
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
   for i in {40..4..-8}; do
     for j in {1..5}; do
-      make testpolaristc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
+      make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
         NTOTRANKS=${i} \
         NRANKS_PER_NODE=${NRANKS_PER_NODE} \
         NDEPTH=${NDEPTH} \
@@ -43,6 +43,8 @@ run_benchmark() {
   local method=$2
   local mpi_gpu_support_enabled=$3
 
+  # fe_body
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   # p2p-Gnutella31
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_147892.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   # usroad
@@ -50,18 +52,10 @@ run_benchmark() {
   # fe_ocean
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-
 
 #  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/as-skitter.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 #  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 #  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  # fe_body
-#  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  # usroad
-#  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  # fe_ocean
-#  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 #  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 }
 
@@ -79,7 +73,7 @@ CUDA_AWARE_MPI=0
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
 MPICH_GPU_SUPPORT_ENABLED=0
-make buildpolaristc
+make buildpolarissg
 echo "TRADITIONAL MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
@@ -102,7 +96,7 @@ MPICH_GPU_SUPPORT_ENABLED=1
 CUDA_AWARE_MPI=1
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
-make buildpolaristc
+make buildpolarissg
 echo "CUDA AWARE MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}

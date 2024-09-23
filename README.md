@@ -363,14 +363,22 @@ ssh arsho@polaris.alcf.anl.gov
 qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
 cd mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
+
+# Debugging memory leak
+CC wcc.cu -o cc_interactive.out -g -O1
+mpiexec --np 4 ./cc_interactive.out data/flickr.bin 0 0
+mpiexec --np 20 ./cc_interactive.out data/flickr.bin 0 0
+
+
 ## Traditional MPI
 CC wcc.cu -o cc_interactive.out
 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/flickr.bin 0 0
 ## CUDA-AWARE-MPI
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
-# Debugging memory leak
-CC wcc.cu -o cc_interactive.out -g -O1
+
+
+
 module load valgrind4hpc/2.13.2
 
 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/flickr.bin 1 0

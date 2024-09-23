@@ -29,6 +29,7 @@
 #include "common/utils.cu"
 #include "common/kernels.cu"
 #include "common/comm.cu"
+#include "common/hash_table.cu"
 #include "common/join.cu"
 
 using namespace std;
@@ -47,13 +48,15 @@ void benchmark(int argc, char **argv) {
     grid_size = 32 * number_of_sm;
     setlocale(LC_ALL, "");
     double start_time, end_time, elapsed_time;
-    double max_fileio_time = 0.0, max_initialization_time = 0.0, max_hashtable_build_time = 0.0, max_finalization_time = 0.0;
+    double max_fileio_time = 0.0, max_initialization_time = 0.0, max_finalization_time = 0.0;
     double max_join_time = 0.0, max_merge_time = 0.0;
     double max_buffer_preparation_time = 0.0, max_communication_time = 0.0;
     double buffer_preparation_time = 0.0, communication_time = 0.0;
     double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
     double join_time = 0.0, merge_time = 0.0;
     double deduplication_time = 0.0, max_deduplication_time = 0.0;;
+    double hashtable_build_time = 0.0, max_hashtable_build_time = 0.0;
+
     double file_io_time = 0.0;
     double total_time = 0.0, max_total_time = 0.0;
     int total_rank, rank;
@@ -168,26 +171,17 @@ void benchmark(int argc, char **argv) {
     long long global_t_full_size;
     long long t_full_size = t_delta_size;
     MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
-//    cout << "Rank: " << rank << ", iterations: " << iterations << ", t_full_size: " << t_full_size << ", global_t_full_size: " << global_t_full_size << endl;
-
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     merge_time += elapsed_time;
-    start_time = MPI_Wtime();
-    Entity *hash_table;
-    double load_factor = 0.4;
-    int hash_table_rows = (int) input_relation_size / load_factor;
-    hash_table_rows = pow(2, ceil(log(hash_table_rows) / log(2)));
-    checkCuda(cudaMalloc((void **) &hash_table, hash_table_rows * sizeof(Entity)));
-    Entity negative_entity;
-    negative_entity.key = -1;
-    negative_entity.value = -1;
-    thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
-    build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, input_relation,
-                                                       input_relation_size);
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    MPI_Allreduce(&elapsed_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+    // Hash table is Edge
+    double temp_hashtable_build_time = 0.0;
+    int hash_table_rows = 0;
+    Entity *hash_table = get_hash_table(grid_size, block_size, input_relation, input_relation_size,
+                                        &hash_table_rows, &temp_hashtable_build_time);
+    hashtable_build_time += temp_hashtable_build_time;
+
 
     while (true) {
         Entity *new_t_full;
@@ -260,6 +254,7 @@ void benchmark(int argc, char **argv) {
     MPI_Allreduce(&merge_time, &max_merge_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&buffer_preparation_time, &max_buffer_preparation_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&communication_time, &max_communication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&hashtable_build_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     start_time = MPI_Wtime();
     // Reverse the t_full as we stored it in reverse order initially

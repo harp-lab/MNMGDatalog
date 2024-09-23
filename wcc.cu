@@ -33,6 +33,7 @@
 #include "common/utils.cu"
 #include "common/kernels.cu"
 #include "common/comm.cu"
+#include "common/hash_table.cu"
 #include "common/join.cu"
 
 using namespace std;
@@ -74,7 +75,7 @@ void benchmark(int argc, char **argv) {
     double buffer_preparation_time = 0.0, communication_time = 0.0;
     double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
     double join_time = 0.0, merge_time = 0.0;
-    double deduplication_time = 0.0, max_deduplication_time = 0.0;;
+    double deduplication_time = 0.0, max_deduplication_time = 0.0;
     double hashtable_build_time = 0.0, max_hashtable_build_time = 0.0;
 
     double total_time = 0.0, max_total_time = 0.0;
@@ -169,29 +170,6 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
-    //show_device_entity_variable(edge, edge_size, rank, "edge before distribution", 0);
-
-    // Create cc from edge where node, component_id = node, node
-    // cc(x, x) :- edge(x, _)
-//    start_time = MPI_Wtime();
-//    Entity *cc_base;
-//    long cc_base_size = edge_size;
-//    checkCuda(cudaMalloc((void **) &cc_base, cc_base_size * sizeof(Entity)));
-//    same_key_value_entity_ar<<<grid_size, block_size>>>(edge, cc_base_size, cc_base);
-//    end_time = MPI_Wtime();
-//    elapsed_time = end_time - start_time;
-//    initialization_time += elapsed_time;
-//
-//    // Deduplicate cc
-//    start_time = MPI_Wtime();
-//    thrust::stable_sort(thrust::device, cc_base, cc_base + cc_base_size, set_cmp());
-//    cc_base_size = (thrust::unique(thrust::device,
-//                                   cc_base, cc_base + cc_base_size,
-//                                   is_equal_key())) - cc_base;
-//    end_time = MPI_Wtime();
-//    elapsed_time = end_time - start_time;
-//    deduplication_time += elapsed_time;
-//    //show_device_entity_variable(cc_base, cc_base_size, rank, "cc_base before distribution", 0);
 
     // Distribute edge
     int distributed_edge_size = 0;
@@ -214,11 +192,10 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
-    //show_device_entity_variable(distributed_edge, distributed_edge_size, rank, "edge after distribution", 0);
 
 
-//     Create cc from edge where node, component_id = node, node
-//     cc(x, x) :- edge(x, _)
+    // Create cc from edge where node, component_id = node, node
+    // cc(x, x) :- edge(x, _)
     start_time = MPI_Wtime();
     Entity *cc;
     int cc_size = distributed_edge_size;
@@ -237,31 +214,6 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
-    //show_device_entity_variable(cc, cc_size, rank, "cc", 0);
-
-
-
-//    // Distribute cc created from base rule
-//    buffer_preparation_time_temp = 0.0;
-//    communication_time_temp = 0.0;
-//    int t_delta_size = 0;
-//    Entity *t_delta = get_split_relation(rank, cc_base,
-//                                         cc_base_size, total_columns, total_rank,
-//                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
-//                                         &buffer_preparation_time_temp, &communication_time_temp);
-//    buffer_preparation_time += buffer_preparation_time_temp;
-//    communication_time += communication_time_temp;
-
-
-    // Deduplicate distributed cc
-//    start_time = MPI_Wtime();
-//    thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
-//    t_delta_size = (thrust::unique(thrust::device,
-//                                   t_delta, t_delta + t_delta_size,
-//                                   is_equal())) - t_delta;
-//    end_time = MPI_Wtime();
-//    elapsed_time = end_time - start_time;
-//    deduplication_time += elapsed_time;
 
     // t_delta = cc, key-value pair: node - component id
     start_time = MPI_Wtime();
@@ -283,26 +235,12 @@ void benchmark(int argc, char **argv) {
     initialization_time += elapsed_time;
 
     // Hash table is Edge
-    start_time = MPI_Wtime();
-    Entity *hash_table;
-    double load_factor = 0.4;
-    int hash_table_rows = (int) distributed_edge_size / load_factor;
-    hash_table_rows = pow(2, ceil(log(hash_table_rows) / log(2)));
-    checkCuda(cudaMalloc((void **) &hash_table, hash_table_rows * sizeof(Entity)));
-    Entity negative_entity;
-    negative_entity.key = -1;
-    negative_entity.value = -1;
-    thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
-    build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, distributed_edge,
-                                                       distributed_edge_size);
-    if(rank == 0)
-        cout << "hash_table_rows: " << hash_table_rows << endl;
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    hashtable_build_time += elapsed_time;
+    double temp_hashtable_build_time = 0.0;
+    int hash_table_rows = 0;
+    Entity *hash_table = get_hash_table(grid_size, block_size, distributed_edge, distributed_edge_size,
+                                        &hash_table_rows, &temp_hashtable_build_time);
+    hashtable_build_time += temp_hashtable_build_time;
 
-//    cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size
-//         << ", global_t_delta_size: " << global_t_delta_size << endl;
 
     while (true) {
         Entity *new_cc;
@@ -310,11 +248,8 @@ void benchmark(int argc, char **argv) {
         int join_result_size = 0;
         Entity *join_result = get_join(grid_size, block_size, hash_table, hash_table_rows,
                                        t_delta, t_delta_size,
-                                       &join_result_size, &temp_join_time, rank, iterations);
+                                       &join_result_size, &temp_join_time);
         join_time += temp_join_time;
-        if (rank == 0)
-            cout << "Rank " << rank << ", iteration: " << iterations << " join_result_size: " << join_result_size
-                 << endl;
 
         // Scatter the join result with reverse among relevant processes
         buffer_preparation_time_temp = 0.0;
@@ -341,11 +276,6 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         deduplication_time += elapsed_time;
-//        if (rank == 0)
-//            cout << "Rank " << rank << ", iteration: " << iterations << " distributed_join_result_size: "
-//                 << distributed_join_result_size
-//                 << endl;
-
 
         // Set union of two sets (sorted cc and distributed join result)
         start_time = MPI_Wtime();
@@ -369,10 +299,7 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         deduplication_time += elapsed_time;
-//        if (rank == 0)
-//            cout << "Rank " << rank << ", iteration: " << iterations << " new_cc_size: " << new_cc_size
-//                 << endl;
-//
+
         // Update t delta which is the only new facts which are not in cc and will be used in next iteration
         start_time = MPI_Wtime();
         Entity *t_delta_temp;
@@ -399,10 +326,6 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
-//        if (rank == 0)
-//            cout << "Rank: " << rank << ", iterations: " << iterations << ", t_delta_size: " << t_delta_size
-//                 << ", global_t_delta_size: " << global_t_delta_size << endl;
-        //show_device_entity_variable(cc, cc_size, rank, "cc", 0);
         if (old_global_t_delta_size == global_t_delta_size) {
             break;
         }

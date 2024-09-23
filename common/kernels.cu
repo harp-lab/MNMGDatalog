@@ -27,29 +27,6 @@ void build_hash_table(Entity *hash_table, long int hash_table_row_size,
 }
 
 __global__
-void build_hash_table_entity(Entity *hash_table, long int hash_table_size,
-                             Entity *relation, long int relation_size) {
-    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (index >= relation_size) return;
-
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = index; i < relation_size; i += stride) {
-        int key = relation[i].key;
-        int value = relation[i].value;
-        int position = get_position(key, hash_table_size);
-        while (true) {
-            int existing_key = atomicCAS(&hash_table[position].key, -1, key);
-            if (existing_key == -1) {
-                hash_table[position].value = value;
-                break;
-            }
-            position = (position + 1) & (hash_table_size - 1);
-        }
-    }
-}
-
-__global__
 void copy_t_delta(Entity *t_delta, int *reverse_relation, long int reverse_relation_rows, int relation_columns) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= reverse_relation_rows) return;
