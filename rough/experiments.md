@@ -1,5 +1,29 @@
 ### Debugging locally
 ```shell
+mpiexec --np 20 ./cc_interactive.out data/flickr.bin 0 0
+rank 14, iterations 0, relation_size 40931, hash_table_size: 2097151
+rank 3, iterations 0, relation_size 41091, hash_table_size: 2097151
+rank 7, iterations 0, relation_size 41336, hash_table_size: 2097151
+rank 13, iterations 0, relation_size 41113, hash_table_size: 2097151
+rank 5, iterations 0, relation_size 40528, hash_table_size: 2097151
+rank 10, iterations 0, relation_size 40565, hash_table_size: 2097151
+rank 15, iterations 0, relation_size 41185, hash_table_size: 2097151
+rank 11, iterations 0, relation_size 41003, hash_table_size: 2097151
+rank 9, iterations 0, relation_size 41563, hash_table_size: 2097151
+rank 8, iterations 0, relation_size 41029, hash_table_size: 2097151
+rank 4, iterations 0, relation_size 40971, hash_table_size: 2097151
+rank 2, iterations 0, relation_size 41186, hash_table_size: 2097151
+rank 6, iterations 0, relation_size 41003, hash_table_size: 2097151
+rank 19, iterations 0, relation_size 41080, hash_table_size: 2097151
+rank 1, iterations 0, relation_size 41098, hash_table_size: 2097151
+rank 17, iterations 0, relation_size 41133, hash_table_size: 2097151
+rank 18, iterations 0, relation_size 41061, hash_table_size: 2097151
+rank 0, iterations 0, relation_size 41431, hash_table_size: 2097151
+rank 16, iterations 0, relation_size 40798, hash_table_size: 2097151
+rank 12, iterations 0, relation_size 40773, hash_table_size: 2097151
+^CInterrupt (once more within 1 sec to abort immediately)
+
+
 nvcc wcc.cu -o wcc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm --extended-lambda -g -O1
 mpirun -np 22 --oversubscribe ./wcc.out data/flickr.bin 0 0
 ```

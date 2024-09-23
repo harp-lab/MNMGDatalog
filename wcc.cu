@@ -295,6 +295,8 @@ void benchmark(int argc, char **argv) {
     thrust::fill(thrust::device, hash_table, hash_table + hash_table_rows, negative_entity);
     build_hash_table_entity<<<grid_size, block_size>>>(hash_table, hash_table_rows, distributed_edge,
                                                        distributed_edge_size);
+    if(rank == 0)
+        cout << "hash_table_rows: " << hash_table_rows << endl;
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     hashtable_build_time += elapsed_time;
