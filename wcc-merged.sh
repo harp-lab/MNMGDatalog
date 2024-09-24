@@ -27,7 +27,7 @@ run_single_dataset() {
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> WCC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
   for i in {40..4..-8}; do
     for j in {1..5}; do
-      make testpolarissg MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
+      make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
         NTOTRANKS=${i} \
         NRANKS_PER_NODE=${NRANKS_PER_NODE} \
         NDEPTH=${NDEPTH} \

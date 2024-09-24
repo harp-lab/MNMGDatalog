@@ -13,6 +13,95 @@ data_147892.bin does not work for 16, 24, 32, 40
 data_165435.bin does not work
 data_409593.bin does not work
 data/vsp_finan512_scagr7-2c_rlfddd.bin does not work
+
+
+
+
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> CC tc.cu -o tc_interactive.out -g -O1
+
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> 
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_147892.bin 1 0
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 147,892 | 4 | 31 | 884,179,859 |   4.4235 |   0.5334 |   6.1584 |   0.0003 |   0.0584 |   0.4959 |   2.1434 |   0.2112 |   0.5067 |   0.4742 | data/data_147892.bin_tc.bin |
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 40 ./tc_interactive.out data/data_147892.bin 1 0
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 147,892 | 40 | 31 | 884,179,859 |  35.7599 |  13.5661 |   6.6912 |   0.0065 |   0.7751 |   2.6939 |  11.3998 |   1.4921 |   5.3049 |   0.5216 | data/data_147892.bin_tc.bin |
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 128 ./tc_interactive.out data/data_147892.bin 1 0
+WARNING: CPU oversubscription detected for application
+GPUassert: out of memory tc.cu 124
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 121 exited with code 2
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 32 died from signal 15
+
+
+CC sg.cu -o sg_interactive.out
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+| # Input | # Process | # Iterations | # SG | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 552,020 | 4 | 513 | 864,761,518 |  52.5131 |   0.5382 |   5.5495 |   0.0007 |   0.6974 |   2.4376 |  25.7629 |   1.3026 |  21.2854 |   0.4881 | data/vsp_finan512_scagr7-2c_rlfddd.bin_sg.bin |
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 40 ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+GPUassert: out of memory sg.cu 321
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 321
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 321
+GPUassert: out of memory sg.cu 321
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 2 exited with code 2
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 4 died from signal 15
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 32 ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+GPUassert: out of memory common/comm.cu 58
+GPUassert: out of memory common/comm.cu 58
+GPUassert: out of memory common/comm.cu 58
+GPUassert: out of memory common/comm.cu 58
+GPUassert: out of memory common/comm.cu 58
+GPUassert: out of memory common/comm.cu 58
+GPUassert: out of memory common/comm.cu 58
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 1 exited with code 2
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 2 died from signal 15
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 24 ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 321
+GPUassert: out of memory sg.cu 321
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+GPUassert: out of memory sg.cu 327
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 23 exited with code 2
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 10 died from signal 15
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 16 ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 0
+GPUassert: out of memory sg.cu 327
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 6 exited with code 2
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 2 died from signal 15
+
+
+
+CC wcc.cu -o cc_interactive.out
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/data_214078.bin 1 0
+| # Input | # Process | # Iterations | # CC (# Nodes in largest WCC) | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 214,078 | 4 | 12 | 547 (56,739) |   1.1877 |   0.5336 |   1.3005 |   0.0003 |   0.0066 |   0.0025 |   0.5302 |   0.1096 |   0.0041 |   0.0009 | data/data_214078.bin_cc.bin |
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 40 ./cc_interactive.out data/data_214078.bin 1 0
+| # Input | # Process | # Iterations | # CC (# Nodes in largest WCC) | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 214,078 | 40 | 12 | 547 (56,739) |  31.6277 |  13.6684 |   3.1867 |   0.0079 |   0.2537 |   0.1882 |  16.9058 |   0.2639 |   0.3247 |   0.0151 | data/data_214078.bin_cc.bin |
+arsho::x3006c0s31b0n0 { ~/mnmgJOIN }-> mpiexec --np 128 ./cc_interactive.out data/data_214078.bin 1 0
+WARNING: CPU oversubscription detected for application
+GPUassert: out of memory wcc.cu 145
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 40 exited with code 2
+x3006c0s31b0n0.hsn.cm.polaris.alcf.anl.gov: rank 80 died from signal 15
+
 ```
 
 

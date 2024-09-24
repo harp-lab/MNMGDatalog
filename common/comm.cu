@@ -29,10 +29,10 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
     int *receive_count_host = (int *) malloc(total_rank * sizeof(int));
     int *send_displacements_host = (int *) malloc(total_rank * sizeof(int));
     int *receive_displacements_host = (int *) malloc(total_rank * sizeof(int));
-    memset(send_count_host, 0, total_rank* sizeof(int));
-    memset(receive_count_host, 0, total_rank* sizeof(int));
-    memset(send_displacements_host, 0, total_rank* sizeof(int));
-    memset(receive_displacements_host, 0, total_rank* sizeof(int));
+    memset(send_count_host, 0, total_rank * sizeof(int));
+    memset(receive_count_host, 0, total_rank * sizeof(int));
+    memset(send_displacements_host, 0, total_rank * sizeof(int));
+    memset(receive_displacements_host, 0, total_rank * sizeof(int));
     cudaMemcpy(send_count_host, send_count, total_rank * sizeof(int), cudaMemcpyDeviceToHost);
     cudaMemcpy(send_displacements_host, send_displacements, total_rank * sizeof(int), cudaMemcpyDeviceToHost);
     end_time = MPI_Wtime();

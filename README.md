@@ -276,6 +276,7 @@ cat tc-merged.output
 
 # Interactive 1 node run tc
 ssh arsho@polaris.alcf.anl.gov
+# 1 node
 qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
 cd mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
@@ -292,6 +293,46 @@ mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 165,435 | 4 | 606 | 871,365,688 |  40.5196 |   0.5299 |   6.0761 |   0.0003 |   0.2900 |   0.7357 |  12.1137 |   0.5656 |  25.8573 |   0.4270 | data/data_165435.bin_tc.bin |
 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 1 1
+
+# Debugging on 4 nodes
+# 4 nodes
+qsub -I -l select=4 -l filesystems=home:eagle -l walltime=1:00:00 -q debug-scaling -A dist_relational_alg
+arsho::x3106c0s25b1n0 { ~/mnmgJOIN }-> module load craype-accel-nvidia80
+arsho::x3106c0s25b1n0 { ~/mnmgJOIN }-> export MPICH_GPU_SUPPORT_ENABLED=1
+arsho::x3106c0s25b1n0 { ~/mnmgJOIN }-> 
+arsho::x3106c0s25b1n0 { ~/mnmgJOIN }-> CC tc.cu -o tc_interactive.out -g -O1
+arsho::x3106c0s25b1n0 { ~/mnmgJOIN }-> mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_147892.bin 1 0
+MPICH ERROR [Rank 3] [job id 7b36a3f1-595c-422e-8040-8c8a3bb3eec1] [Mon Sep 23 22:55:29 2024] [x3106c0s25b1n0] - Abort(875110671) (rank 3 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x152f532f9000, scnts=0x2bde4c0, sdispls=0x2b70230, dtype=0x4c00083e, rbuf=0x152f53344400, rcnts=0x2b712d0, rdispls=0x2bb63c0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x152f532f9000, scnts=0x2bde4c0, sdispls=0x2b70230, dtype=0x4c00083e, rbuf=0x152f53344400, rcnts=0x2b712d0, rdispls=0x2bb63c0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+x3106c0s25b1n0.hsn.cm.polaris.alcf.anl.gov: rank 3 exited with code 255
+x3106c0s25b1n0.hsn.cm.polaris.alcf.anl.gov: rank 0 died from signal 15
+arsho::x3106c0s25b1n0 { ~/mnmgJOIN }-> mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_147892.bin 0 0
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 147,892 | 16 | 31 | 884,179,859 |   1.1596 |   0.0057 |   2.5608 |   0.0001 |   0.0247 |   0.1434 |   0.6399 |   0.0690 |   0.1587 |   0.1181 | data/data_147892.bin_tc.bin |
+
+arsho::x3106c0s25b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_147892.bin 1 0
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 147,892 | 8 | 31 | 884,179,859 |   1.7675 |   0.0058 |   5.9972 |   0.0001 |   0.0385 |   0.2590 |   0.7708 |   0.1249 |   0.3405 |   0.2281 | data/data_147892.bin_tc.bin |
+
+
+
+
 ```
 
 ### Same Generation (SG)
