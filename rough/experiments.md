@@ -14,8 +14,384 @@ data_165435.bin does not work
 data_409593.bin does not work
 data/vsp_finan512_scagr7-2c_rlfddd.bin does not work
 
+# 1 node
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+CC wcc.cu -o cc_interactive.out
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 0 0
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 1 0
 
 
+# 2 nodes
+qsub -I -l select=2 -l filesystems=home:eagle -l walltime=1:00:00 -q debug-scaling -A dist_relational_alg
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+CC tc.cu -o tc_interactive.out
+
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 1 0
+
+
+CC wcc.cu -o cc_interactive.out
+
+
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/data_165435.bin 1 0
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 0 0
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 1 0
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 1 0
+Rank: 0, iterations: 216, MPI_Alltoall MPI error: 0
+Rank: 0, iterations: 216total_send: 72721, total_receive: 72330
+Rank: 0, send_count_host[0]: 8824, send_displacements_host[0]: 0, receive_count_host[0]: 8824, receive_displacements_host[0]: 0
+Rank: 0, send_count_host[1]: 9355, send_displacements_host[1]: 8824, receive_count_host[1]: 9447, receive_displacements_host[1]: 8824
+Rank: 0, send_count_host[2]: 9142, send_displacements_host[2]: 18179, receive_count_host[2]: 9078, receive_displacements_host[2]: 18271
+Rank: 0, send_count_host[3]: 9216, send_displacements_host[3]: 27321, receive_count_host[3]: 9124, receive_displacements_host[3]: 27349
+Rank: 0, send_count_host[4]: 9149, send_displacements_host[4]: 36537, receive_count_host[4]: 9058, receive_displacements_host[4]: 36473
+Rank: 0, send_count_host[5]: 9004, send_displacements_host[5]: 45686, receive_count_host[5]: 8979, receive_displacements_host[5]: 45531
+Rank: 0, send_count_host[6]: 8930, send_displacements_host[6]: 54690, receive_count_host[6]: 8907, receive_displacements_host[6]: 54510
+Rank: 0, send_count_host[7]: 9101, send_displacements_host[7]: 63620, receive_count_host[7]: 8913, receive_displacements_host[7]: 63417
+Rank: 1, iterations: 216, MPI_Alltoall MPI error: 0
+Rank: 1, iterations: 216total_send: 73526, total_receive: 73114
+Rank: 1, send_count_host[0]: 9447, send_displacements_host[0]: 0, receive_count_host[0]: 9355, receive_displacements_host[0]: 0
+Rank: 1, send_count_host[1]: 9339, send_displacements_host[1]: 9447, receive_count_host[1]: 9339, receive_displacements_host[1]: 9355
+Rank: 1, send_count_host[2]: 9160, send_displacements_host[2]: 18786, receive_count_host[2]: 9047, receive_displacements_host[2]: 18694
+Rank: 1, send_count_host[3]: 9193, send_displacements_host[3]: 27946, receive_count_host[3]: 9211, receive_displacements_host[3]: 27741
+Rank: 1, send_count_host[4]: 9054, send_displacements_host[4]: 37139, receive_count_host[4]: 9021, receive_displacements_host[4]: 36952
+Rank: 1, send_count_host[5]: 9016, send_displacements_host[5]: 46193, receive_count_host[5]: 9101, receive_displacements_host[5]: 45973
+Rank: 1, send_count_host[6]: 9171, send_displacements_host[6]: 55209, receive_count_host[6]: 9021, receive_displacements_host[6]: 55074
+Rank: 1, send_count_host[7]: 9146, send_displacements_host[7]: 64380, receive_count_host[7]: 9019, receive_displacements_host[7]: 64095
+Rank: 4, iterations: 216, MPI_Alltoall MPI error: 0
+Rank: 4, iterations: 216total_send: 71966, total_receive: 72200
+Rank: 4, send_count_host[0]: 9058, send_displacements_host[0]: 0, receive_count_host[0]: 9149, receive_displacements_host[0]: 0
+Rank: 4, send_count_host[1]: 9021, send_displacements_host[1]: 9058, receive_count_host[1]: 9054, receive_displacements_host[1]: 9149
+Rank: 4, send_count_host[2]: 8928, send_displacements_host[2]: 18079, receive_count_host[2]: 8922, receive_displacements_host[2]: 18203
+Rank: 4, send_count_host[3]: 9080, send_displacements_host[3]: 27007, receive_count_host[3]: 9183, receive_displacements_host[3]: 27125
+Rank: 4, send_count_host[4]: 9099, send_displacements_host[4]: 36087, receive_count_host[4]: 9099, receive_displacements_host[4]: 36308
+Rank: 4, send_count_host[5]: 8942, send_displacements_host[5]: 45186, receive_count_host[5]: 8932, receive_displacements_host[5]: 45407
+Rank: 4, send_count_host[6]: 8883, send_displacements_host[6]: 54128, receive_count_host[6]: 8855, receive_displacements_host[6]: 54339
+Rank: 4, send_count_host[7]: 8955, send_displacements_host[7]: 63011, receive_count_host[7]: 9006, receive_displacements_host[7]: 63194
+Rank: 2, iterations: 216, MPI_Alltoall MPI error: 0
+Rank: 2, iterations: 216total_send: 72123, total_receive: 72253
+Rank: 2, send_count_host[0]: 9078, send_displacements_host[0]: 0, receive_count_host[0]: 9142, receive_displacements_host[0]: 0
+Rank: 2, send_count_host[1]: 9047, send_displacements_host[1]: 9078, receive_count_host[1]: 9160, receive_displacements_host[1]: 9142
+Rank: 2, send_count_host[2]: 8834, send_displacements_host[2]: 18125, receive_count_host[2]: 8834, receive_displacements_host[2]: 18302
+Rank: 2, send_count_host[3]: 9151, send_displacements_host[3]: 26959, receive_count_host[3]: 9210, receive_displacements_host[3]: 27136
+Rank: 2, send_count_host[4]: 8922, send_displacements_host[4]: 36110, receive_count_host[4]: 8928, receive_displacements_host[4]: 36346
+Rank: 2, send_count_host[5]: 9061, send_displacements_host[5]: 45032, receive_count_host[5]: 9088, receive_displacements_host[5]: 45274
+Rank: 2, send_count_host[6]: 8962, send_displacements_host[6]: 54093, receive_count_host[6]: 8914, receive_displacements_host[6]: 54362
+Rank: 2, send_count_host[7]: 9068, send_displacements_host[7]: 63055, receive_count_host[7]: 8977, receive_displacements_host[7]: 63276
+Rank: 5, iterations: 216, MPI_Alltoall MPI error: 0
+Rank: 5, iterations: 216total_send: 72460, total_receive: 72307
+Rank: 5, send_count_host[0]: 8979, send_displacements_host[0]: 0, receive_count_host[0]: 9004, receive_displacements_host[0]: 0
+Rank: 5, send_count_host[1]: 9101, send_displacements_host[1]: 8979, receive_count_host[1]: 9016, receive_displacements_host[1]: 9004
+Rank: 5, send_count_host[2]: 9088, send_displacements_host[2]: 18080, receive_count_host[2]: 9061, receive_displacements_host[2]: 18020
+Rank: 5, send_count_host[3]: 9352, send_displacements_host[3]: 27168, receive_count_host[3]: 9274, receive_displacements_host[3]: 27081
+Rank: 5, send_count_host[4]: 8932, send_displacements_host[4]: 36520, receive_count_host[4]: 8942, receive_displacements_host[4]: 36355
+Rank: 5, send_count_host[5]: 9124, send_displacements_host[5]: 45452, receive_count_host[5]: 9124, receive_displacements_host[5]: 45297
+Rank: 5, send_count_host[6]: 8911, send_displacements_host[6]: 54576, receive_count_host[6]: 8941, receive_displacements_host[6]: 54421
+Rank: 5, send_count_host[7]: 8973, send_displacements_host[7]: 63487, receive_count_host[7]: 8945, receive_displacements_host[7]: 63362
+Rank: 6, iterations: 216, MPI_Alltoall MPI error: 0
+Rank: 6, iterations: 216total_send: 71462, total_receive: 71595
+Rank: 6, send_count_host[0]: 8907, send_displacements_host[0]: 0, receive_count_host[0]: 8930, receive_displacements_host[0]: 0
+Rank: 6, send_count_host[1]: 9021, send_displacements_host[1]: 8907, receive_count_host[1]: 9171, receive_displacements_host[1]: 8930
+Rank: 6, send_count_host[2]: 8914, send_displacements_host[2]: 17928, receive_count_host[2]: 8962, receive_displacements_host[2]: 18101
+Rank: 6, send_count_host[3]: 9041, send_displacements_host[3]: 26842, receive_count_host[3]: 9032, receive_displacements_host[3]: 27063
+Rank: 6, send_count_host[4]: 8855, send_displacements_host[4]: 35883, receive_count_host[4]: 8883, receive_displacements_host[4]: 36095
+Rank: 6, send_count_host[5]: 8941, send_displacements_host[5]: 44738, receive_count_host[5]: 8911, receive_displacements_host[5]: 44978
+Rank: 6, send_count_host[6]: 8952, send_displacements_host[6]: 53679, receive_count_host[6]: 8952, receive_displacements_host[6]: 53889
+Rank: 6, send_count_host[7]: 8831, send_displacements_host[7]: 62631, receive_count_host[7]: 8754, receive_displacements_host[7]: 62841
+Rank: 3, iterations: 216, MPI_Alltoall MPI error: 0
+Rank: 3, iterations: 216total_send: 73499, total_receive: 73511
+Rank: 3, send_count_host[0]: 9124, send_displacements_host[0]: 0, receive_count_host[0]: 9216, receive_displacements_host[0]: 0
+Rank: 3, send_count_host[1]: 9211, send_displacements_host[1]: 9124, receive_count_host[1]: 9193, receive_displacements_host[1]: 9216
+Rank: 3, send_count_host[2]: 9210, send_displacements_host[2]: 18335, receive_count_host[2]: 9151, receive_displacements_host[2]: 18409
+Rank: 3, send_count_host[3]: 9210, send_displacements_host[3]: 27545, receive_count_host[3]: 9210, receive_displacements_host[3]: 27560
+Rank: 3, send_count_host[4]: 9183, send_displacements_host[4]: 36755, receive_count_host[4]: 9080, receive_displacements_host[4]: 36770
+Rank: 3, send_count_host[5]: 9274, send_displacements_host[5]: 45938, receive_count_host[5]: 9352, receive_displacements_host[5]: 45850
+Rank: 3, send_count_host[6]: 9032, send_displacements_host[6]: 55212, receive_count_host[6]: 9041, receive_displacements_host[6]: 55202
+Rank: 3, send_count_host[7]: 9255, send_displacements_host[7]: 64244, receive_count_host[7]: 9268, receive_displacements_host[7]: 64243
+Rank: 7, iterations: 216, MPI_Alltoall MPI error: 0
+Rank: 7, iterations: 216total_send: 71933, total_receive: 72380
+Rank: 7, send_count_host[0]: 8913, send_displacements_host[0]: 0, receive_count_host[0]: 9101, receive_displacements_host[0]: 0
+Rank: 7, send_count_host[1]: 9019, send_displacements_host[1]: 8913, receive_count_host[1]: 9146, receive_displacements_host[1]: 9101
+Rank: 7, send_count_host[2]: 8977, send_displacements_host[2]: 17932, receive_count_host[2]: 9068, receive_displacements_host[2]: 18247
+Rank: 7, send_count_host[3]: 9268, send_displacements_host[3]: 26909, receive_count_host[3]: 9255, receive_displacements_host[3]: 27315
+Rank: 7, send_count_host[4]: 9006, send_displacements_host[4]: 36177, receive_count_host[4]: 8955, receive_displacements_host[4]: 36570
+Rank: 7, send_count_host[5]: 8945, send_displacements_host[5]: 45183, receive_count_host[5]: 8973, receive_displacements_host[5]: 45525
+Rank: 7, send_count_host[6]: 8754, send_displacements_host[6]: 54128, receive_count_host[6]: 8831, receive_displacements_host[6]: 54498
+Rank: 7, send_count_host[7]: 9051, send_displacements_host[7]: 62882, receive_count_host[7]: 9051, receive_displacements_host[7]: 63329
+MPICH ERROR [Rank 7] [job id 1541d67e-2681-435b-8116-65af3d712f6a] [Thu Sep 26 14:57:09 2024] [x3102c0s7b0n0] - Abort(136913167) (rank 7 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14f7ec2d6c00, scnts=0x29f7670, sdispls=0x2a1a220, dtype=0x4c00083e, rbuf=0x14f7ec363400, rcnts=0x2a1a1f0, rdispls=0x2a1a250, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14f7ec2d6c00, scnts=0x29f7670, sdispls=0x2a1a220, dtype=0x4c00083e, rbuf=0x14f7ec363400, rcnts=0x2a1a1f0, rdispls=0x2a1a250, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+MPICH ERROR [Rank 5] [job id 1541d67e-2681-435b-8116-65af3d712f6a] [Thu Sep 26 14:57:09 2024] [x3102c0s7b0n0] - Abort(271130895) (rank 5 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14e9a46d8400, scnts=0x44bb0b0, sdispls=0x4456d80, dtype=0x4c00083e, rbuf=0x14e9a4765e00, rcnts=0x446d4b0, rdispls=0x4456db0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14e9a46d8400, scnts=0x44bb0b0, sdispls=0x4456d80, dtype=0x4c00083e, rbuf=0x14e9a4765e00, rcnts=0x446d4b0, rdispls=0x4456db0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+x3102c0s7b0n0.hsn.cm.polaris.alcf.anl.gov: rank 7 exited with code 255
+x3102c0s37b1n0.hsn.cm.polaris.alcf.anl.gov: rank 0 died from signal 15
+
+
+
+
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/data_163734.bin 1 0
+Rank: 2, iterations: 0total_send: 40934, total_receive: 40729
+Rank: 4, iterations: 0total_send: 40932, total_receive: 40963
+Rank: 3, iterations: 0total_send: 40934, total_receive: 41336
+Rank: 5, iterations: 0total_send: 40934, total_receive: 40119
+Rank: 6, iterations: 0total_send: 40934, total_receive: 40490
+Rank: 0, iterations: 0total_send: 40932, total_receive: 40869
+Rank: 7, iterations: 0total_send: 40934, total_receive: 41151
+Rank: 1, iterations: 0total_send: 40934, total_receive: 41811
+Rank: 4, iterations: 0 done!
+Rank: 5, iterations: 0 done!
+Rank: 6, iterations: 0 done!
+Rank: 7, iterations: 0 done!
+Rank: 0, iterations: 0 done!
+Rank: 1, iterations: 0 done!
+Rank: 2, iterations: 0 done!
+Rank: 3, iterations: 0 done!
+Rank: 6, iterations: 0total_send: 40490, total_receive: 40490
+Rank: 0, iterations: 0total_send: 40869, total_receive: 40869
+Rank: 4, iterations: 0total_send: 40963, total_receive: 40963
+Rank: 5, iterations: 0total_send: 40119, total_receive: 40119
+Rank: 1, iterations: 0total_send: 41811, total_receive: 41811
+Rank: 7, iterations: 0total_send: 41151, total_receive: 41151
+Rank: 2, iterations: 0total_send: 40729, total_receive: 40729
+Rank: 3, iterations: 0total_send: 41336, total_receive: 41336
+Rank: 4, iterations: 0 done!
+Rank: 5, iterations: 0 done!
+Rank: 6, iterations: 0 done!
+Rank: 7, iterations: 0 done!
+Rank: 0, iterations: 0 done!
+Rank: 1, iterations: 0 done!
+Rank: 2, iterations: 0 done!
+Rank: 3, iterations: 0 done!
+Rank: 0, iterations: 1total_send: 40812, total_receive: 40816
+Rank: 2, iterations: 1total_send: 40676, total_receive: 40697
+Rank: 4, iterations: 1total_send: 40911, total_receive: 40929
+Rank: 3, iterations: 1total_send: 41301, total_receive: 41290
+Rank: 5, iterations: 1total_send: 40089, total_receive: 40083
+Rank: 1, iterations: 1total_send: 41797, total_receive: 41775
+Rank: 6, iterations: 1total_send: 40453, total_receive: 40449
+Rank: 7, iterations: 1total_send: 41108, total_receive: 41108
+Rank: 4, iterations: 1 done!
+Rank: 5, iterations: 1 done!
+Rank: 6, iterations: 1 done!
+Rank: 7, iterations: 1 done!
+Rank: 0, iterations: 1 done!
+Rank: 1, iterations: 1 done!
+Rank: 2, iterations: 1 done!
+Rank: 3, iterations: 1 done!
+Rank: 2, iterations: 2total_send: 40523, total_receive: 40507
+Rank: 3, iterations: 2total_send: 41084, total_receive: 41062
+Rank: 0, iterations: 2total_send: 40552, total_receive: 40584
+Rank: 1, iterations: 2total_send: 41611, total_receive: 41585
+Rank: 6, iterations: 2total_send: 40273, total_receive: 40286
+Rank: 7, iterations: 2total_send: 40859, total_receive: 40900
+Rank: 4, iterations: 2total_send: 40772, total_receive: 40758
+Rank: 5, iterations: 2total_send: 39879, total_receive: 39871
+Rank: 4, iterations: 2 done!
+Rank: 5, iterations: 2 done!
+Rank: 6, iterations: 2 done!
+Rank: 7, iterations: 2 done!
+Rank: 0, iterations: 2 done!
+Rank: 1, iterations: 2 done!
+Rank: 2, iterations: 2 done!
+Rank: 3, iterations: 2 done!
+Rank: 0, iterations: 3total_send: 40254, total_receive: 40251
+Rank: 1, iterations: 3total_send: 41194, total_receive: 41213
+Rank: 2, iterations: 3total_send: 40233, total_receive: 40236
+Rank: 4, iterations: 3total_send: 40518, total_receive: 40481
+Rank: 3, iterations: 3total_send: 40676, total_receive: 40741
+Rank: 6, iterations: 3total_send: 40001, total_receive: 39986
+Rank: 7, iterations: 3total_send: 40618, total_receive: 40564
+Rank: 5, iterations: 3total_send: 39517, total_receive: 39539
+Rank: 4, iterations: 3 done!
+Rank: 5, iterations: 3 done!
+Rank: 6, iterations: 3 done!
+Rank: 7, iterations: 3 done!
+Rank: 0, iterations: 3 done!
+Rank: 1, iterations: 3 done!
+Rank: 2, iterations: 3 done!
+Rank: 3, iterations: 3 done!
+Rank: 3, iterations: 4total_send: 40335, total_receive: 40287
+Rank: 5, iterations: 4total_send: 39138, total_receive: 39105
+Rank: 6, iterations: 4total_send: 39507, total_receive: 39563
+Rank: 7, iterations: 4total_send: 40152, total_receive: 40189
+Rank: 0, iterations: 4total_send: 39856, total_receive: 39844
+Rank: 4, iterations: 4total_send: 40112, total_receive: 40127
+Rank: 1, iterations: 4total_send: 40705, total_receive: 40766
+Rank: 2, iterations: 4total_send: 39867, total_receive: 39791
+MPICH ERROR [Rank 4] [job id bbc8b1c3-39ae-4732-8d2c-a756f33f4c88] [Sat Sep 28 12:31:58 2024] [x3005c0s7b0n0] - Abort(338239759) (rank 4 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386)......: MPI_Alltoallv(sbuf=0x150d11d00000, scnts=0x27876c0, sdispls=0x27a0550, dtype=0x4c00083e, rbuf=0x150d11d4e600, rcnts=0x27a0520, rdispls=0x27a0580, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1168): 
+MPIC_Irecv(594)..........: 
+MPID_Irecv(529)..........: 
+MPIDI_irecv_unsafe(163)..: 
+MPIDI_OFI_do_irecv(356)..: OFI tagged recv failed (ofi_recv.h:356:MPIDI_OFI_do_irecv:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386)......: MPI_Alltoallv(sbuf=0x150d11d00000, scnts=0x27876c0, sdispls=0x27a0550, dtype=0x4c00083e, rbuf=0x150d11d4e600, rcnts=0x27a0520, rdispls=0x27a0580, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1168): 
+MPIC_Irecv(594)..........: 
+MPID_Irecv(529)..........: 
+MPIDI_irecv_unsafe(163)..: 
+MPIDI_OFI_do_irecv(356)..: OFI tagged recv failed (ofi_recv.h:356:MPIDI_OFI_do_irecv:Resource temporarily unavailable)
+x3005c0s7b0n0.hsn.cm.polaris.alcf.anl.gov: rank 4 exited with code 255
+x3005c0s7b0n0.hsn.cm.polaris.alcf.anl.gov: rank 6 died from signal 15
+
+CC tc.cu -o tc_interactive.out
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_10.bin 1 0 
+
+# 4 nodes
+qsub -I -l select=4 -l filesystems=home:eagle -l walltime=1:00:00 -q debug-scaling -A dist_relational_alg
+CC tc.cu -o tc_interactive.out
+CC sg.cu -o sg_interactive.out
+CC wcc.cu -o cc_interactive.out
+# p2p-Gnutella31 
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_147892.bin 1 0 
+MPICH ERROR [Rank 3] [job id 75e458c6-72cf-4978-bdf1-1cefce146b2a] [Wed Sep 25 12:32:18 2024] [x3005c0s19b1n0] - Abort(740892943) (rank 3 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x1470812f9000, scnts=0x35403f0, sdispls=0x3538850, dtype=0x4c00083e, rbuf=0x147081344400, rcnts=0x34eada0, rdispls=0x35303c0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x1470812f9000, scnts=0x35403f0, sdispls=0x3538850, dtype=0x4c00083e, rbuf=0x147081344400, rcnts=0x34eada0, rdispls=0x35303c0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+x3005c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 3 exited with code 255
+x3005c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 2 died from signal 15
+arsho::x3005c0s19b1n0 { ~/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_147892.bin 0 0 
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 147,892 | 16 | 31 | 884,179,859 |   1.8617 |   0.7122 |   2.4026 |   0.0000 |   0.0246 |   0.1441 |   0.6355 |   0.0658 |   0.1617 |   0.1177 | data/data_147892.bin_tc.bin |
+
+
+
+# CC
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 0 0
+| # Input | # Process | # Iterations | # CC (# Nodes in largest WCC) | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5,533,214 | 8 | 556 | 2,638 (1,957,027) |   1.2425 |   0.0094 |   0.0346 |   0.0003 |   0.0767 |   0.1752 |   0.1960 |   0.1860 |   0.5966 |   0.0022 | data/roadNet-CA.bin_cc.bin |
+arsho::x3005c0s19b1n0 { ~/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 1 0
+MPICH ERROR [Rank 7] [job id 0247c724-c92b-49cc-a387-64db65eb4447] [Wed Sep 25 12:53:06 2024] [x3005c0s1b0n0] - Abort(808001807) (rank 7 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14be102d6c00, scnts=0x2efd050, sdispls=0x2efd830, dtype=0x4c00083e, rbuf=0x14be10363400, rcnts=0x2efd800, rdispls=0x2efd860, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14be102d6c00, scnts=0x2efd050, sdispls=0x2efd830, dtype=0x4c00083e, rbuf=0x14be10363400, rcnts=0x2efd800, rdispls=0x2efd860, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+MPICH ERROR [Rank 5] [job id 0247c724-c92b-49cc-a387-64db65eb4447] [Wed Sep 25 12:53:06 2024] [x3005c0s1b0n0] - Abort(942219535) (rank 5 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x1478226d8400, scnts=0x37efd20, sdispls=0x37ee910, dtype=0x4c00083e, rbuf=0x147822765e00, rcnts=0x37efd50, rdispls=0x37ee940, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x1478226d8400, scnts=0x37efd20, sdispls=0x37ee910, dtype=0x4c00083e, rbuf=0x147822765e00, rcnts=0x37efd50, rdispls=0x37ee940, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+x3005c0s1b0n0.hsn.cm.polaris.alcf.anl.gov: rank 7 exited with code 255
+x3005c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 0 died from signal 15
+arsho::x3005c0s19b1n0 { ~/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 0 1
+| # Input | # Process | # Iterations | # CC (# Nodes in largest WCC) | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5,533,214 | 8 | 556 | 2,638 (1,957,027) |   1.2464 |   0.0084 |   0.0415 |   0.0003 |   0.0765 |   0.1898 |   0.2009 |   0.1938 |   0.5744 |   0.0022 | data/roadNet-CA.bin_cc.bin |
+arsho::x3005c0s19b1n0 { ~/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 1 1
+MPICH ERROR [Rank 6] [job id 92163b00-28fc-4c35-b838-092c0530103f] [Wed Sep 25 12:54:10 2024] [x3005c0s1b0n0] - Abort(472457487) (rank 6 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14577c66a000, scnts=0x2ac4f80, sdispls=0x2ac4fb0, dtype=0x4c00083e, rbuf=0x14577c731c00, rcnts=0x2a83390, rdispls=0x2abd880, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x14577c66a000, scnts=0x2ac4f80, sdispls=0x2ac4fb0, dtype=0x4c00083e, rbuf=0x14577c731c00, rcnts=0x2a83390, rdispls=0x2abd880, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+MPICH ERROR [Rank 2] [job id 92163b00-28fc-4c35-b838-092c0530103f] [Wed Sep 25 12:54:10 2024] [x3005c0s19b1n0] - Abort(69804303) (rank 2 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x15197646a800, scnts=0x40b1bf0, sdispls=0x40dab70, dtype=0x4c00083e, rbuf=0x151976533800, rcnts=0x4096040, rdispls=0x4094780, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386).........: MPI_Alltoallv(sbuf=0x15197646a800, scnts=0x40b1bf0, sdispls=0x40dab70, dtype=0x4c00083e, rbuf=0x151976533800, rcnts=0x4096040, rdispls=0x4094780, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1180)...: 
+MPIC_Isend(511).............: 
+MPID_Isend_coll(610)........: 
+MPIDI_isend_coll_unsafe(176): 
+MPIDI_OFI_send_normal(372)..: OFI tagged senddata failed (ofi_send.h:372:MPIDI_OFI_send_normal:Resource temporarily unavailable)
+x3005c0s1b0n0.hsn.cm.polaris.alcf.anl.gov: rank 6 exited with code 255
+x3005c0s1b0n0.hsn.cm.polaris.alcf.anl.gov: rank 7 died from signal 15
+arsho::x3005c0s19b1n0 { ~/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/roadNet-CA.bin 1 0
+| # Input | # Process | # Iterations | # CC (# Nodes in largest WCC) | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5,533,214 | 4 | 556 | 2,638 (1,957,027) |   7.7911 |   0.5551 |   1.3438 |   0.0003 |   0.1163 |   0.3133 |   5.7633 |   0.2809 |   0.7596 |   0.0022 | data/roadNet-CA.bin_cc.bin |
+
+
+
+
+
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./cc_interactive.out data/data_165435.bin 1 0
+
+
+# Single interactive node
+qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
 
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1

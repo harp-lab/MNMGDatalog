@@ -5,9 +5,7 @@
 using namespace std;
 
 
-#define BLOCK_START(process_id, total_process, n) ((process_id)*(n)/(total_process))
-#define BLOCK_SIZE(process_id, total_process, n) \
-    (BLOCK_START(process_id + 1, total_process, n) - BLOCK_START(process_id, total_process, n))
+
 
 struct Entity {
     int key;
@@ -371,3 +369,5 @@ void show_device_entity_variable(Entity *device_data, int device_data_size, int 
 
 // show_device_entity_variable(local_data, local_data_size, rank, "local_data", 1);
 // show_device_variable(local_data_temp_device, local_count, 2, rank, "local data temp device", 0);
+
+

@@ -31,6 +31,7 @@
 #include <thrust/iterator/transform_iterator.h>
 #include "common/error_handler.cu"
 #include "common/utils.cu"
+#include "common/parallel_io.cu"
 #include "common/kernels.cu"
 #include "common/comm.cu"
 #include "common/hash_table.cu"
@@ -106,40 +107,21 @@ void benchmark(int argc, char **argv) {
     } else if (argc == 2) {
         input_file = argv[1];
     } else {
-        input_file = "hipc_2019.bin";
+        input_file = "data/dummy.bin";
     }
     string output_file = string(input_file) + "_cc.bin";
     const char *output_file_name = output_file.c_str();
 
-    // READ THE FILE IN PARALLEL
-    // Reading filesize in bytes
-    start_time = MPI_Wtime();
-    struct stat filestats{};
-    stat(input_file, &filestats);
-    off_t filesize = filestats.st_size;
-
-    // Calculating the current rank's starting row and number of rows
-    // Scatter larger blocks among processes (non-uniform)
+    // Read file in parallel
     int total_columns = 2;
-    unsigned long total_rows = filesize / (sizeof(int) * total_columns);
-    int row_start = BLOCK_START(rank, total_rank, total_rows);
-    int row_size = BLOCK_SIZE(rank, total_rank, total_rows);
+    double temp_file_io_time = 0.0;
+    int row_size = 0;
+    int total_rows = 0;
+    int *edge_host = parallel_read(rank, total_rank, input_file, total_columns,
+                                   &row_size, &total_rows, &temp_file_io_time);
     int local_count = row_size * total_columns;
+    file_io_time += temp_file_io_time;
 
-    // Reading specific portion from the file as char in parallel
-    int offset = row_start * total_columns * sizeof(int);
-    int *edge_host = (int *) malloc(local_count * sizeof(int));
-    MPI_File mpi_file_buffer;
-    if (MPI_File_open(MPI_COMM_WORLD, input_file, MPI_MODE_RDONLY,
-                      MPI_INFO_NULL, &mpi_file_buffer) != MPI_SUCCESS) {
-        printf("Error opening file %s", input_file);
-        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
-    MPI_File_read_at(mpi_file_buffer, offset, edge_host, local_count, MPI_INT, MPI_STATUS_IGNORE);
-    MPI_File_close(&mpi_file_buffer);
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    file_io_time += elapsed_time;
     start_time = MPI_Wtime();
     int *edge_temp_device;
     checkCuda(cudaMalloc((void **) &edge_temp_device, local_count * sizeof(int)));
@@ -179,7 +161,7 @@ void benchmark(int argc, char **argv) {
                                                   edge_size, total_columns, total_rank,
                                                   grid_size, block_size, cuda_aware_mpi,
                                                   &distributed_edge_size, comm_method,
-                                                  &buffer_preparation_time_temp, &communication_time_temp);
+                                                  &buffer_preparation_time_temp, &communication_time_temp, iterations);
     buffer_preparation_time += buffer_preparation_time_temp;
     communication_time += communication_time_temp;
 
@@ -192,7 +174,6 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
-
 
     // Create cc from edge where node, component_id = node, node
     // cc(x, x) :- edge(x, _)
@@ -224,7 +205,6 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     initialization_time += elapsed_time;
-
 
     start_time = MPI_Wtime();
     long long global_t_delta_size = 0;
@@ -260,7 +240,8 @@ void benchmark(int argc, char **argv) {
                                                              grid_size, block_size, cuda_aware_mpi,
                                                              &distributed_join_result_size,
                                                              comm_method,
-                                                             &buffer_preparation_time_temp, &communication_time_temp);
+                                                             &buffer_preparation_time_temp, &communication_time_temp,
+                                                             iterations);
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
 
@@ -315,6 +296,8 @@ void benchmark(int argc, char **argv) {
         // Update cc
         cc_size = new_cc_size;
         cudaMemcpy(cc, new_cc, cc_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+
+
         long long t_delta_size_temp_loop = t_delta_size;
         long long old_global_t_delta_size = global_t_delta_size;
         MPI_Allreduce(&t_delta_size_temp_loop, &global_t_delta_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
@@ -346,7 +329,7 @@ void benchmark(int argc, char **argv) {
                                                 cc_size, total_columns, total_rank,
                                                 grid_size, block_size, cuda_aware_mpi, &cc_distributed_size,
                                                 comm_method,
-                                                &buffer_preparation_time_temp, &communication_time_temp);
+                                                &buffer_preparation_time_temp, &communication_time_temp, iterations);
     buffer_preparation_time += buffer_preparation_time_temp;
     communication_time += communication_time_temp;
 
@@ -422,17 +405,10 @@ void benchmark(int argc, char **argv) {
 
     if (job_run == 0) {
         // Write the cc to an offset of the output file
-        start_time = MPI_Wtime();
-        MPI_File fh;
-        MPI_File_open(MPI_COMM_WORLD, output_file_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
-        int file_offset = component_displacements[rank] * sizeof(int);
-        MPI_File_write_at(fh, file_offset, component_ar_host, cc_distributed_size * total_columns, MPI_INT,
-                          MPI_STATUS_IGNORE);
-        // Close the file and clean up
-        MPI_File_close(&fh);
-        end_time = MPI_Wtime();
-        elapsed_time = end_time - start_time;
-        file_io_time += elapsed_time;
+        double temp_file_write_time = 0.0;
+        parallel_write(rank, total_rank, output_file_name, component_ar_host, component_displacements,
+                       total_columns, cc_distributed_size, &temp_file_write_time);
+        file_io_time += temp_file_write_time;
     }
 
     start_time = MPI_Wtime();
@@ -441,7 +417,6 @@ void benchmark(int argc, char **argv) {
     cudaFree(edge_reverse_temp_device);
     cudaFree(edge_temp_device);
     cudaFree(edge);
-//    cudaFree(cc_base);
     cudaFree(cc);
     cudaFree(t_delta);
     cudaFree(component_ar);
@@ -467,9 +442,9 @@ void benchmark(int argc, char **argv) {
     MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&finalization_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
-    total_time = max_initialization_time + max_hashtable_build_time + max_join_time +
-                 max_buffer_preparation_time + max_communication_time + max_deduplication_time + max_merge_time +
-                 max_finalization_time;
+    total_time = initialization_time + hashtable_build_time + join_time +
+                 buffer_preparation_time + communication_time + deduplication_time + merge_time +
+                 finalization_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     if (rank == 0) {
@@ -519,3 +494,6 @@ int main(int argc, char **argv) {
 // make runwcc DATA_FILE=data/data_214078.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runwcc DATA_FILE=data/data_214078.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
 // make runwcc DATA_FILE=data/web-Stanford.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
+// make runwcc DATA_FILE=data/roadNet-CA.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+
+// /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 8 ./cc.out data/roadNet-CA.bin 1 0

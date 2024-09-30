@@ -1,9 +1,9 @@
 Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
                                        int row_size, int total_columns, int total_rank,
                                        int grid_size, int block_size, int cuda_aware_mpi,
-                                       int *size,
+                                       int *receive_size,
                                        double *buffer_preparation_time,
-                                       double *communication_time) {
+                                       double *communication_time, int iterations) {
     double start_time, end_time, elapsed_time;
     double prep_time = 0.0, comm_time = 0.0;
     start_time = MPI_Wtime();
@@ -53,7 +53,14 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
     start_time = MPI_Wtime();
     int total_receive = thrust::reduce(thrust::host, receive_count_host, receive_count_host + total_rank, 0,
                                        thrust::plus<int>());
-    thrust::exclusive_scan(receive_count_host, receive_count_host + total_rank, receive_displacements_host);
+
+    int global_total_send = 0;
+    int global_total_receive = 0;
+    MPI_Allreduce(&row_size, &global_total_send, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&total_receive, &global_total_receive, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+    thrust::exclusive_scan(thrust::host, receive_count_host, receive_count_host + total_rank,
+                           receive_displacements_host);
     Entity *receive_data;
     checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
     end_time = MPI_Wtime();
@@ -93,7 +100,7 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
     elapsed_time = end_time - start_time;
     comm_time += elapsed_time;
     start_time = MPI_Wtime();
-    *size = total_receive;
+    *receive_size = total_receive;
     free(send_count_host);
     free(receive_count_host);
     free(send_displacements_host);
@@ -114,7 +121,7 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
                                        int row_size, int total_columns, int total_rank,
                                        int grid_size, int block_size, int cuda_aware_mpi, int *size,
                                        double *buffer_preparation_time,
-                                       double *communication_time) {
+                                       double *communication_time, int iterations) {
     double start_time, end_time, elapsed_time;
     double prep_time = 0.0, comm_time = 0.0;
     start_time = MPI_Wtime();
@@ -229,14 +236,14 @@ Entity *get_split_relation(int rank, Entity *data_device,
                            int data_size, int total_columns, int total_rank,
                            int grid_size, int block_size, int cuda_aware_mpi, int *size, int method,
                            double *buffer_preparation_time,
-                           double *communication_time) {
+                           double *communication_time, int iterations) {
     if (method == 0) {
         return get_split_relation_pass_method(rank, data_device, data_size,
                                               total_columns, total_rank, grid_size, block_size, cuda_aware_mpi, size,
-                                              buffer_preparation_time, communication_time);
+                                              buffer_preparation_time, communication_time, iterations);
     } else {
         return get_split_relation_sort_method(rank, data_device, data_size,
                                               total_columns, total_rank, grid_size, block_size, cuda_aware_mpi, size,
-                                              buffer_preparation_time, communication_time);
+                                              buffer_preparation_time, communication_time, iterations);
     }
 }
