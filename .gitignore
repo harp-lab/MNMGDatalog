@@ -41,4 +41,5 @@ data/*_tc.bin
 data/*_tc.txt
 data/*_sg.bin
 data/*_sg.txt
+data/large_datasets/
 venv/*

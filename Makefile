@@ -48,10 +48,10 @@ testpolarissg:
 	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SG).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
 
 buildpolariswcc:
-	CC $(SRC_CC) -o $(TARGET_CC)_interactive.out $(COMPILER_FLAGS)
+	CC $(SRC_CC) -o $(TARGET_CC).out $(COMPILER_FLAGS)
 
 testpolariswcc:
-	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_CC)_interactive.out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
+	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_CC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
 
 runpolaristc: buildpolaristc testpolaristc
 

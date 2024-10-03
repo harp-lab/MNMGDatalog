@@ -62,12 +62,20 @@ This repository hosts code for Datalog applications optimized for multi-node, mu
 
 #### Weakly Connected Component (CC) datasets
 
-| Dataset                                                              | # Input   | # Iterations | # CC (# Nodes in largest WCC) | Path                  |
-|----------------------------------------------------------------------|-----------|--------------|-------------------------------|-----------------------|
-| [web-BerkStan](https://snap.stanford.edu/data/web-BerkStan.html)     | 7,600,595 | 415          | 1,062 (654,782)               | data/web-BerkStan.bin |
-| [roadNet-CA](https://snap.stanford.edu/data/roadNet-CA.html)         | 5,533,214 | 556          | 2,638 (1,957,027)             | data/roadNet-CA.bin   |
-| [WikiTalk](https://snap.stanford.edu/data/wiki-Talk.html)            | 5,021,410 | 9            | 2,555 (2,388,953)             | data/WikiTalk.bin     |
-| [loc-Brightkite](https://snap.stanford.edu/data/loc-Brightkite.html) | 214,078   | 12           | 547 (56,739)                  | data/data_214078.bin  |
+| Dataset                                                              | # Input    | # Iterations | # CC (# Nodes in largest WCC) | Path                  |
+|----------------------------------------------------------------------|------------|--------------|-------------------------------|-----------------------|
+| [web-BerkStan](https://snap.stanford.edu/data/web-BerkStan.html)     | 7,600,595  | 415          | 1,062 (654,782)               | data/web-BerkStan.bin |
+| [roadNet-CA](https://snap.stanford.edu/data/roadNet-CA.html)         | 5,533,214  | 556          | 2,638 (1,957,027)             | data/roadNet-CA.bin   |
+| [WikiTalk](https://snap.stanford.edu/data/wiki-Talk.html)            | 5,021,410  | 9            | 2,555 (2,388,953)             | data/WikiTalk.bin     |
+| [loc-Brightkite](https://snap.stanford.edu/data/loc-Brightkite.html) | 214,078    | 12           | 547 (56,739)                  | data/data_214078.bin  |
+| [as-skitter](https://snap.stanford.edu/data/as-Skitter.html)         | 11,095,298 | 23           | 756 (1,694,616)               | data/as-skitter.bin   |
+| [webbase-2001](https://sparse.tamu.edu/LAW/webbase-2001)         | 1,019,903,190 | x            | x                             | data/webbase-2001.bin      |
+| [arabic-2005](https://sparse.tamu.edu/LAW/arabic-2005)         | 639,999,458 | x            | x                             | data/arabic-2005.bin      |
+| [com-Orkut](https://sparse.tamu.edu/SNAP/com-Orkut)         | 234,370,166 | x            | x                             | data/com-Orkut.bin      |
+| [stokes](https://sparse.tamu.edu/VLSI/stokes)         | 349,321,980 | x            | x                             | data/stokes.bin      |
+
+
+
 
 #### Additional datasets
 
@@ -512,6 +520,19 @@ resize
 COLUMNS=185;
 LINES=47;
 export COLUMNS LINES;
+```
+
+#### Data preprocessing SuiteSparse Matrix Collection
+- Download `Matrix Market` format by going to browser console (site is in HTTPS but data are in HTTP, that is why error is generated). 
+- Unzip the file. The `mtx` file usually has several meta lines and then 1 line with 3 numbers indicating `ROWS-COLUMNS-NONZEROS`
+- Remove the meta lines by storing only lines with 2 numbers assuming the file has 2 numbers per line:
+```shell
+sed -n '/^[0-9]\+ [0-9]\+$/,$p' com-Orkut.mtx > com-Orkut.txt
+```
+- If the file has 3 numbers per line, first we write all lines and then deleteTo delete first `n` lines (here its 1):
+```shell
+sed -n '/^[0-9]\+ [0-9]\+ [0-9]\+$/,$p' stokes.mtx > stokes.txt
+sed -i -e '1,1d' stokes.txt
 ```
 
 ## Results

@@ -5,7 +5,14 @@ import sys
 def convert_to_binary_file(input_filename, output_filename):
     with open(input_filename, 'r') as fp, open(output_filename, "wb") as file:
         for line in fp:
-            row = list(map(int, line.strip().split("\t")))
+            row = []
+            for part in line.strip().replace("\t", " ").split():
+                try:
+                    row.append(int(part))
+                except ValueError:
+                    # Ignore parts that are not integers
+                    pass
+            row = row[:2]  # Keep only the first two numbers if there are more
             packed_data = struct.pack(f'{len(row)}i', *row)
             file.write(packed_data)
     print(f"Converted {input_filename} to binary file: {output_filename}")
