@@ -4,7 +4,8 @@ TARGET_SG = sg
 SRC_SG = $(TARGET_SG).cu
 TARGET_CC = wcc
 SRC_CC = $(TARGET_CC).cu
-
+TARGET_SINGLE_JOIN = single_join
+SRC_SINGLE_JOIN = $(TARGET_SINGLE_JOIN).cu
 
 COMPILER_FLAGS = -lm -O3
 COMPILER_FLAGS_LOCAL = --extended-lambda
@@ -35,6 +36,12 @@ buildwcc:
 testwcc:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_CC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
 
+buildsinglejoin:
+	nvcc $(SRC_SINGLE_JOIN) -o $(TARGET_SINGLE_JOIN).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+
+testsinglejoin:
+	${MPIRUN} -np $(NPROCS) ./$(TARGET_SINGLE_JOIN).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
+
 buildpolaristc:
 	CC $(SRC_TC) -o $(TARGET_TC).out $(COMPILER_FLAGS)
 
@@ -53,11 +60,19 @@ buildpolariswcc:
 testpolariswcc:
 	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_CC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
 
+buildpolarissinglejoin:
+	CC $(SRC_SINGLE_JOIN) -o $(TARGET_SINGLE_JOIN).out $(COMPILER_FLAGS)
+
+testpolarissinglejoin:
+	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SINGLE_JOIN).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
+
 runpolaristc: buildpolaristc testpolaristc
 
 runpolarissg: buildpolarissg testpolarissg
 
 runpolariswcc: buildpolariswcc testpolariswcc
+
+runpolariswcc: buildpolarissinglejoin testpolarissinglejoin
 
 runtc: buildtc testtc
 
@@ -65,12 +80,15 @@ runsg: buildsg testsg
 
 runwcc: buildwcc testwcc
 
-all: buildtc buildsg buildwcc
+runsinglejoin: buildsinglejoin testsinglejoin
+
+all: buildtc buildsg buildwcc buildsinglejoin
 
 cleanoutput:
 	rm -f data/*_tc.bin*
 	rm -f data/*_sg.bin*
 	rm -f data/*_cc.bin*
+	rm -f data/*_singlejoin.bin*
 
 clean: cleanoutput
 	rm -f *.out
@@ -80,6 +98,7 @@ clean: cleanoutput
 	rm -f data/*_tc.txt*
 	rm -f data/*_sg.txt*
 	rm -f data/*_cc.txt*
+	rm -f data/*_singlejoin.txt*
 	rm -f data/*_converted.txt*
 	rm -f core.*
 	rm -f vgcore.*

@@ -283,6 +283,17 @@ __global__ void get_int_ar_from_entity_ar(Entity *input_data, int data_rows, int
     }
 }
 
+__global__ void get_reverse_int_ar_from_entity_ar(Entity *input_data, int data_rows, int *output_data) {
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (index >= data_rows) return;
+
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < data_rows; i += stride) {
+        output_data[i * 2] = input_data[i].value;
+        output_data[(i * 2) + 1] = input_data[i].key;
+    }
+}
+
 __global__ void get_valueless_entity_ar_from_int_ar(int *input_data, int data_rows, Entity *output_data) {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     if (index >= data_rows) return;
