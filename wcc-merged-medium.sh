@@ -1,5 +1,5 @@
 #!/bin/sh
-#PBS -l select=24:system=polaris
+#PBS -l select=64:system=polaris
 #PBS -l place=scatter
 #PBS -l walltime=05:59:00
 #PBS -q prod
@@ -25,7 +25,7 @@ run_single_dataset() {
   local mpi_gpu_support_enabled=$4
 
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> WCC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-  for i in {96..4..-16}; do
+  for i in {256..10..-16}; do
     for j in {1..3}; do
       make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
         NTOTRANKS=${i} \
