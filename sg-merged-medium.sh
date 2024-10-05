@@ -5,8 +5,8 @@
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
-#PBS -o sg-merged-large.output
-#PBS -e sg-merged-large.error
+#PBS -o sg-merged-medium.output
+#PBS -e sg-merged-medium.error
 
 cd ${PBS_O_WORKDIR}
 

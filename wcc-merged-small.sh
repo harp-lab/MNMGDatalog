@@ -1,12 +1,12 @@
 #!/bin/sh
-#PBS -l select=10:system=polaris
+#PBS -l select=24:system=polaris
 #PBS -l place=scatter
-#PBS -l walltime=2:59:59
+#PBS -l walltime=2:59:00
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
-#PBS -o wcc-merged.output
-#PBS -e wcc-merged.error
+#PBS -o wcc-merged-small.output
+#PBS -e wcc-merged-small.error
 
 cd ${PBS_O_WORKDIR}
 
@@ -25,8 +25,8 @@ run_single_dataset() {
   local mpi_gpu_support_enabled=$4
 
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> WCC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-  for i in {40..4..-8}; do
-    for j in {1..5}; do
+  for i in {96..4..-16}; do
+    for j in {1..2}; do
       make testpolariswcc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
         NTOTRANKS=${i} \
         NRANKS_PER_NODE=${NRANKS_PER_NODE} \
@@ -44,8 +44,9 @@ run_benchmark() {
   local method=$2
   local mpi_gpu_support_enabled=$3
 
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/as-skitter.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/com-Orkut.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/flickr.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/as-skitter.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   # fe_body

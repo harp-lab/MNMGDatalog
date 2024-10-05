@@ -1,12 +1,12 @@
 #!/bin/sh
-#PBS -l select=64:system=polaris
+#PBS -l select=24:system=polaris
 #PBS -l place=scatter
-#PBS -l walltime=05:59:00
+#PBS -l walltime=2:59:00
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
-#PBS -o tc-merged-medium.output
-#PBS -e tc-merged-medium.error
+#PBS -o single-join-small.output
+#PBS -e single-join-small.error
 
 cd ${PBS_O_WORKDIR}
 
@@ -17,16 +17,17 @@ NDEPTH=4                       # Number of hardware threads per rank (i.e. spaci
 NTHREADS=1                     # Number of software threads per rank to launch (i.e. OMP_NUM_THREADS)
 NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
 
+
 run_single_dataset() {
   local cuda_aware_mpi=$1
   local method=$2
   local data_file=$3
   local mpi_gpu_support_enabled=$4
 
-  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-  for i in {256..10..-16}; do
-    for j in {1..3}; do
-      make testpolaristc MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
+  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SINGLE JOIN on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+  for i in {96..4..-16}; do
+    for j in {1..2}; do
+      make testpolarissinglejoin MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
         NTOTRANKS=${i} \
         NRANKS_PER_NODE=${NRANKS_PER_NODE} \
         NDEPTH=${NDEPTH} \
@@ -44,21 +45,17 @@ run_benchmark() {
   local mpi_gpu_support_enabled=$3
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/as-skitter.bin" ${MPICH_GPU_SUPPORT_ENABLED}
   run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/com-Orkut.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/uk-2002.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/stokes.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/arabic-2005.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/webbase-2001.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/twitter_rv.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  # p2p-Gnutella31
-#  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_147892.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  # usroad
-#  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  # fe_ocean
-#  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/flickr.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # fe_body
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # usroad
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # fe_ocean
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 }
-
-
 
 
 start_time=$(date +"%Y-%m-%d %H:%M:%S")
@@ -72,7 +69,7 @@ CUDA_AWARE_MPI=0
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
 MPICH_GPU_SUPPORT_ENABLED=0
-make buildpolaristc
+make buildpolarissinglejoin
 echo "TRADITIONAL MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
@@ -95,7 +92,7 @@ MPICH_GPU_SUPPORT_ENABLED=1
 CUDA_AWARE_MPI=1
 # METHOD 0 = TWO PASS, 1 = SORTING
 METHOD=1
-make buildpolaristc
+make buildpolarissinglejoin
 echo "CUDA AWARE MPI - SORTING"
 echo "------------------------------------------------------------------------------------"
 run_benchmark ${CUDA_AWARE_MPI} ${METHOD} ${MPICH_GPU_SUPPORT_ENABLED}
