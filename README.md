@@ -62,19 +62,19 @@ This repository hosts code for Datalog applications optimized for multi-node, mu
 
 #### Weakly Connected Component (CC) datasets
 
-| Dataset                                                          | # Input       | # Iterations | # CC (# Nodes in largest WCC) | Path                  |
-|------------------------------------------------------------------|---------------|--------------|-------------------------------|-----------------------|
-| [web-BerkStan](https://snap.stanford.edu/data/web-BerkStan.html) | 7,600,595     | 415          | 1,062 (654,782)               | data/web-BerkStan.bin |
-| [roadNet-CA](https://snap.stanford.edu/data/roadNet-CA.html)     | 5,533,214     | 556          | 2,638 (1,957,027)             | data/roadNet-CA.bin   |
-| [WikiTalk](https://snap.stanford.edu/data/wiki-Talk.html)        | 5,021,410     | 9            | 2,555 (2,388,953)             | data/WikiTalk.bin     |
-| [loc-Brightkite](https://snap.stanford.edu/data/loc-Brightkite.html) | 214,078       | 12           | 547 (56,739)                  | data/data_214078.bin  |
-| [as-skitter](https://snap.stanford.edu/data/as-Skitter.html)     | 11,095,298    | 23           | 756 (1,694,616)               | data/as-skitter.bin   |
-| [webbase-2001](https://sparse.tamu.edu/LAW/webbase-2001)     | 1,019,903,190 | x            | x                             | data/webbase-2001.bin      |
-| [arabic-2005](https://sparse.tamu.edu/LAW/arabic-2005)     | 639,999,458   | x            | x                             | data/arabic-2005.bin      |
-| [com-Orkut](https://sparse.tamu.edu/SNAP/com-Orkut)        | 234,370,166   | x            | x                             | data/com-Orkut.bin      |
-| [stokes](https://sparse.tamu.edu/VLSI/stokes)         | 349,321,980   | x            | x                             | data/stokes.bin      |
-| [uk-2002](https://sparse.tamu.edu/VLSI/stokes)         | 298,113,762   | x            | x                             | data/uk-2002.bin      |
-| [twitter_rv](https://github.com/ANLAB-KAIST/traces/releases/tag/twitter_rv.net)         | x             | x            | x                             | data/twitter_rv.bin      |
+| Dataset                                                                                                   | # Input       | # Iterations | # CC (# Nodes in largest WCC) | Path                  |
+|-----------------------------------------------------------------------------------------------------------|---------------|--------------|-------------------------------|-----------------------|
+| [web-BerkStan](https://snap.stanford.edu/data/web-BerkStan.html)                                          | 7,600,595     | 415          | 1,062 (654,782)               | data/web-BerkStan.bin |
+| [roadNet-CA](https://snap.stanford.edu/data/roadNet-CA.html)                                              | 5,533,214     | 556          | 2,638 (1,957,027)             | data/roadNet-CA.bin   |
+| [WikiTalk](https://snap.stanford.edu/data/wiki-Talk.html)                                                 | 5,021,410     | 9            | 2,555 (2,388,953)             | data/WikiTalk.bin     |
+| [loc-Brightkite](https://snap.stanford.edu/data/loc-Brightkite.html)                                      | 214,078       | 12           | 547 (56,739)                  | data/data_214078.bin  |
+| [as-skitter](https://snap.stanford.edu/data/as-Skitter.html)                                              | 11,095,298    | 23           | 756 (1,694,616)               | data/as-skitter.bin   |
+| [webbase-2001](https://sparse.tamu.edu/LAW/webbase-2001)                                                  | 1,019,903,190 | x            | x                             | data/webbase-2001.bin      |
+| [arabic-2005](https://sparse.tamu.edu/LAW/arabic-2005)                                                    | 639,999,458   | x            | x                             | data/arabic-2005.bin      |
+| [com-Orkut](https://sparse.tamu.edu/SNAP/com-Orkut) [snap](https://snap.stanford.edu/data/com-Orkut.html) | 117,185,083   | x            | x                             | data/com-Orkut.bin      |
+| [stokes](https://sparse.tamu.edu/VLSI/stokes)                                                             | 349,321,980   | x            | x                             | data/stokes.bin      |
+| [uk-2002](https://sparse.tamu.edu/VLSI/uk-2002)                                                           | 298,113,762   | x            | x                             | data/uk-2002.bin      |
+| [twitter_rv](https://github.com/ANLAB-KAIST/traces/releases/tag/twitter_rv.net)                           | x             | x            | x                             | data/twitter_rv.bin      |
 
 
 #### Additional datasets
