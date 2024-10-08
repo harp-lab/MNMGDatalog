@@ -72,6 +72,10 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
     cudaDeviceSynchronize();
     result_size = thrust::reduce(thrust::device, join_offset, join_offset + relation_size, 0, thrust::plus<int>());
     thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
+#ifdef DEBUG
+    cout << "result_size * sizeof(Entity): " << result_size * sizeof(Entity) << endl;
+#endif
+
     checkCuda(cudaMalloc((void **) &join_result, result_size * sizeof(Entity)));
     get_join_result_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
                                                       relation, relation_size, join_offset, join_result);

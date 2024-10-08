@@ -158,8 +158,8 @@ void benchmark(int argc, char **argv) {
 
     start_time = MPI_Wtime();
     Entity *same_key_value_removed = thrust::remove_if(thrust::device, base_join_result,
-                                        base_join_result + base_join_size,
-                                        is_key_equal_value());
+                                                       base_join_result + base_join_size,
+                                                       is_key_equal_value());
     base_join_size = same_key_value_removed - base_join_result;
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
@@ -231,9 +231,10 @@ void benchmark(int argc, char **argv) {
                                                                    comm_method,
                                                                    &buffer_preparation_time_temp,
                                                                    &communication_time_temp, iterations);
-        buffer_preparation_time += buffer_preparation_time_temp;
-        communication_time += communication_time_temp;
-
+        if (rank > 1) {
+            buffer_preparation_time += buffer_preparation_time_temp;
+            communication_time += communication_time_temp;
+        }
         start_time = MPI_Wtime();
         // Deduplicate scattered facts
         thrust::stable_sort(thrust::device, distributed_first_join_result,
@@ -271,8 +272,10 @@ void benchmark(int argc, char **argv) {
                                                                     comm_method,
                                                                     &buffer_preparation_time_temp,
                                                                     &communication_time_temp, iterations);
-        buffer_preparation_time += buffer_preparation_time_temp;
-        communication_time += communication_time_temp;
+        if (rank > 1) {
+            buffer_preparation_time += buffer_preparation_time_temp;
+            communication_time += communication_time_temp;
+        }
         start_time = MPI_Wtime();
         // Deduplicate scattered facts
         thrust::stable_sort(thrust::device, distributed_second_join_result,
@@ -346,7 +349,7 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
     finalization_time += elapsed_time;
 
-    if(job_run == 0){
+    if (job_run == 0) {
         // Comment out file write for polaris benchmark
         // Write the t full to an offset of the output file
         double temp_file_write_time = 0.0;
@@ -407,7 +410,7 @@ void benchmark(int argc, char **argv) {
         output.merge_time = max_merge_time;
         output.deduplication_time = max_deduplication_time;
         output.finalization_time = max_finalization_time;
-        if(job_run == 0){
+        if (job_run == 0) {
             // Comment out next 3 prints for polaris benchmark
             printf("| # Input | # Process | # Iterations | # SG | Total Time ");
             printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");

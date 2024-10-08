@@ -66,6 +66,7 @@ void benchmark(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &total_rank);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     warm_up_kernel<<<1, 1>>>();
+//    cout << "Total rank: " << total_rank << ", rank: " << rank << endl;
     int iterations = 0;
     // Should pass the input filename in command line argument
     const char *input_file;
@@ -125,8 +126,10 @@ void benchmark(int argc, char **argv) {
                                                 grid_size, block_size, cuda_aware_mpi,
                                                 &input_relation_size, comm_method,
                                                 &buffer_preparation_time_temp, &communication_time_temp, iterations);
+//    if (total_rank > 1) {
     buffer_preparation_time += buffer_preparation_time_temp;
     communication_time += communication_time_temp;
+//    }
 
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
@@ -135,9 +138,10 @@ void benchmark(int argc, char **argv) {
                                          row_size, total_columns, total_rank,
                                          grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
                                          &buffer_preparation_time_temp, &communication_time_temp, iterations);
+//    if (total_rank > 1) {
     buffer_preparation_time += buffer_preparation_time_temp;
     communication_time += communication_time_temp;
-
+//    }
     start_time = MPI_Wtime();
     thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
@@ -158,7 +162,6 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     merge_time += elapsed_time;
-
     // Hash table is Edge
     double temp_hashtable_build_time = 0.0;
     int hash_table_rows = 0;
@@ -184,8 +187,10 @@ void benchmark(int argc, char **argv) {
                                                   grid_size, block_size, cuda_aware_mpi, &t_delta_size,
                                                   comm_method,
                                                   &buffer_preparation_time_temp, &communication_time_temp, iterations);
-        buffer_preparation_time += buffer_preparation_time_temp;
-        communication_time += communication_time_temp;
+        if (total_rank > 1) {
+            buffer_preparation_time += buffer_preparation_time_temp;
+            communication_time += communication_time_temp;
+        }
         start_time = MPI_Wtime();
         // Deduplicate scattered facts
         thrust::stable_sort(thrust::device, t_delta_temp, t_delta_temp + t_delta_size, set_cmp());

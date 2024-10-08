@@ -101,6 +101,9 @@ void benchmark(int argc, char **argv) {
     int *local_data_host = parallel_read(rank, total_rank, input_file, total_columns,
                                          &row_size, &total_rows, &temp_file_io_time);
     int local_count = row_size * total_columns;
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", Local count: " << local_count << endl;
+#endif
     file_io_time += temp_file_io_time;
 
     start_time = MPI_Wtime();
@@ -127,6 +130,9 @@ void benchmark(int argc, char **argv) {
                                                 &buffer_preparation_time_temp, &communication_time_temp, iterations);
     buffer_preparation_time += buffer_preparation_time_temp;
     communication_time += communication_time_temp;
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", input_relation_size: " << input_relation_size << endl;
+#endif
 
     start_time = MPI_Wtime();
     thrust::stable_sort(thrust::device, input_relation, input_relation + input_relation_size, set_cmp());
@@ -136,6 +142,9 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", input_relation_size after deduplication: " << input_relation_size << endl;
+#endif
 
 
     buffer_preparation_time_temp = 0.0;
@@ -148,7 +157,9 @@ void benchmark(int argc, char **argv) {
                                                   &buffer_preparation_time_temp, &communication_time_temp, iterations);
     buffer_preparation_time += buffer_preparation_time_temp;
     communication_time += communication_time_temp;
-
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", reverse_relation_size: " << reverse_relation_size << endl;
+#endif
     start_time = MPI_Wtime();
     thrust::stable_sort(thrust::device, reverse_relation, reverse_relation + reverse_relation_size, set_cmp());
     reverse_relation_size = (thrust::unique(thrust::device,
@@ -157,6 +168,9 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", reverse_relation_size after deduplication: " << reverse_relation_size << endl;
+#endif
 
     // Hash table is Edge
     double temp_hashtable_build_time = 0.0;
@@ -164,7 +178,9 @@ void benchmark(int argc, char **argv) {
     Entity *hash_table = get_hash_table(grid_size, block_size, input_relation, input_relation_size,
                                         &hash_table_rows, &temp_hashtable_build_time);
     hashtable_build_time += temp_hashtable_build_time;
-
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", hash_table_rows: " << hash_table_rows << endl;
+#endif
 
     double temp_join_time = 0.0;
     int join_result_size = 0;
@@ -173,7 +189,9 @@ void benchmark(int argc, char **argv) {
                                    &join_result_size, &temp_join_time);
 
     join_time += temp_join_time;
-
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", join_result_size: " << join_result_size << endl;
+#endif
     // Scatter the join result among relevant processes
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
@@ -187,7 +205,9 @@ void benchmark(int argc, char **argv) {
                                                          iterations);
     buffer_preparation_time += buffer_preparation_time_temp;
     communication_time += communication_time_temp;
-
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", distributed_join_result_size: " << distributed_join_result_size << endl;
+#endif
 
     // Deduplicate distributed join result
     start_time = MPI_Wtime();
@@ -200,6 +220,9 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", distributed_join_result_size after deduplication: " << distributed_join_result_size << endl;
+#endif
 
     start_time = MPI_Wtime();
     long long global_join_result_size = 0;
@@ -318,3 +341,6 @@ int main(int argc, char **argv) {
 }
 // METHOD 0 = two pass method, 1 = sorting method
 // make runsinglejoin DATA_FILE=data/data_5.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
+// make runsinglejoin DATA_FILE=data/large_datasets/com-Orkut.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
+// make runsinglejoin DATA_FILE=data/large_datasets/soc-LiveJournal1.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
+// make runsinglejoin DATA_FILE=data/as-skitter.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0

@@ -29,6 +29,9 @@ Entity *get_hash_table(int grid_size, int block_size, Entity *edge, int edge_siz
     double load_factor = 0.4;
     int hash_table_rows = (int) edge_size / load_factor;
     hash_table_rows = 1 << (int) ceil(log2(hash_table_rows));
+#ifdef DEBUG
+    cout << "hash_table_rows * sizeof(Entity): " << hash_table_rows * sizeof(Entity) << endl;
+#endif
     checkCuda(cudaMalloc((void **) &hash_table, hash_table_rows * sizeof(Entity)));
     Entity negative_entity;
     negative_entity.key = -1;

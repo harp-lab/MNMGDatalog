@@ -495,5 +495,5 @@ int main(int argc, char **argv) {
 // make runwcc DATA_FILE=data/data_214078.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=1
 // make runwcc DATA_FILE=data/web-Stanford.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runwcc DATA_FILE=data/roadNet-CA.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
-
+// make runwcc DATA_FILE=data/data/large_datasets/com-Orkut.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 8 ./cc.out data/roadNet-CA.bin 1 0
