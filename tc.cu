@@ -126,10 +126,10 @@ void benchmark(int argc, char **argv) {
                                                 grid_size, block_size, cuda_aware_mpi,
                                                 &input_relation_size, comm_method,
                                                 &buffer_preparation_time_temp, &communication_time_temp, iterations);
-//    if (total_rank > 1) {
-    buffer_preparation_time += buffer_preparation_time_temp;
-    communication_time += communication_time_temp;
-//    }
+    if (total_rank > 1) {
+        buffer_preparation_time += buffer_preparation_time_temp;
+        communication_time += communication_time_temp;
+    }
 
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
@@ -138,10 +138,10 @@ void benchmark(int argc, char **argv) {
                                          row_size, total_columns, total_rank,
                                          grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
                                          &buffer_preparation_time_temp, &communication_time_temp, iterations);
-//    if (total_rank > 1) {
-    buffer_preparation_time += buffer_preparation_time_temp;
-    communication_time += communication_time_temp;
-//    }
+    if (total_rank > 1) {
+        buffer_preparation_time += buffer_preparation_time_temp;
+        communication_time += communication_time_temp;
+    }
     start_time = MPI_Wtime();
     thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
@@ -161,7 +161,9 @@ void benchmark(int argc, char **argv) {
     MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    merge_time += elapsed_time;
+    if (total_rank > 1) {
+        merge_time += elapsed_time;
+    }
     // Hash table is Edge
     double temp_hashtable_build_time = 0.0;
     int hash_table_rows = 0;
@@ -169,6 +171,8 @@ void benchmark(int argc, char **argv) {
                                         &hash_table_rows, &temp_hashtable_build_time);
     hashtable_build_time += temp_hashtable_build_time;
 
+    show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
+    show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
 
     while (true) {
         Entity *new_t_full;
@@ -347,3 +351,4 @@ int main(int argc, char **argv) {
 // make runtc DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1 METHOD=1
 // make runtc DATA_FILE=data/data_147892.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runtc DATA_FILE=data/dummy.bin NPROCS=2 CUDA_AWARE_MPI=0 METHOD=0

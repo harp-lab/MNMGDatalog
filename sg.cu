@@ -119,8 +119,10 @@ void benchmark(int argc, char **argv) {
                                                 grid_size, block_size, cuda_aware_mpi,
                                                 &input_relation_size, comm_method,
                                                 &buffer_preparation_time_temp, &communication_time_temp, iterations);
-    buffer_preparation_time += buffer_preparation_time_temp;
-    communication_time += communication_time_temp;
+    if(total_rank > 1) {
+        buffer_preparation_time += buffer_preparation_time_temp;
+        communication_time += communication_time_temp;
+    }
 
     start_time = MPI_Wtime();
     Entity *t_delta;
@@ -173,8 +175,10 @@ void benchmark(int argc, char **argv) {
                                                    grid_size, block_size, cuda_aware_mpi,
                                                    &t_delta_size_temp, comm_method,
                                                    &buffer_preparation_time_temp, &communication_time_temp, iterations);
-    buffer_preparation_time += buffer_preparation_time_temp;
-    communication_time += communication_time_temp;
+    if(total_rank > 1) {
+        buffer_preparation_time += buffer_preparation_time_temp;
+        communication_time += communication_time_temp;
+    }
 
     start_time = MPI_Wtime();
     t_delta_size = t_delta_size_temp;
@@ -203,7 +207,9 @@ void benchmark(int argc, char **argv) {
     MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    merge_time += elapsed_time;
+    if(total_rank > 1) {
+        merge_time += elapsed_time;
+    }
 
 
     while (true) {

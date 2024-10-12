@@ -66,7 +66,7 @@ void benchmark(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &total_rank);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     warm_up_kernel<<<1, 1>>>();
-    int iterations = 0;
+    int iterations = 1;
     // Should pass the input filename in command line argument
     const char *input_file;
     int comm_method = 0;
@@ -96,11 +96,13 @@ void benchmark(int argc, char **argv) {
     // Read file in parallel
     int total_columns = 2;
     double temp_file_io_time = 0.0;
-    int row_size = 0;
-    int total_rows = 0;
-    int *local_data_host = parallel_read(rank, total_rank, input_file, total_columns,
-                                         &row_size, &total_rows, &temp_file_io_time);
-    int local_count = row_size * total_columns;
+    long long row_size = 0;
+    int *local_data_host = parallel_generate(rank, total_columns,
+                                         &row_size, &temp_file_io_time);
+    long long local_count = row_size * total_columns;
+    long long global_row_size = 0;
+    MPI_Allreduce(&row_size, &global_row_size, 1, MPI_LONG_LONG_INT, MPI_SUM,
+                  MPI_COMM_WORLD);
 #ifdef DEBUG
     cout << "Rank: " << rank << ", Local count: " << local_count << endl;
 #endif
@@ -142,6 +144,7 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
+//    show_device_entity_variable(input_relation, input_relation_size, rank, "input_relation", 0);
 #ifdef DEBUG
     cout << "Rank: " << rank << ", input_relation_size after deduplication: " << input_relation_size << endl;
 #endif
@@ -299,11 +302,12 @@ void benchmark(int argc, char **argv) {
                  buffer_preparation_time + communication_time + deduplication_time + merge_time +
                  finalization_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     if (rank == 0) {
         output.block_size = block_size;
         output.grid_size = grid_size;
-        output.input_rows = total_rows;
+        output.input_rows = global_row_size;
         output.total_rank = total_rank;
         output.iterations = iterations;
         output.output_file_name = output_file_name;
@@ -340,6 +344,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 // METHOD 0 = two pass method, 1 = sorting method
+// make runsinglejoin DATA_FILE=data/random_6gb.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
 // make runsinglejoin DATA_FILE=data/data_5.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
 // make runsinglejoin DATA_FILE=data/large_datasets/com-Orkut.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runsinglejoin DATA_FILE=data/large_datasets/soc-LiveJournal1.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0

@@ -262,6 +262,24 @@ mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_
 
 ## Run in Polaris
 
+### 1 node interactive node
+```shell
+qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
+cd mnmgJOIN
+chmod +x set_affinity_gpu_polaris.sh
+## Traditional MPI
+CC tc.cu -o tc_interactive.out
+CC sg.cu -o sg_interactive.out
+CC wcc.cu -o wcc_interactive.out
+CC single_join.cu -o single_join_interactive.out 
+./single_join_interactive.out data/data_165435.bin 0 1
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out data/data_165435.bin 0 1
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 1
+
+
+./tc_interactive.out data/data_163734.bin 0 1  
+```
+
 ### Transitive Closure Computation (TC)
 
 The job script [tc-merged.sh](tc-merged.sh) contains the multi node multi GPU configuration for Polaris.

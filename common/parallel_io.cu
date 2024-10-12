@@ -40,6 +40,35 @@ int *parallel_read(int rank, int total_rank, const char *input_file, int total_c
     return edge_host;
 }
 
+int *parallel_generate(int rank, int total_columns,
+                   long long *row_count, double *compute_time) {
+    double start_time, end_time, elapsed_time;
+
+    // Start timing
+    start_time = MPI_Wtime();
+
+    // Set a seed for reproducibility, using rank to ensure different numbers for each rank
+    unsigned int seed = rank + 1;
+    srand(seed);
+
+
+    long long row_size = 1000000;
+    long long total_elements = row_size * total_columns;
+
+    int *edge_host = (int *) malloc(total_elements * sizeof(int));
+    for (int i = 0; i < total_elements; i++) {
+        edge_host[i] = (rand() % 1000000) + 1;
+    }
+
+    *row_count = row_size;
+
+    // End timing
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    *compute_time = elapsed_time;
+
+    return edge_host;
+}
 
 void parallel_write(int rank, int total_rank, const char *output_file_name,
                     int *ar_host, int *displacement,
