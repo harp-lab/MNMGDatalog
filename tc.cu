@@ -59,6 +59,7 @@ void benchmark(int argc, char **argv) {
     double join_time = 0.0, merge_time = 0.0;
     double deduplication_time = 0.0, max_deduplication_time = 0.0;;
     double hashtable_build_time = 0.0, max_hashtable_build_time = 0.0;
+    double set_diff_time = 0.0, set_union_time = 0.0, t_full_copy_time = 0.0, inner_clear_time = 0.0, t_full_size_all_to_all_time = 0.0;
 
     double total_time = 0.0, max_total_time = 0.0;
     int total_rank, rank;
@@ -155,13 +156,24 @@ void benchmark(int argc, char **argv) {
     Entity *t_full;
     checkCuda(cudaMalloc((void **) &t_full, t_delta_size * sizeof(Entity)));
     cudaMemcpy(t_full, t_delta, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
-
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+//    if (total_rank > 1) {
+#ifdef DEBUG
+    cout << "t_full initialization: " << elapsed_time << endl;
+#endif
+    merge_time += elapsed_time;
+//    }
+    start_time = MPI_Wtime();
     long long global_t_full_size;
     long long t_full_size = t_delta_size;
     MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     if (total_rank > 1) {
+#ifdef DEBUG
+        cout << "MPI_Allreduce initialization: " << elapsed_time << endl;
+#endif
         merge_time += elapsed_time;
     }
     // Hash table is Edge
@@ -171,8 +183,8 @@ void benchmark(int argc, char **argv) {
                                         &hash_table_rows, &temp_hashtable_build_time);
     hashtable_build_time += temp_hashtable_build_time;
 
-    show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
-    show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
+//    show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
+//    show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
 
     while (true) {
         Entity *new_t_full;
@@ -214,33 +226,64 @@ void benchmark(int argc, char **argv) {
                                               t_delta, t_delta + t_delta_size,
                                               t_full, t_full + t_full_size,
                                               t_delta, set_cmp()) - t_delta;
-
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        merge_time += elapsed_time;
+        set_diff_time += elapsed_time;
         // set union of two sets (sorted t full and t delta)
+        start_time = MPI_Wtime();
         long long new_t_full_size = t_delta_size + t_full_size;
         checkCuda(cudaMalloc((void **) &new_t_full, new_t_full_size * sizeof(Entity)));
+//        thrust::merge(thrust::device,
+//                      t_full, t_full + t_full_size,
+//                      t_delta, t_delta + t_delta_size,
+//                      new_t_full, set_cmp());
+//        new_t_full_size = (thrust::unique(thrust::device,
+//                                          new_t_full, new_t_full + new_t_full_size,
+//                                          is_equal())) - new_t_full;
         new_t_full_size = thrust::set_union(thrust::device,
                                             t_full, t_full + t_full_size,
                                             t_delta, t_delta + t_delta_size,
                                             new_t_full, set_cmp()) - new_t_full;
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        merge_time += elapsed_time;
+        set_union_time += elapsed_time;
+        start_time = MPI_Wtime();
         cudaFree(t_full);
         checkCuda(cudaMalloc((void **) &t_full, new_t_full_size * sizeof(Entity)));
         cudaMemcpy(t_full, new_t_full, new_t_full_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
         t_full_size = new_t_full_size;
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        merge_time += elapsed_time;
+        t_full_copy_time += elapsed_time;
+        start_time = MPI_Wtime();
         cudaFree(join_result);
         cudaFree(new_t_full);
         cudaFree(t_delta_temp);
         // Check if the global t full size has changed in this iteration
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        merge_time += elapsed_time;
+        inner_clear_time += elapsed_time;
+        start_time = MPI_Wtime();
         long long old_global_t_full_size = global_t_full_size;
         MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
+        t_full_size_all_to_all_time += elapsed_time;
         if (old_global_t_full_size == global_t_full_size) {
             break;
         }
     }
-
+#ifdef DEBUG
+    cout << "Rank: " << rank << ", set diff: " << set_diff_time << ", set union: " << set_union_time << ", t full cpy: "
+         << t_full_copy_time << ", t full all to all: " << t_full_size_all_to_all_time << ", inner clear: "
+         << inner_clear_time << endl;
+#endif
     start_time = MPI_Wtime();
     // Reverse the t_full as we stored it in reverse order initially
     int *t_full_ar;
@@ -344,6 +387,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 // METHOD 0 = two pass method, 1 = sorting method
+// make runtc DATA_FILE=data/data_7035.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_5.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_10.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
@@ -352,3 +396,4 @@ int main(int argc, char **argv) {
 // make runtc DATA_FILE=data/data_23874.bin NPROCS=8 CUDA_AWARE_MPI=1 METHOD=1
 // make runtc DATA_FILE=data/data_147892.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/dummy.bin NPROCS=2 CUDA_AWARE_MPI=0 METHOD=0
+// make runtc DATA_FILE=data/data_23874.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0

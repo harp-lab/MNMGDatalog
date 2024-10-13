@@ -22,6 +22,10 @@ mpiexec --np 2 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 | 163,734 | 2 | 188 | 156,120,489 |   4.9542 |   0.3645 |   0.3173 |   0.0002 |   0.0695 |   0.1084 |   1.4488 |   0.2118 |   2.6043 |   0.0065 | data/data_163734.bin_tc.bin |
 arsho::x3101c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_163734.bin 0 1 1
 | 163,734 | 4 | 188 | 156,120,489 |   2.5745 |   0.6983 |   1.0696 |   0.0003 |   0.0835 |   0.1413 |   0.6727 |   0.1492 |   0.8442 |   0.0059 | data/data_163734.bin_tc.bin |
+./tc_interactive.out data/data_165435.bin 0 0 1
+t_full initialization: 9.8565e-05
+Rank: 0, set diff: 3.5727, set union: 87.8449, t full cpy: 44.3399, t full all to all: 0.00129719, inner clear: 5.99966
+| 165,435 | 1 | 606 | 871,365,688 | 143.8553 |   0.2221 |   0.0033 |   0.0001 |   0.2415 |   0.0000 |   0.0000 |   0.6072 | 141.7586 |   0.0243 | data/data_165435.bin_tc.bin |
 
 # VSP
 ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
@@ -61,7 +65,8 @@ edge size 165435
 Rebuild relation detail time : rebuild rel sort time: 0 ; rebuild rel unique time: 0 ; rebuild rel index time: 0.160467
 Path counts 871365688
 TC time: 38.9328
-arsho::x3005c0s13b0n0 { ~/gdlog/build }-> ./TC ~/mnmgJOIN/data/data_165435.txt 1Input graph rows: 165435
+arsho::x3005c0s13b0n0 { ~/gdlog/build }-> ./TC ~/mnmgJOIN/data/data_165435.txt 1
+Input graph rows: 165435
 edge size 165435
  memory alloc time: 60.1233 ; Join time: 1.41393 ; merge full time: 7.46292 ; rebuild full time: 4.096e-06 ; rebuild delta time: 0.225772 ; set diff time: 15.4262
 Rebuild relation detail time : rebuild rel sort time: 0 ; rebuild rel unique time: 0 ; rebuild rel index time: 0.159792

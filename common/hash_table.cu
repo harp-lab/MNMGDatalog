@@ -26,7 +26,7 @@ Entity *get_hash_table(int grid_size, int block_size, Entity *edge, int edge_siz
     double start_time, end_time, elapsed_time;
     start_time = MPI_Wtime();
     Entity *hash_table;
-    double load_factor = 0.4;
+    double load_factor = 0.6;
     int hash_table_rows = (int) edge_size / load_factor;
     hash_table_rows = 1 << (int) ceil(log2(hash_table_rows));
 #ifdef DEBUG
