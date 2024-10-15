@@ -22,10 +22,6 @@ mpiexec --np 2 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 | 163,734 | 2 | 188 | 156,120,489 |   4.9542 |   0.3645 |   0.3173 |   0.0002 |   0.0695 |   0.1084 |   1.4488 |   0.2118 |   2.6043 |   0.0065 | data/data_163734.bin_tc.bin |
 arsho::x3101c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_163734.bin 0 1 1
 | 163,734 | 4 | 188 | 156,120,489 |   2.5745 |   0.6983 |   1.0696 |   0.0003 |   0.0835 |   0.1413 |   0.6727 |   0.1492 |   0.8442 |   0.0059 | data/data_163734.bin_tc.bin |
-./tc_interactive.out data/data_165435.bin 0 0 1
-t_full initialization: 9.8565e-05
-Rank: 0, set diff: 3.5727, set union: 87.8449, t full cpy: 44.3399, t full all to all: 0.00129719, inner clear: 5.99966
-| 165,435 | 1 | 606 | 871,365,688 | 143.8553 |   0.2221 |   0.0033 |   0.0001 |   0.2415 |   0.0000 |   0.0000 |   0.6072 | 141.7586 |   0.0243 | data/data_165435.bin_tc.bin |
 
 # VSP
 ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
@@ -56,6 +52,25 @@ mpiexec --np 2 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 | 165,435 | 2 | 606 | 871,365,688 |  76.5405 |   0.3623 |   0.3135 |   0.0002 |   0.2627 |   1.4569 |   3.3267 |   0.4881 |  69.7778 |   0.0248 | data/data_165435.bin_tc.bin |
 arsho::x3001c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 0 1
 | 165,435 | 4 | 606 | 871,365,688 |  38.4733 |   0.7032 |   1.0752 |   0.0003 |   0.3098 |   0.9894 |   1.5351 |   0.4422 |  34.1576 |   0.0263 | data/data_165435.bin_tc.bin |
+
+
+usroads
+1 - 143
+2 - 76
+4 - 38
+
+vsp_finan512_scagr7
+1 - 153
+2 - 84
+4 - 42
+
+
+
+
+./tc_interactive.out data/data_165435.bin 0 0 1
+t_full initialization: 9.8565e-05
+Rank: 0, set diff: 3.5727, set union: 87.8449, t full cpy: 44.3399, t full all to all: 0.00129719, inner clear: 5.99966
+| 165,435 | 1 | 606 | 871,365,688 | 143.8553 |   0.2221 |   0.0033 |   0.0001 |   0.2415 |   0.0000 |   0.0000 |   0.6072 | 141.7586 |   0.0243 | data/data_165435.bin_tc.bin |
 
 
 ./TC ~/mnmgJOIN/data/data_165435.txt 0 
@@ -118,6 +133,19 @@ arsho::x3109c0s37b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bi
 ### Local Comparison
 ```shell
 # fe_body
+make runtc DATA_FILE=data/data_163734.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
+nvcc tc.cu -o tc.out -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -lm -O3 --extended-lambda
+mpirun -np 1 ./tc.out data/data_163734.bin 0 0
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 163,734 | 1 | 188 | 156,120,489 |   6.4528 |   0.0012 |   0.8332 |   0.0002 |   0.3735 |   0.0000 |   0.0000 |   0.7557 |   4.2796 |   0.0644 | data/data_163734.bin_tc.bin |
+(venv) ➜  mnmgJOIN git:(main) ✗ mpirun -np 3 ./tc.out data/data_163734.bin 0 0
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 163,734 | 3 | 188 | 156,120,489 |   8.6434 |   0.0015 |   0.5344 |   0.0003 |   0.3447 |   0.8048 |   2.4516 |   0.5828 |   4.3201 |   0.0418 | data/data_163734.bin_tc.bin |
+
+
+
 ./tc.out data/data_163734.bin 0 1                                           
 | # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
