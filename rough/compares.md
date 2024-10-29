@@ -64,7 +64,10 @@ vsp_finan512_scagr7
 2 - 84
 4 - 42
 
-
+vsp_finan #Input 552,020, #TC 910M, #Iterations 520
+1 - 76
+2 - 44
+4 - 22
 
 
 ./tc_interactive.out data/data_165435.bin 0 0 1
@@ -72,6 +75,28 @@ t_full initialization: 9.8565e-05
 Rank: 0, set diff: 3.5727, set union: 87.8449, t full cpy: 44.3399, t full all to all: 0.00129719, inner clear: 5.99966
 | 165,435 | 1 | 606 | 871,365,688 | 143.8553 |   0.2221 |   0.0033 |   0.0001 |   0.2415 |   0.0000 |   0.0000 |   0.6072 | 141.7586 |   0.0243 | data/data_165435.bin_tc.bin |
 
+# No t full copy
+usroads - #Input 165435, #TC 871M, #Iterations 606 
+1 - 75
+2 - 38
+4 - 19
+
+
+./tc_interactive.out data/data_165435.bin 0 0 1
+Rank: 0, set diff: 3.58056, merge: 68.5683, t full cpy: 1.42875, t full all to all: 0.00120612, inner clear: 0.0421691
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 165,435 | 1 | 606 | 871,365,688 |  75.8164 |   0.2107 |   0.0096 |   0.0001 |   0.2353 |   0.0000 |   0.0000 |   0.5224 |  73.6210 |   0.0174 | data/data_165435.bin_tc.bin |
+mpiexec --np 2 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 0 1
+Rank: 0, set diff: 5.94824, merge: 14.9144, t full cpy: 10.7663, t full all to all: 0.768416, inner clear: 0.0758007
+Rank: 1, set diff: 2.57017, merge: 28.337, t full cpy: 1.20302, t full all to all: 0.263052, inner clear: 0.0697985
+| 165,435 | 2 | 606 | 871,365,688 |  38.8948 |   0.3627 |   0.3092 |   0.0002 |   0.2372 |   1.4368 |   3.1994 |   0.3445 |  32.4732 |   0.0260 | data/data_165435.bin_tc.bin |
+arsho::x3207c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 0 1
+Rank: 0, set diff: 1.26883, merge: 10.591, t full cpy: 2.89782, t full all to all: 0.596137, inner clear: 0.16998
+Rank: 1, set diff: 2.49932, merge: 10.3591, t full cpy: 2.10622, t full all to all: 0.43053, inner clear: 0.135156
+Rank: 2, set diff: 1.43227, merge: 8.28685, t full cpy: 4.74182, t full all to all: 0.86548, inner clear: 0.25631
+Rank: 3, set diff: 2.15568, merge: 10.7947, t full cpy: 1.88876, t full all to all: 0.44841, inner clear: 0.219958
+| 165,435 | 4 | 606 | 871,365,688 |  19.6870 |   0.6975 |   1.0729 |   0.0003 |   0.2879 |   0.9821 |   1.4950 |   0.3000 |  15.5830 |   0.0283 | data/data_165435.bin_tc.bin |
 
 ./TC ~/mnmgJOIN/data/data_165435.txt 0 
 Input graph rows: 165435
@@ -87,6 +112,21 @@ edge size 165435
 Rebuild relation detail time : rebuild rel sort time: 0 ; rebuild rel unique time: 0 ; rebuild rel index time: 0.159792
 Path counts 871365688
 TC time: 85.0049
+
+# VSP
+./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 0 1
+Rank: 0, set diff: 3.85634, merge: 68.6521, t full cpy: 1.52066, t full all to all: 0.00148961, inner clear: 0.048341
+| 552,020 | 1 | 520 | 910,070,918 |  76.9266 |   0.2133 |   0.0137 |   0.0001 |   0.4540 |   0.0000 |   0.0000 |   0.9919 |  74.0790 |   0.0180 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+mpiexec --np 2 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 0 1
+Rank: 0, set diff: 9.89451, merge: 19.5027, t full cpy: 2.49032, t full all to all: 1.5015, inner clear: 0.119962
+Rank: 1, set diff: 2.29642, merge: 29.6179, t full cpy: 0.861167, t full all to all: 0.1523, inner clear: 0.142708
+| 552,020 | 2 | 520 | 910,070,918 |  44.5384 |   0.3621 |   0.3251 |   0.0002 |   0.4529 |   2.2496 |   6.9216 |   0.6253 |  33.5091 |   0.0233 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+arsho::x3207c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 0 1
+Rank: 0, set diff: 1.08559, merge: 8.05197, t full cpy: 6.00012, t full all to all: 0.768939, inner clear: 0.300881
+Rank: 1, set diff: 0.970731, merge: 13.5166, t full cpy: 0.866946, t full all to all: 0.468381, inner clear: 0.20118
+Rank: 2, set diff: 2.00791, merge: 6.18969, t full cpy: 6.90292, t full all to all: 0.852828, inner clear: 0.310308
+Rank: 3, set diff: 0.955518, merge: 9.36907, t full cpy: 4.90813, t full all to all: 0.485756, inner clear: 0.255572
+| 552,020 | 4 | 520 | 910,070,918 |  22.4764 |   0.6888 |   1.0734 |   0.0003 |   0.3296 |   1.2109 |   3.4198 |   0.5392 |  16.2639 |   0.0247 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
 
 
 
@@ -122,10 +162,6 @@ arsho::x3109c0s37b0n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 4 --depth=4 --cpu-bi
 | 163,734 | 2 | 125 | 408,443,204 |   6.1466 |   0.3460 |   0.3170 |   0.0001 |   0.2106 |   0.0014 |   0.0066 |   0.9227 |   4.2926 |   0.4571 | data/data_163734.bin_sg.bin |
 arsho::x3109c0s37b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_163734.bin 0 1 1
 | 163,734 | 4 | 125 | 408,443,204 |   9.1368 |   0.7042 |   1.0616 |   0.0003 |   0.1907 |   0.2458 |   5.6426 |   0.5150 |   1.6757 |   0.2259 | data/data_163734.bin_sg.bin |
-
-
-# usroads
-./tc_interactive.out data/data_165435.bin 0 0 1
 
 
 ```

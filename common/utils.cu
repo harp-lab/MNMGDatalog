@@ -5,8 +5,6 @@
 using namespace std;
 
 
-
-
 struct Entity {
     int key;
     int value;
@@ -367,6 +365,47 @@ void show_device_entity_variable(Entity *device_data, int device_data_size, int 
     free(host_data);
 }
 
+// Function to print variable details and data
+void show_variable_generic(void *data, string var_name, size_t data_size, string data_type,
+                   string execution_policy, int rank, int iteration,
+                   string message, int size_only) {
+    cout << "Rank: " << rank << ", iteration: " << iteration << ", " << var_name << "(" << execution_policy << ")"
+         << " size: " << data_size << " : " << message << " ----------------" << endl;
+    if (size_only == 1) return;
+    if (execution_policy == "device") {
+        if (data_type == "Entity") {
+            Entity *host_data = (Entity *) malloc(data_size * sizeof(Entity));
+            cudaMemcpy(host_data, data, data_size * sizeof(Entity), cudaMemcpyDeviceToHost);
+            for (int i = 0; i < data_size; i++) {
+                cout << host_data[i].key << " " << host_data[i].value << endl;
+            }
+            cout << endl;
+            free(host_data);
+        } else {
+            int *host_data = (int *) malloc(data_size * sizeof(int));
+            cudaMemcpy(host_data, data, data_size * sizeof(int), cudaMemcpyDeviceToHost);
+            for (int i = 0; i < data_size; i++) {
+                cout << host_data[i] << endl;
+            }
+            cout << endl;
+            free(host_data);
+        }
+    } else {
+        if (data_type == "Entity") {
+            Entity *entity_data = static_cast<Entity *>(data);
+            for (int i = 0; i < data_size; i++) {
+                cout << entity_data[i].key << " " << entity_data[i].value << endl;
+            }
+        } else {
+            int *int_data = static_cast<int *>(data);
+            for (int i = 0; i < data_size; i++) {
+                cout << int_data[i] << endl;
+            }
+            cout << endl;
+        }
+    }
+}
+// show_variable_generic(hash_table, "hash_table", hash_table_rows, "Entity", "device", rank, iterations, "", 0);
 // show_device_entity_variable(local_data, local_data_size, rank, "local_data", 1);
 // show_device_variable(local_data_temp_device, local_count, 2, rank, "local data temp device", 0);
 

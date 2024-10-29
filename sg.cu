@@ -101,7 +101,6 @@ void benchmark(int argc, char **argv) {
                                          &row_size, &total_rows, &temp_file_io_time);
     int local_count = row_size * total_columns;
     file_io_time += temp_file_io_time;
-
     start_time = MPI_Wtime();
     int *local_data_device;
     checkCuda(cudaMalloc((void **) &local_data_device, local_count * sizeof(int)));
@@ -133,7 +132,7 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
     initialization_time += elapsed_time;
     start_time = MPI_Wtime();
-    thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
+    thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
                                    t_delta, t_delta + t_delta_size,
                                    is_equal())) - t_delta;
@@ -183,15 +182,16 @@ void benchmark(int argc, char **argv) {
     start_time = MPI_Wtime();
     t_delta_size = t_delta_size_temp;
     cudaFree(t_delta);
-    checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
-    cudaMemcpy(t_delta, t_delta_temp_base, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+    t_delta = t_delta_temp_base;
+//    checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
+//    cudaMemcpy(t_delta, t_delta_temp_base, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     initialization_time += elapsed_time;
 
     start_time = MPI_Wtime();
     // Deduplicate scattered facts
-    thrust::stable_sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
+    thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device, t_delta, t_delta + t_delta_size, is_equal())) - t_delta;
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
@@ -211,7 +211,7 @@ void benchmark(int argc, char **argv) {
         merge_time += elapsed_time;
     }
 
-
+    Entity *distributed_second_join_result,  *new_t_full;
     while (true) {
         // tmp(b, x): - edge(a, x), sg(a, b).
         double first_join_time = 0.0;
@@ -243,7 +243,7 @@ void benchmark(int argc, char **argv) {
         }
         start_time = MPI_Wtime();
         // Deduplicate scattered facts
-        thrust::stable_sort(thrust::device, distributed_first_join_result,
+        thrust::sort(thrust::device, distributed_first_join_result,
                             distributed_first_join_result + distributed_first_join_size, set_cmp());
         distributed_first_join_size = (thrust::unique(thrust::device,
                                                       distributed_first_join_result,
@@ -271,7 +271,7 @@ void benchmark(int argc, char **argv) {
         buffer_preparation_time_temp = 0.0;
         communication_time_temp = 0.0;
         int distributed_second_join_size = 0;
-        Entity *distributed_second_join_result = get_split_relation(rank, second_join_result,
+        distributed_second_join_result = get_split_relation(rank, second_join_result,
                                                                     second_join_size, total_columns, total_rank,
                                                                     grid_size, block_size, cuda_aware_mpi,
                                                                     &distributed_second_join_size,
@@ -284,7 +284,7 @@ void benchmark(int argc, char **argv) {
         }
         start_time = MPI_Wtime();
         // Deduplicate scattered facts
-        thrust::stable_sort(thrust::device, distributed_second_join_result,
+        thrust::sort(thrust::device, distributed_second_join_result,
                             distributed_second_join_result + distributed_second_join_size, set_cmp());
         distributed_second_join_size = (thrust::unique(thrust::device,
                                                        distributed_second_join_result,
@@ -293,8 +293,7 @@ void benchmark(int argc, char **argv) {
 
         t_delta_size = distributed_second_join_size;
         cudaFree(t_delta);
-        checkCuda(cudaMalloc((void **) &t_delta, t_delta_size * sizeof(Entity)));
-        cudaMemcpy(t_delta, distributed_second_join_result, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+        t_delta = distributed_second_join_result;
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         deduplication_time += elapsed_time;
@@ -305,25 +304,21 @@ void benchmark(int argc, char **argv) {
                                               t_full, t_full + t_full_size,
                                               t_delta, set_cmp()) - t_delta;
 
-        // set union of two sets (sorted t full and t delta)
-        Entity *new_t_full;
+        // merge of two sets (sorted t full and t delta)
         int new_t_full_size = t_delta_size + t_full_size;
         checkCuda(cudaMalloc((void **) &new_t_full, new_t_full_size * sizeof(Entity)));
-        new_t_full_size = thrust::set_union(thrust::device,
-                                            t_full, t_full + t_full_size,
-                                            t_delta, t_delta + t_delta_size,
-                                            new_t_full, set_cmp()) - new_t_full;
+        thrust::merge(thrust::device,
+                      t_full, t_full + t_full_size,
+                      t_delta, t_delta + t_delta_size,
+                      new_t_full, set_cmp());
         cudaFree(t_full);
-        checkCuda(cudaMalloc((void **) &t_full, new_t_full_size * sizeof(Entity)));
-        cudaMemcpy(t_full, new_t_full, new_t_full_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
         t_full_size = new_t_full_size;
+        t_full = new_t_full;
         // Check if the global t full size has changed in this iteration
         long long old_global_t_full_size = global_t_full_size;
         MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
         cudaFree(distributed_first_join_result);
-        cudaFree(distributed_second_join_result);
-        cudaFree(new_t_full);
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
@@ -356,7 +351,6 @@ void benchmark(int argc, char **argv) {
     finalization_time += elapsed_time;
 
     if (job_run == 0) {
-        // Comment out file write for polaris benchmark
         // Write the t full to an offset of the output file
         double temp_file_write_time = 0.0;
         parallel_write(rank, total_rank, output_file_name, t_full_ar_host, t_full_displacements,
@@ -417,7 +411,6 @@ void benchmark(int argc, char **argv) {
         output.deduplication_time = max_deduplication_time;
         output.finalization_time = max_finalization_time;
         if (job_run == 0) {
-            // Comment out next 3 prints for polaris benchmark
             printf("| # Input | # Process | # Iterations | # SG | Total Time ");
             printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
             printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");

@@ -50,11 +50,13 @@ void get_join_result_entity(Entity *hash_table, int hash_table_size,
 
 Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_table_size, Entity *relation,
                  int relation_size, int *join_result_size, double *compute_time) {
+//    show_variable_generic(hash_table, "hash_table", hash_table_size, "Entity", "device", 0, 0, "hash table in get join", 0);
+//    show_variable_generic(relation, "relation", relation_size, "Entity", "device", 0, 0, "", 0);
     double start_time, end_time, elapsed_time;
     start_time = MPI_Wtime();
+    Entity *join_result = nullptr;
     if (hash_table_size == 0) {
-        Entity *join_result;
-        checkCuda(cudaMalloc((void **) &join_result, 0));
+//        checkCuda(cudaMalloc((void **) &join_result, 0));
         *join_result_size = 0;
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
@@ -63,7 +65,6 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
     }
     int result_size;
     int *join_offset;
-    Entity *join_result;
     checkCuda(cudaMalloc((void **) &join_offset, relation_size * sizeof(int)));
     checkCuda(cudaMemset(join_offset, 0, relation_size * sizeof(int)));
 

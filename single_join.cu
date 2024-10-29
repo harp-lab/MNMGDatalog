@@ -137,7 +137,7 @@ void benchmark(int argc, char **argv) {
 #endif
 
     start_time = MPI_Wtime();
-    thrust::stable_sort(thrust::device, input_relation, input_relation + input_relation_size, set_cmp());
+    thrust::sort(thrust::device, input_relation, input_relation + input_relation_size, set_cmp());
     input_relation_size = (thrust::unique(thrust::device,
                                           input_relation, input_relation + input_relation_size,
                                           is_equal())) - input_relation;
@@ -164,7 +164,7 @@ void benchmark(int argc, char **argv) {
     cout << "Rank: " << rank << ", reverse_relation_size: " << reverse_relation_size << endl;
 #endif
     start_time = MPI_Wtime();
-    thrust::stable_sort(thrust::device, reverse_relation, reverse_relation + reverse_relation_size, set_cmp());
+    thrust::sort(thrust::device, reverse_relation, reverse_relation + reverse_relation_size, set_cmp());
     reverse_relation_size = (thrust::unique(thrust::device,
                                             reverse_relation, reverse_relation + reverse_relation_size,
                                             is_equal())) - reverse_relation;
@@ -214,7 +214,7 @@ void benchmark(int argc, char **argv) {
 
     // Deduplicate distributed join result
     start_time = MPI_Wtime();
-    thrust::stable_sort(thrust::device, distributed_join_result,
+    thrust::sort(thrust::device, distributed_join_result,
                         distributed_join_result + distributed_join_result_size, set_cmp());
     distributed_join_result_size = (thrust::unique(thrust::device,
                                                    distributed_join_result,

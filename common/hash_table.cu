@@ -25,9 +25,17 @@ Entity *get_hash_table(int grid_size, int block_size, Entity *edge, int edge_siz
                        int *hash_table_size, double *compute_time) {
     double start_time, end_time, elapsed_time;
     start_time = MPI_Wtime();
-    Entity *hash_table;
+    Entity *hash_table = nullptr;
+
+    if (edge_size == 0) {
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        *compute_time = elapsed_time;
+        return hash_table;
+    }
+
     double load_factor = 0.6;
-    int hash_table_rows = (int) edge_size / load_factor;
+    int hash_table_rows = (int) std::ceil(edge_size / load_factor);
     hash_table_rows = 1 << (int) ceil(log2(hash_table_rows));
 #ifdef DEBUG
     cout << "hash_table_rows * sizeof(Entity): " << hash_table_rows * sizeof(Entity) << endl;
