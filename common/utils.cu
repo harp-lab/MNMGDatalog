@@ -367,8 +367,8 @@ void show_device_entity_variable(Entity *device_data, int device_data_size, int 
 
 // Function to print variable details and data
 void show_variable_generic(void *data, string var_name, size_t data_size, string data_type,
-                   string execution_policy, int rank, int iteration,
-                   string message, int size_only) {
+                           string execution_policy, int rank, int iteration,
+                           string message, int size_only) {
     cout << "Rank: " << rank << ", iteration: " << iteration << ", " << var_name << "(" << execution_policy << ")"
          << " size: " << data_size << " : " << message << " ----------------" << endl;
     if (size_only == 1) return;
@@ -405,6 +405,59 @@ void show_variable_generic(void *data, string var_name, size_t data_size, string
         }
     }
 }
+
+std::tuple<double, double, double> calculate_load_metrics(int array_size, int total_rank) {
+    // Function to Calculate Load Imbalance Ratio (LIR) and Coefficient of Variation (CV) based on array size
+    // LIR = (max_size - min_size) / mean_size,
+    // CV = std dev / mean_size
+    // Max/min ratio = max_size / min_size
+    // LIR near 0: Indicates good load balance, as the difference between max and min loads is minimal.
+    // CV: The smaller the CV, the better the load balance. Typically, a CV below 0.1 (10%) suggests reasonable balance, while a CV close to 0 means near-perfect balance.
+    // Max_min ratio should be near 1
+    int total_size = 0;
+    int min_size = 0;
+    int max_size = 0;
+
+    // Calculate the total, min, and max array size across all ranks
+    MPI_Reduce(&array_size, &total_size, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&array_size, &min_size, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&array_size, &max_size, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    double lir = 0.0;
+    double cv = 0.0;
+    double max_min_ratio = 0.0;
+
+    if (total_rank > 0) {
+        // Calculate mean size
+        double mean_size = static_cast<double>(total_size) / total_rank;
+
+        // Calculate Load Imbalance Ratio (LIR)
+        lir = static_cast<double>(max_size - min_size) / mean_size;
+
+        // Calculate local squared difference from the mean
+        double local_squared_diff = (array_size - mean_size) * (array_size - mean_size);
+
+        // Calculate the total squared difference across all ranks
+        double total_squared_diff = 0.0;
+        MPI_Reduce(&local_squared_diff, &total_squared_diff, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+        // Calculate standard deviation and Coefficient of Variation (CV)
+        double std_dev = std::sqrt(total_squared_diff / total_rank);
+        cv = std_dev / mean_size;
+
+        // Calculate Max/Min Ratio, ensuring no division by zero
+        if (min_size > 0) {
+            max_min_ratio = static_cast<double>(max_size) / min_size;
+        } else {
+            max_min_ratio = std::numeric_limits<double>::infinity(); // Handle division by zero
+        }
+    }
+
+    return std::make_tuple(lir, cv, max_min_ratio);
+
+}
+
+
 // show_variable_generic(hash_table, "hash_table", hash_table_rows, "Entity", "device", rank, iterations, "", 0);
 // show_device_entity_variable(local_data, local_data_size, rank, "local_data", 1);
 // show_device_variable(local_data_temp_device, local_count, 2, rank, "local data temp device", 0);

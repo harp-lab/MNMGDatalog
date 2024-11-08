@@ -70,6 +70,7 @@ int *parallel_generate(int rank, int total_columns,
     return edge_host;
 }
 
+
 void parallel_write(int rank, int total_rank, const char *output_file_name,
                     int *ar_host, int *displacement,
                     int total_columns, int row_size, double *compute_time) {

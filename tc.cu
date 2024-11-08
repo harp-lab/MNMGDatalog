@@ -133,8 +133,15 @@ void benchmark(int argc, char **argv) {
                                                 grid_size, block_size, cuda_aware_mpi,
                                                 &input_relation_size, comm_method,
                                                 &buffer_preparation_time_temp, &communication_time_temp, iterations);
-//    show_variable_generic(input_relation, "input_relation", input_relation_size, "Entity",
-//                          "device", rank, iterations, "", 0);
+    show_variable_generic(input_relation, "input_relation", input_relation_size, "Entity",
+                          "device", rank, iterations, "", 1);
+    // Calculate LIR and CV
+    auto [lir, cv, max_min] = calculate_load_metrics(input_relation_size, total_rank);
+    if (rank == 0) {
+        cout << "Input relation distribution stats: Load imbalance ratio: " << lir
+             << ", Coefficient of Variation (CV): " << cv << ", max min ratio: " << max_min<< endl;
+    }
+
     if (total_rank > 1) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
@@ -195,6 +202,10 @@ void benchmark(int argc, char **argv) {
 
     Entity *new_t_full;
     while (true) {
+//        show_variable_generic(input_relation, "input_relation", input_relation_size, "Entity",
+//                              "device", rank, iterations, "", 1);
+//        show_variable_generic(t_delta, "t_delta", t_delta_size, "Entity",
+//                              "device", rank, iterations, "", 1);
 
         double temp_join_time = 0.0;
         int join_result_size = 0;
@@ -267,7 +278,7 @@ void benchmark(int argc, char **argv) {
         inner_clear_time += elapsed_time;
         // Check if the global t full size has changed in this iteration
         start_time = MPI_Wtime();
-        cout << "Rank: " << rank << ", iteration: " << iterations << ", t_full_size: " << t_full_size << endl;
+//        cout << "Rank: " << rank << ", iteration: " << iterations << ", t_delta_size: "<< t_delta_size << ", t_full_size: " << t_full_size << endl;
         long long old_global_t_full_size = global_t_full_size;
         MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
@@ -399,3 +410,5 @@ int main(int argc, char **argv) {
 // make runtc DATA_FILE=data/dummy.bin NPROCS=2 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_23874.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_163734.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
+// make runtc DATA_FILE=data/skewed_data.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runtc DATA_FILE=data/data_88234.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0

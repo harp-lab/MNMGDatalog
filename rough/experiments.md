@@ -1,3 +1,24 @@
+### Data distribution
+```shell
+Data ego facebook 
+| # Input | # Process | # Iterations | # TC | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 88,234 | 32 | 17 | 2,508,102 |   1.1421 |   0.0143 |   7.4569 |   0.0032 |   0.1328 |   0.3357 |   0.4304 |   0.1258 |   0.3315 |   0.0092 | data/data_88234.bin_tc.bin |
+
+Rank 32 
+| Bucket | Load imbalance ratio LIR | Coefficient of Variation (CV) | max min ratio | 
+| no bucket | 0.47 | 0.98 | 1.59 |
+| 1024 | 0.47 | 0.98 | 1.59 |
+| 129 | 0.65 | 0.99 | 1.88 |
+| 557 | 0.75 | 0.99 | 2.21 |
+| 1001 | 0.88 | 1.00 | 2.52 |
+| 1025 | 0.69 | 0.99 | 1.99 |
+
+
+
+```
+
+
 ### After fixing hashtable
 ```shell
 cat tc-merged-new.output

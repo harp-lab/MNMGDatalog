@@ -204,6 +204,10 @@ __host__ __device__ int get_rank(int key, int total_rank) {
     key *= 0xc2b2ae35;
     key ^= key >> 16;
     return key % total_rank;
+    // adding bucket layer
+//    int total_buckets = 1025;
+//    int bucket_id = key % total_buckets;
+//    return bucket_id % total_rank;
 }
 
 __global__ void get_send_count(Entity *local_data, int local_data_row_count,
