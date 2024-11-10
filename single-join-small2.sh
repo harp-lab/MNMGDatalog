@@ -26,7 +26,7 @@ run_single_dataset() {
 
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SINGLE JOIN on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
   for i in 32 16 8 4 2 1; do
-#    for j in {1..2}; do
+    for j in {1..3}; do
       make testpolarissinglejoin MPICH_GPU_SUPPORT_ENABLED=${mpi_gpu_support_enabled} \
         NTOTRANKS=${i} \
         NRANKS_PER_NODE=${NRANKS_PER_NODE} \
@@ -35,7 +35,7 @@ run_single_dataset() {
         CUDA_AWARE_MPI=${cuda_aware_mpi} \
         METHOD=${method} \
         JOB_RUN=${JOB_RUN}
-#    done
+    done
   done
 }
 
