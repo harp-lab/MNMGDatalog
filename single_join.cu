@@ -344,8 +344,4 @@ int main(int argc, char **argv) {
     return 0;
 }
 // METHOD 0 = two pass method, 1 = sorting method
-// make runsinglejoin DATA_FILE=data/random_6gb.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
-// make runsinglejoin DATA_FILE=data/data_5.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
-// make runsinglejoin DATA_FILE=data/large_datasets/com-Orkut.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
-// make runsinglejoin DATA_FILE=data/large_datasets/soc-LiveJournal1.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
-// make runsinglejoin DATA_FILE=data/as-skitter.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
+// make runsinglejoin DATA_FILE=random NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0

@@ -1,0 +1,73 @@
+```
+cat single-join-small2.output
+Polaris job started at: 2024-10-14 06:25:29
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> JOB STARTED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+CC single_join.cu -o single_join.out -lm -O3
+TRADITIONAL MPI - SORTING
+------------------------------------------------------------------------------------
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SINGLE JOIN on data/random >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 1 1
+| 32,000,000 | 32 | 1 | 1,023,462,223 |   0.9672 |   0.7030 |   0.0185 |   0.0003 |   0.0059 |   0.0058 |   0.1897 |   0.0169 |   0.0000 |   0.0033 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 1 1
+| 16,000,000 | 16 | 1 | 255,942,574 |   0.8428 |   0.6991 |   0.0173 |   0.0003 |   0.0034 |   0.0040 |   0.1038 |   0.0095 |   0.0000 |   0.0030 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 1 1
+| 8,000,000 | 8 | 1 | 64,000,630 |   0.7762 |   0.6946 |   0.0171 |   0.0003 |   0.0021 |   0.0035 |   0.0557 |   0.0060 |   0.0000 |   0.0045 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 1 1
+| 4,000,000 | 4 | 1 | 15,998,561 |   0.7414 |   0.6831 |   0.0163 |   0.0003 |   0.0018 |   0.0036 |   0.0380 |   0.0046 |   0.0000 |   0.0021 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 2 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 1 1
+| 2,000,000 | 2 | 1 | 3,998,446 |   0.4108 |   0.3731 |   0.0169 |   0.0002 |   0.0012 |   0.0025 |   0.0264 |   0.0031 |   0.0000 |   0.0012 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 1 1
+| 1,000,000 | 1 | 1 | 999,180 |   0.2235 |   0.2040 |   0.0168 |   0.0001 |   0.0009 |   0.0020 |   0.0116 |   0.0025 |   0.0000 |   0.0008 | data/random_singlejoin.bin |
+TRADITIONAL MPI - TWO PASS
+------------------------------------------------------------------------------------
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SINGLE JOIN on data/random >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 0 1
+| 32,000,000 | 32 | 1 | 1,023,462,223 |   0.9796 |   0.6975 |   0.0173 |   0.0003 |   0.0060 |   0.0331 |   0.1825 |   0.0160 |   0.0000 |   0.0043 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 0 1
+| 16,000,000 | 16 | 1 | 255,942,574 |   0.8485 |   0.6947 |   0.0170 |   0.0003 |   0.0034 |   0.0183 |   0.0999 |   0.0092 |   0.0000 |   0.0024 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 0 1
+| 8,000,000 | 8 | 1 | 64,000,630 |   0.7833 |   0.6937 |   0.0170 |   0.0003 |   0.0019 |   0.0104 |   0.0553 |   0.0060 |   0.0000 |   0.0022 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 0 1
+| 4,000,000 | 4 | 1 | 15,998,561 |   0.7594 |   0.6967 |   0.0164 |   0.0003 |   0.0019 |   0.0088 |   0.0382 |   0.0044 |   0.0000 |   0.0021 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 2 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 0 1
+| 2,000,000 | 2 | 1 | 3,998,446 |   0.4015 |   0.3574 |   0.0169 |   0.0002 |   0.0011 |   0.0077 |   0.0284 |   0.0032 |   0.0000 |   0.0012 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 0 0 1
+| 1,000,000 | 1 | 1 | 999,180 |   0.2305 |   0.2028 |   0.0170 |   0.0002 |   0.0009 |   0.0088 |   0.0125 |   0.0025 |   0.0000 |   0.0008 | data/random_singlejoin.bin |
+
+====================================================================================
+
+CC single_join.cu -o single_join.out -lm -O3
+CUDA AWARE MPI - SORTING
+------------------------------------------------------------------------------------
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SINGLE JOIN on data/random >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 1 1
+| 32,000,000 | 32 | 1 | 1,023,462,223 |   0.3170 |   0.0096 |   0.0174 |   0.0003 |   0.0060 |   0.0067 |   0.2030 |   0.0198 |   0.0000 |   0.0184 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 1 1
+| 16,000,000 | 16 | 1 | 255,942,574 |   0.1748 |   0.0062 |   0.0170 |   0.0003 |   0.0035 |   0.0043 |   0.1097 |   0.0097 |   0.0000 |   0.0108 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 1 1
+| 8,000,000 | 8 | 1 | 64,000,630 |   0.1360 |   0.0062 |   0.0164 |   0.0003 |   0.0023 |   0.0039 |   0.0949 |   0.0067 |   0.0000 |   0.0067 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 1 1
+| 4,000,000 | 4 | 1 | 15,998,561 |   0.6401 |   0.5255 |   0.0171 |   0.0003 |   0.0018 |   0.0981 |   0.5084 |   0.0052 |   0.0000 |   0.0021 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 2 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 1 1
+| 2,000,000 | 2 | 1 | 3,998,446 |   0.2458 |   0.2066 |   0.0162 |   0.0002 |   0.0012 |   0.0026 |   0.1886 |   0.0033 |   0.0000 |   0.0011 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 1 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 1 1
+| 1,000,000 | 1 | 1 | 999,180 |   0.2200 |   0.2020 |   0.0162 |   0.0001 |   0.0009 |   0.0021 |   0.0093 |   0.0025 |   0.0000 |   0.0008 | data/random_singlejoin.bin |
+CUDA AWARE MPI - TWO PASS
+------------------------------------------------------------------------------------
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SINGLE JOIN on data/random >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 32 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 0 1
+| 32,000,000 | 32 | 1 | 1,023,462,223 |   0.3384 |   0.0062 |   0.0206 |   0.0003 |   0.0060 |   0.0397 |   0.2037 |   0.0263 |   0.0000 |   0.0113 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 16 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 0 1
+| 16,000,000 | 16 | 1 | 255,942,574 |   0.1898 |   0.0062 |   0.0170 |   0.0003 |   0.0036 |   0.0228 |   0.1153 |   0.0118 |   0.0000 |   0.0067 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 0 1
+| 8,000,000 | 8 | 1 | 64,000,630 |   0.1458 |   0.0061 |   0.0168 |   0.0003 |   0.0023 |   0.0131 |   0.0980 |   0.0075 |   0.0000 |   0.0047 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 0 1
+| 4,000,000 | 4 | 1 | 15,998,561 |   0.6495 |   0.5277 |   0.0168 |   0.0003 |   0.0018 |   0.1046 |   0.5096 |   0.0054 |   0.0000 |   0.0023 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 2 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 0 1
+| 2,000,000 | 2 | 1 | 3,998,446 |   0.2458 |   0.1992 |   0.0163 |   0.0002 |   0.0011 |   0.0075 |   0.1902 |   0.0032 |   0.0000 |   0.0012 | data/random_singlejoin.bin |
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 1 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join.out data/random 1 0 1
+| 1,000,000 | 1 | 1 | 999,180 |   0.2181 |   0.1951 |   0.0163 |   0.0001 |   0.0009 |   0.0080 |   0.0087 |   0.0024 |   0.0000 |   0.0008 | data/random_singlejoin.bin |
+Polaris job ended at: 2024-10-14 06:28:00
+Total time taken: 0 hour(s), 2 minute(s), 31 second(s)
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> JOB ENDED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+```
