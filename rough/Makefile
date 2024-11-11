@@ -82,6 +82,7 @@ cleanoutput:
 clean: cleanoutput
 	rm -f *.out
 	rm -f *.cobaltlog
+	rm -f *_singlejoin.bin*
 	rm -f data/*_output.bin*
 	rm -f data/*_output.txt*
 	rm -f data/*_tc.txt*

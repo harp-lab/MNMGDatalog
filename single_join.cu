@@ -92,12 +92,14 @@ void benchmark(int argc, char **argv) {
     }
     string output_file = string(input_file) + "_singlejoin.bin";
     const char *output_file_name = output_file.c_str();
+    int total_rows = atoi(input_file);
+    // if total_rows > 10M then perform strong scaling
 
     // Read file in parallel
     int total_columns = 2;
     double temp_file_io_time = 0.0;
     long long row_size = 0;
-    int *local_data_host = parallel_generate(rank, total_columns,
+    int *local_data_host = parallel_generate(total_rank, rank, total_rows, total_columns,
                                          &row_size, &temp_file_io_time);
     long long local_count = row_size * total_columns;
     long long global_row_size = 0;
@@ -344,4 +346,9 @@ int main(int argc, char **argv) {
     return 0;
 }
 // METHOD 0 = two pass method, 1 = sorting method
-// make runsinglejoin DATA_FILE=random NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// DATA_FILE>10000000, strong scaling, otherwise weak scaling;
+// make runsinglejoin DATA_FILE=100 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// Weak scaling
+// make runsinglejoin DATA_FILE=10000000 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// Strong scaling
+// make runsinglejoin DATA_FILE=20000000 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0

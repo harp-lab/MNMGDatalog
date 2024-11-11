@@ -1,7 +1,7 @@
 #!/bin/sh
 #PBS -l select=10:system=polaris
 #PBS -l place=scatter
-#PBS -l walltime=0:59:00
+#PBS -l walltime=0:30:00
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
@@ -43,7 +43,8 @@ run_benchmark() {
   local cuda_aware_mpi=$1
   local method=$2
   local mpi_gpu_support_enabled=$3
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "data/random" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "10000000" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "20000000" ${MPICH_GPU_SUPPORT_ENABLED}
 }
 
 

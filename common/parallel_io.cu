@@ -40,7 +40,7 @@ int *parallel_read(int rank, int total_rank, const char *input_file, int total_c
     return edge_host;
 }
 
-int *parallel_generate(int rank, int total_columns,
+int *parallel_generate(int total_rank, int rank, int total_rows, int total_columns,
                    long long *row_count, double *compute_time) {
     double start_time, end_time, elapsed_time;
 
@@ -50,9 +50,10 @@ int *parallel_generate(int rank, int total_columns,
     // Set a seed for reproducibility, using rank to ensure different numbers for each rank
     unsigned int seed = rank + 1;
     srand(seed);
-
-
-    long long row_size = 1000000;
+    long long row_size = total_rows;
+    if(total_rows > 10000000) {
+        row_size = total_rows / total_rank;
+    }
     long long total_elements = row_size * total_columns;
 
     int *edge_host = (int *) malloc(total_elements * sizeof(int));
