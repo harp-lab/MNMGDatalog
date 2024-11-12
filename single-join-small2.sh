@@ -43,8 +43,10 @@ run_benchmark() {
   local cuda_aware_mpi=$1
   local method=$2
   local mpi_gpu_support_enabled=$3
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "10000000" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset ${CUDA_AWARE_MPI} ${METHOD} "20000000" ${MPICH_GPU_SUPPORT_ENABLED}
+  weak_scaling_dataset=5000000
+  strong_scaling_dataset=15000000
+  run_single_dataset ${cuda_aware_mpi} ${method} ${weak_scaling_dataset} ${mpi_gpu_support_enabled}
+  run_single_dataset ${cuda_aware_mpi} ${method} ${strong_scaling_dataset} ${mpi_gpu_support_enabled}
 }
 
 
