@@ -2,10 +2,24 @@ import os
 import warnings
 import pandas as pd
 import matplotlib.pyplot as plt
+from io import StringIO
+import numpy as np
 
 
-def read_markdown_table(file_path, method, replacement_dict):
-    df = pd.read_table(file_path, sep="|", header=0, skipinitialspace=True).dropna(axis=1, how='all').iloc[1:]
+def read_markdown_table(file_path, method, replacement_dict=None, group=5, header=None, other_columns=[]):
+    lines = []
+    # Read and filter lines that start with '|'
+    with open(file_path, 'r') as file:
+        lines = [line for line in file if line.startswith('|')]
+
+    if header:
+        lines.insert(0, header)
+
+    # Join the filtered lines into a single string and use StringIO to read into pandas
+    data = StringIO(''.join(lines))
+
+    # Load the filtered data into a DataFrame
+    df = pd.read_table(data, sep="|", header=0, skipinitialspace=True).dropna(axis=1, how='all').iloc[0:]
     df.columns = df.columns.str.strip()
     drop_column = "Output"
     if drop_column in df.columns:
@@ -19,12 +33,18 @@ def read_markdown_table(file_path, method, replacement_dict):
             df[col] = pd.to_numeric(df[col], errors='ignore')
 
     # Replace values in the 'Dataset' column
-    df['Dataset'] = df['Dataset'].replace(replacement_dict)
+    if replacement_dict:
+        df['Dataset'] = df['Dataset'].replace(replacement_dict)
     # Group every five rows together and calculate the mean for numeric columns
     df = df.reset_index(drop=True)
-    grouped = df.groupby(df.index // 5).agg(
+    grouped = df.groupby(df.index // group).agg(
         {col: 'mean' if df[col].dtype != 'object' else 'first' for col in df.columns})
-    grouped["Other"] = grouped['Initialization'] + grouped['Hashtable'] + grouped['Finalization']
+    if len(other_columns) == 0:
+        grouped["Other"] = grouped['Initialization'] + grouped['Hashtable'] + grouped['Finalization']
+    else:
+        grouped["Other"] = 0
+        for other_column in other_columns:
+            grouped["Other"] += grouped[other_column]
     return grouped
 
 
@@ -98,7 +118,7 @@ def show_breakdown_bar_chart(df, figure_name=None, breakdown_columns=None, appli
 
         # Annotate the total time values on top of the points
         for i, process in enumerate(subset['# Process']):
-            ax.text(process, subset[total_time_column].iloc[i]+ (0.02 * subset[total_time_column].max()),
+            ax.text(process, subset[total_time_column].iloc[i] + (0.02 * subset[total_time_column].max()),
                     f'{subset[total_time_column].iloc[i]:.2f}',
                     ha='center', va='baseline', fontsize=12, color='black')
 
@@ -133,6 +153,144 @@ def show_breakdown_bar_chart(df, figure_name=None, breakdown_columns=None, appli
 
         # Close the figure to avoid too many open figures
         plt.close(fig)
+
+
+def show_breakdown_bar_chart_single_join_strong(df, figure_name=None, breakdown_columns=None, application=None):
+    total_time_column = 'Total Time'
+    bar_width = 0.6  # Adjusted for better visual spacing
+
+    # Loop through each dataset
+    datasets = df['Dataset'].unique()
+    for dataset in datasets:
+        # Create a new figure and axis
+        fig, ax = plt.subplots()
+
+        # Filter the subset of data for the current dataset
+        subset = df[df['Dataset'] == dataset]
+
+        # Convert '# Process' to a string to treat as categorical
+        subset['# Process'] = subset['# Process'].astype(str)
+
+        # Plot stacked bar chart for breakdown columns
+        bar_bottom = None
+        for column in breakdown_columns:
+            if bar_bottom is None:
+                bar_bottom = subset[column]
+                ax.bar(subset['# Process'], subset[column], width=bar_width, label=column)
+            else:
+                ax.bar(subset['# Process'], subset[column], bottom=bar_bottom, width=bar_width, label=column)
+                bar_bottom += subset[column]
+
+        # Plot the Total Time as a line chart on the same axis
+        ax.plot(subset['# Process'], subset[total_time_column], color='black', marker='o',
+                label=total_time_column, linewidth=2)
+
+        # Annotate the total time values on top of the points
+        for i, process in enumerate(subset['# Process']):
+            ax.text(process, subset[total_time_column].iloc[i] + (0.02 * subset[total_time_column].max()),
+                    f'{subset[total_time_column].iloc[i]:.2f}',
+                    ha='center', va='baseline', fontsize=12, color='black')
+
+        # Set titles and labels
+        method = subset["Method"].unique()[0]
+        ax.set_title(f'{method}: {dataset}')
+        ax.set_xlabel('Process Count')
+        ax.set_ylabel('Time (s)')
+
+        # Set X-axis ticks to the unique values of '# Process' as categorical
+        ax.set_xticks(range(len(subset['# Process'])))
+        ax.set_xticklabels(subset['# Process'])
+
+        # Add a single merged legend for breakdown columns and Total Time
+        ax.legend()
+
+        # Adjust the layout
+        plt.tight_layout()
+
+        # Save the figure to the specified path
+        if figure_name:
+            directory = os.path.join("drawing", f"{application.lower()}_breakdown")
+            os.makedirs(directory, exist_ok=True)
+            figure_path = os.path.join(directory, f"{figure_name}_{dataset}.png")
+        else:
+            figure_path = os.path.join("drawing", "breakdown", f"{dataset}.png")
+
+        # Save the figure
+        fig.savefig(figure_path, bbox_inches="tight")
+        print(f"Figure saved in {figure_path}")
+
+        # Close the figure to avoid too many open figures
+        plt.close(fig)
+
+
+def show_breakdown_bar_chart_single_join(df, figure_name=None, breakdown_columns=None, application=None):
+    total_time_column = 'Total Time'
+    bar_width = 0.8  # Adjust for wider bars if needed
+
+    # Initialize a new figure and axis for all datasets
+    fig, ax1 = plt.subplots()
+
+    # Set consistent x-axis spacing
+    unique_processes = sorted(df['# Process'].unique())
+    ax1.set_xticks(unique_processes)
+
+    # Loop through each dataset and plot stacked bars in the same figure
+    datasets = df['Dataset'].unique()
+    color_index = 0  # Track color for each dataset plot (color will vary per dataset)
+
+    for dataset in datasets:
+        # Filter data for the current dataset
+        subset = df[df['Dataset'] == dataset]
+
+        # Start the stack at the baseline for each dataset
+        bar_bottom = None
+        for column in breakdown_columns:
+            if bar_bottom is None:
+                bar_bottom = subset[column]
+                ax1.bar(subset['# Process'], subset[column], width=bar_width, label=column if color_index == 0 else "",
+                        color=f"C{color_index}")
+            else:
+                ax1.bar(subset['# Process'], subset[column], bottom=bar_bottom, width=bar_width,
+                        color=f"C{color_index}")
+                bar_bottom += subset[column]
+            color_index += 1
+
+        # Plot Total Time as a line chart on the same axis for each dataset
+        ax1.plot(subset['# Process'], subset[total_time_column], marker='o', color=f"C{color_index}",
+                 label=dataset if color_index == 0 else "")
+        color_index += 1  # Ensure color uniqueness across datasets
+
+        # Annotate Total Time values for each dataset
+        for i, process in enumerate(subset['# Process']):
+            ax1.text(process, subset[total_time_column].iloc[i] + (0.02 * subset[total_time_column].max()),
+                     f'{subset[total_time_column].iloc[i]:.2f}', ha='center', va='baseline', fontsize=12, color='black')
+
+    # Set titles and labels
+    ax1.set_title('Weak Scaling Breakdown Across Datasets')
+    ax1.set_xlabel('Process Count')
+    ax1.set_ylabel('Time (s)')
+
+    # Single legend for breakdown columns only
+    handles, labels = ax1.get_legend_handles_labels()
+    breakdown_labels = labels[:len(breakdown_columns)]
+    ax1.legend(handles[:len(breakdown_columns)], breakdown_labels, loc="upper left", bbox_to_anchor=(1, 1))
+
+    # Adjust the layout
+    plt.tight_layout()
+
+    # Save the figure
+    if figure_name:
+        directory = os.path.join("drawing", f"{application.lower()}_breakdown")
+        os.makedirs(directory, exist_ok=True)
+        figure_path = os.path.join(directory, f"{figure_name}.png")
+    else:
+        figure_path = os.path.join("drawing", "breakdown", "combined_datasets.png")
+
+    fig.savefig(figure_path, bbox_inches="tight")
+    print(f"Figure saved in {figure_path}")
+
+    # Close the figure to free up memory
+    plt.close(fig)
 
 
 def show_breakdown_line_chart(df, figure_name=None, breakdown_columns=None, application=None):
@@ -182,6 +340,66 @@ def show_breakdown_line_chart(df, figure_name=None, breakdown_columns=None, appl
         plt.close(fig)
 
 
+def show_line_chart_total_time(dfs, labels, application, figure_name=None, title="", annotate=True):
+    # Concatenate the DataFrames and add a column indicating their source label
+    combined_df = pd.DataFrame()
+    for df, label in zip(dfs, labels):
+        df = df.copy()  # Make a copy to avoid modifying the original
+        df['Label'] = label  # Add a label column to distinguish each DataFrame
+        combined_df = pd.concat([combined_df, df], ignore_index=True)
+
+    # Convert '# Process' to numeric to handle any decimal values
+    combined_df['# Process'] = pd.to_numeric(combined_df['# Process'], errors='coerce')
+
+    # Get unique values for '# Process' and labels for line plotting
+    processes = sorted(combined_df['# Process'].unique(), key=lambda x: int(x))
+    labels_unique = combined_df['Label'].unique()
+    # Create a new figure and axis
+    fig, ax = plt.subplots(figsize=(10, 6))
+    # Loop over each unique label and plot a line
+    for label in labels_unique:
+        subset = combined_df[combined_df['Label'] == label]
+        # Sort by process count to ensure lines are plotted correctly
+        subset = subset.sort_values(by='# Process', key=lambda x: x.map(lambda v: int(v)))
+
+        # Plot the line for 'Total Time'
+        ax.plot(subset['# Process'], subset['Total Time'], marker='o', label=label)
+
+        if annotate:
+            for i, row in subset.iterrows():
+                input_size_million = int(row['# Input'].replace(",", "")) / 1_000_000  # Convert to millions
+                output_size_million = int(row['# Output'].replace(",", "")) / 1_000_000  # Convert to millions
+                ax.annotate(f"{input_size_million:.0f}M:{output_size_million:.0f}M",
+                            xy=(row['# Process'], row['Total Time']),
+                            xytext=(5, 5), textcoords="offset points", fontsize=10, color='black')
+
+    # Set the x-axis with the processes as categorical labels
+    ax.set_xlabel('Process Count')
+    ax.set_ylabel('Total Time (s)')
+    ax.set_title(title)
+
+    # Set x-axis ticks and labels to represent process count
+    ax.set_xticks(processes)
+    ax.set_xticklabels(processes)
+
+    # Add a single merged legend
+    ax.legend()
+
+    # Adjust layout for readability
+    plt.tight_layout()
+
+    # Save the figure
+    if figure_name:
+        directory = os.path.join("drawing", f"{application.lower()}_breakdown")
+        os.makedirs(directory, exist_ok=True)
+        figure_path = os.path.join(directory, f"{figure_name}.png")
+    else:
+        figure_path = os.path.join("drawing", "breakdown", "combined_datasets.png")
+
+    fig.savefig(figure_path, bbox_inches="tight")
+    print(f"Figure saved in {figure_path}")
+
+
 def generate_charts(application="TC"):
     breakdown_columns = ['Join', 'Buffer preparation',
                          'Communication', 'Deduplication', 'Merge', 'Other']
@@ -229,7 +447,69 @@ def generate_charts(application="TC"):
     show_breakdown_bar_chart(mpi_cpu_sort_df, "traditional_mpi_sort", breakdown_columns, application)
 
 
+def show_single_join():
+    breakdown_columns = ['Join', 'Buffer preparation',
+                         'Communication', 'Deduplication', 'Other']
+    # replacement_dict = None
+    # if application == "TC":
+    #     row_numbers = ["409,593", "165,435", "147,892", "1,049,866", "552,020"]
+    #     dataset_names = ["fe_ocean, 247, 1669M", "usroad, 606, 871M", "p2p-Gnutella31, 31, 884M", "com-dblp, 31, 1911M",
+    #                      "vsp_finan, 520, 910M"]
+    #     replacement_dict = dict(zip(row_numbers, dataset_names))
+    # elif application == "SG":
+    #     row_numbers = ["409,593", "165,435", "147,892", "163,734", "552,020"]
+    #     dataset_names = ["fe_ocean, 77, 65M", "usroad, 588, 3137M", "p2p-Gnutella31, 20, 3700M", "fe_body, 40, 408M",
+    #                      "vsp_finan, 513, 864M"]
+    #     replacement_dict = dict(zip(row_numbers, dataset_names))
+    # Define the header line
+    header = "| # Input | # Process | # Iterations | # Output | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n"
+    other_columns = ["Initialization", "Merge", "Hashtable", "Finalization"]
+    strong_cam_two_pass_file = f"logs/single-join-strong-cam-two-pass.md"
+    weak_cam_two_pass_file = f"logs/single-join-weak-cam-two-pass.md"
+    strong_cam_sort_file = f"logs/single-join-strong-cam-sort.md"
+    weak_cam_sort_file = f"logs/single-join-weak-cam-sort.md"
+    strong_traditional_two_pass_file = f"logs/single-join-strong-traditional-two-pass.md"
+    weak_traditional_two_pass_file = f"logs/single-join-weak-traditional-two-pass.md"
+    strong_traditional_sort_file = f"logs/single-join-strong-traditional-sort.md"
+    weak_traditional_sort_file = f"logs/single-join-weak-traditional-sort.md"
+
+    strong_cam_two_pass_df = read_markdown_table(strong_cam_two_pass_file, "Strong CAM-Two pass", replacement_dict=None,
+                                                 group=3, header=header, other_columns=other_columns)
+    strong_traditional_two_pass_df = read_markdown_table(strong_traditional_two_pass_file, "Strong CPU-Two pass",
+                                                         replacement_dict=None, group=3, header=header,
+                                                         other_columns=other_columns)
+    strong_cam_sort_df = read_markdown_table(strong_cam_sort_file, "Strong CAM-Sort", replacement_dict=None, group=3,
+                                             header=header, other_columns=other_columns)
+    strong_traditional_sort_df = read_markdown_table(strong_traditional_sort_file, "Strong CPU-Sort",
+                                                     replacement_dict=None, group=3, header=header,
+                                                     other_columns=other_columns)
+    weak_cam_two_pass_df = read_markdown_table(weak_cam_two_pass_file, "Weak CAM-Two pass", replacement_dict=None,
+                                               group=3, header=header, other_columns=other_columns)
+    weak_traditional_two_pass_df = read_markdown_table(weak_traditional_two_pass_file, "Weak CPU-Two pass",
+                                                       replacement_dict=None, group=3, header=header,
+                                                       other_columns=other_columns)
+    weak_cam_sort_df = read_markdown_table(weak_cam_sort_file, "Weak CAM-Sort", replacement_dict=None, group=3,
+                                           header=header, other_columns=other_columns)
+    weak_traditional_sort_df = read_markdown_table(weak_traditional_sort_file, "Weak CPU-Sort", replacement_dict=None,
+                                                   group=3, header=header, other_columns=other_columns)
+
+    # Breakdown charts
+    application = "Single Join"
+
+    # show_breakdown_bar_chart_single_join(weak_cam_two_pass_df, "weak_cam_two_pass_df", breakdown_columns, application)
+    # show_breakdown_bar_chart_single_join_strong(strong_cam_two_pass_df, "strong_cam_two_pass_df", breakdown_columns, application)
+    dfs = [strong_cam_two_pass_df, strong_traditional_two_pass_df, strong_cam_sort_df, strong_traditional_sort_df]
+    labels = ["CAM Two Pass", "CPU Two Pass", "CAM Sort", "CPU Sort"]
+    show_line_chart_total_time(dfs, labels, application, figure_name="strong_scaling_combined", title="Strong scaling experiment for single join: Input 15M: Output 225M", annotate=False)
+
+    dfs = [weak_cam_two_pass_df, weak_traditional_two_pass_df, weak_cam_sort_df, weak_traditional_sort_df]
+    labels = ["CAM Two Pass", "CPU Two Pass", "CAM Sort", "CPU Sort"]
+    show_line_chart_total_time(dfs, labels, application, figure_name="weak_scaling_combined", title="Weak scaling experiment for single join")
+
+
 if __name__ == "__main__":
     warnings.simplefilter(action='ignore', category=FutureWarning)
-    generate_charts(application="TC")
-    generate_charts(application="SG")
+
+    show_single_join()
+    # generate_charts(application="TC")
+    # generate_charts(application="SG")

@@ -304,7 +304,6 @@ void benchmark(int argc, char **argv) {
                  buffer_preparation_time + communication_time + deduplication_time + merge_time +
                  finalization_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     if (rank == 0) {
         output.block_size = block_size;
