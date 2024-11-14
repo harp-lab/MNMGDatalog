@@ -41,7 +41,7 @@ buildsinglejoin:
 	nvcc $(SRC_SINGLE_JOIN) -o $(TARGET_SINGLE_JOIN).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
 testsinglejoin:
-	${MPIRUN} -np $(NPROCS) ./$(TARGET_SINGLE_JOIN).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
+	${MPIRUN} -np $(NPROCS) ./$(TARGET_SINGLE_JOIN).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(RAND_RANGE)
 
 buildpolaristc:
 	CC $(SRC_TC) -o $(TARGET_TC).out $(COMPILER_FLAGS)
@@ -65,7 +65,7 @@ buildpolarissinglejoin:
 	CC $(SRC_SINGLE_JOIN) -o $(TARGET_SINGLE_JOIN).out $(COMPILER_FLAGS)
 
 testpolarissinglejoin:
-	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SINGLE_JOIN).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(JOB_RUN)
+	MPICH_GPU_SUPPORT_ENABLED=${MPICH_GPU_SUPPORT_ENABLED} mpiexec --np ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth ./set_affinity_gpu_polaris.sh ./$(TARGET_SINGLE_JOIN).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(RAND_RANGE)
 
 runpolaristc: buildpolaristc testpolaristc
 
@@ -90,6 +90,7 @@ cleanoutput:
 	rm -f data/*_sg.bin*
 	rm -f data/*_cc.bin*
 	rm -f data/*_singlejoin.bin*
+	rm -f *_singlejoin.bin*
 
 clean: cleanoutput
 	rm -f *.out

@@ -23,6 +23,7 @@ run_single_dataset() {
   local method=$2
   local data_file=$3
   local mpi_gpu_support_enabled=$4
+  local rand_range=$5
 
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SINGLE JOIN on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
   for i in 32 16 8 4 2 1; do
@@ -34,7 +35,7 @@ run_single_dataset() {
         DATA_FILE=${data_file} \
         CUDA_AWARE_MPI=${cuda_aware_mpi} \
         METHOD=${method} \
-        JOB_RUN=${JOB_RUN}
+        RAND_RANGE=${rand_range}
     done
   done
 }
@@ -45,8 +46,9 @@ run_benchmark() {
   local mpi_gpu_support_enabled=$3
   weak_scaling_dataset=5000000
   strong_scaling_dataset=15000000
-  run_single_dataset ${cuda_aware_mpi} ${method} ${weak_scaling_dataset} ${mpi_gpu_support_enabled}
-  run_single_dataset ${cuda_aware_mpi} ${method} ${strong_scaling_dataset} ${mpi_gpu_support_enabled}
+  rand_range=1000000
+  run_single_dataset ${cuda_aware_mpi} ${method} ${weak_scaling_dataset} ${mpi_gpu_support_enabled} ${rand_range}
+  run_single_dataset ${cuda_aware_mpi} ${method} ${strong_scaling_dataset} ${mpi_gpu_support_enabled} ${rand_range}
 }
 
 

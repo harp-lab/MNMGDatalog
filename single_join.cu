@@ -70,14 +70,14 @@ void benchmark(int argc, char **argv) {
     // Should pass the input filename in command line argument
     const char *input_file;
     int comm_method = 0;
-    int job_run = 0;
+    int job_run = 1;
     int cuda_aware_mpi = 0;
-
+    int rand_range = 1000000;
     if (argc == 5) {
         input_file = argv[1];
         cuda_aware_mpi = atoi(argv[2]);
         comm_method = atoi(argv[3]);
-        job_run = atoi(argv[4]);
+        rand_range = atoi(argv[4]);
     } else if (argc == 4) {
         input_file = argv[1];
         cuda_aware_mpi = atoi(argv[2]);
@@ -99,7 +99,7 @@ void benchmark(int argc, char **argv) {
     int total_columns = 2;
     double temp_file_io_time = 0.0;
     long long row_size = 0;
-    int *local_data_host = parallel_generate(total_rank, rank, total_rows, total_columns,
+    int *local_data_host = parallel_generate(total_rank, rank, total_rows, total_columns, rand_range,
                                          &row_size, &temp_file_io_time);
     long long local_count = row_size * total_columns;
     long long global_row_size = 0;
@@ -291,19 +291,31 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
     finalization_time += elapsed_time;
 
-    MPI_Allreduce(&initialization_time, &max_initialization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&deduplication_time, &max_deduplication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&join_time, &max_join_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&merge_time, &max_merge_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&buffer_preparation_time, &max_buffer_preparation_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&communication_time, &max_communication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&hashtable_build_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&elapsed_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//    MPI_Allreduce(&initialization_time, &max_initialization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//    MPI_Allreduce(&deduplication_time, &max_deduplication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//    MPI_Allreduce(&join_time, &max_join_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//    MPI_Allreduce(&merge_time, &max_merge_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//    MPI_Allreduce(&buffer_preparation_time, &max_buffer_preparation_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//    MPI_Allreduce(&communication_time, &max_communication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//    MPI_Allreduce(&hashtable_build_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//    MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//    MPI_Allreduce(&finalization_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     total_time = initialization_time + hashtable_build_time + join_time +
                  buffer_preparation_time + communication_time + deduplication_time + merge_time +
                  finalization_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    // Breakdown time is the breakdown times of the slowest process
+    if(total_time == max_total_time) {
+        max_initialization_time = initialization_time;
+        max_deduplication_time = deduplication_time;
+        max_join_time = join_time;
+        max_merge_time = merge_time;
+        max_buffer_preparation_time = buffer_preparation_time;
+        max_communication_time = communication_time;
+        max_hashtable_build_time = hashtable_build_time;
+        max_fileio_time = file_io_time;
+        max_finalization_time = finalization_time;
+    }
 
     if (rank == 0) {
         output.block_size = block_size;
@@ -346,8 +358,11 @@ int main(int argc, char **argv) {
 }
 // METHOD 0 = two pass method, 1 = sorting method
 // DATA_FILE>10000000, strong scaling, otherwise weak scaling;
+// make runsinglejoin DATA_FILE=100 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000
+
 // make runsinglejoin DATA_FILE=100 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // Weak scaling
 // make runsinglejoin DATA_FILE=10000000 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runsinglejoin DATA_FILE=100 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000
 // Strong scaling
 // make runsinglejoin DATA_FILE=20000000 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0

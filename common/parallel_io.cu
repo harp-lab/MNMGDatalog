@@ -40,7 +40,7 @@ int *parallel_read(int rank, int total_rank, const char *input_file, int total_c
     return edge_host;
 }
 
-int *parallel_generate(int total_rank, int rank, int total_rows, int total_columns,
+int *parallel_generate(int total_rank, int rank, int total_rows, int total_columns, int rand_range,
                    long long *row_count, double *compute_time) {
     double start_time, end_time, elapsed_time;
 
@@ -58,7 +58,7 @@ int *parallel_generate(int total_rank, int rank, int total_rows, int total_colum
 
     int *edge_host = (int *) malloc(total_elements * sizeof(int));
     for (int i = 0; i < total_elements; i++) {
-        edge_host[i] = (rand() % 1000000) + 1;
+        edge_host[i] = (rand() % rand_range) + 1;
     }
 
     *row_count = row_size;
