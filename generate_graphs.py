@@ -222,6 +222,85 @@ def show_breakdown_bar_chart_single_join_strong(df, figure_name=None, breakdown_
         # Close the figure to avoid too many open figures
         plt.close(fig)
 
+def show_breakdown_bar_chart_single_join_weak(df, figure_name=None, breakdown_columns=None, application=None):
+    # # X-axis: Number of processes
+    x = df['# Process']
+    # Define the total time column
+    total_time_column = 'Total Time'
+
+    # Plot the stacked bar chart
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    # Initialize the bottom for stacking
+    bottom = np.zeros(len(x))
+
+    # Plot the stacked bars
+    for column in breakdown_columns:
+        ax.bar(
+            x.astype(str),  # Treat x-axis as categorical
+            df[column],
+            label=column,
+            bottom=bottom,
+        )
+        # Update the bottom for the next stack
+        bottom += df[column]
+
+    # Plot the Total Time as a line chart on the same axis
+    ax.plot(
+        x.astype(str),
+        df[total_time_column],
+        color='black',
+        marker='o',
+        label=total_time_column,
+        linewidth=2,
+    )
+
+    # Annotate the total time values on top of the points
+    for i, process in enumerate(x):
+        input_million = int(df["# Input"].iloc[i].replace(',', '')) / 1e6
+        output_million = int(df["# Join"].iloc[i].replace(',', '')) / 1e6
+        ax.text(
+            str(process),
+            df[total_time_column].iloc[i] + (0.02 * df[total_time_column].max()),
+            f'Input={input_million:.1f}M, '
+            f'Output={output_million:.1f}M, '
+            f'Time={df[total_time_column].iloc[i]:.2f}s',
+            ha='center',
+            va='baseline',
+            fontsize=12,
+            color='black',
+            )
+    # ax.text(
+        #     str(process),
+        #     df[total_time_column].iloc[i] + (0.02 * df[total_time_column].max()),
+        #     f'{df[total_time_column].iloc[i]:.2f}',
+        #     ha='center',
+        #     va='baseline',
+        #     fontsize=12,
+        #     color='black',
+        #     )
+
+    # Add labels and legend
+    ax.set_xlabel("# Processes", fontsize=14)
+    ax.set_ylabel("Time (s)", fontsize=14)
+    ax.set_title("Weak scaling bar chart #Input 5M/Rank, #Rand Range 1M/Rank", fontsize=16)
+    ax.legend(title="Breakdown & Total Time", fontsize=10)
+
+    plt.tight_layout()
+
+    # Save the figure to the specified path
+    if figure_name:
+        directory = os.path.join("drawing", f"{application.lower()}_breakdown")
+        os.makedirs(directory, exist_ok=True)
+        figure_path = os.path.join(directory, f"{figure_name}.png")
+    else:
+        figure_path = os.path.join("drawing", "breakdown", "combined_datasets.png")
+
+    fig.savefig(figure_path, bbox_inches="tight")
+    print(f"Figure saved in {figure_path}")
+
+    # Close the figure to avoid too many open figures
+    plt.close(fig)
 
 def show_breakdown_bar_chart_single_join(df, figure_name=None, breakdown_columns=None, application=None):
     total_time_column = 'Total Time'
@@ -448,8 +527,8 @@ def generate_charts(application="TC"):
 
 
 def show_single_join():
-    breakdown_columns = ['Join', 'Buffer preparation',
-                         'Communication', 'Deduplication', 'Other']
+    breakdown_columns = ['Join', 'Buffer preparation (before)', 'Communication (before)',
+                         'Buffer preparation (after)', 'Communication (after)', 'Deduplication', 'Other']
     # replacement_dict = None
     # if application == "TC":
     #     row_numbers = ["409,593", "165,435", "147,892", "1,049,866", "552,020"]
@@ -462,49 +541,59 @@ def show_single_join():
     #                      "vsp_finan, 513, 864M"]
     #     replacement_dict = dict(zip(row_numbers, dataset_names))
     # Define the header line
-    header = "| # Input | # Process | # Iterations | # Output | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n"
-    other_columns = ["Initialization", "Merge", "Hashtable", "Finalization"]
-    strong_cam_two_pass_file = f"logs/single-join-strong-cam-two-pass.md"
-    weak_cam_two_pass_file = f"logs/single-join-weak-cam-two-pass.md"
-    strong_cam_sort_file = f"logs/single-join-strong-cam-sort.md"
-    weak_cam_sort_file = f"logs/single-join-weak-cam-sort.md"
-    strong_traditional_two_pass_file = f"logs/single-join-strong-traditional-two-pass.md"
-    weak_traditional_two_pass_file = f"logs/single-join-weak-traditional-two-pass.md"
-    strong_traditional_sort_file = f"logs/single-join-strong-traditional-sort.md"
-    weak_traditional_sort_file = f"logs/single-join-weak-traditional-sort.md"
+    # header = "| # Input | # Process | # Iterations | # Output | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n"
+    header = "| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Finalization | Output |\n"
+    other_columns = ["Initialization", "Clear", "Hashtable", "Finalization"]
+    weak_traditional_two_pass_local_file = f"logs/single-join-weak-traditional-two-pass-local.md"
+    # strong_cam_two_pass_file = f"logs/single-join-strong-cam-two-pass.md"
+    # weak_cam_two_pass_file = f"logs/single-join-weak-cam-two-pass.md"
+    # strong_cam_sort_file = f"logs/single-join-strong-cam-sort.md"
+    # weak_cam_sort_file = f"logs/single-join-weak-cam-sort.md"
+    # strong_traditional_two_pass_file = f"logs/single-join-strong-traditional-two-pass.md"
+    # weak_traditional_two_pass_file = f"logs/single-join-weak-traditional-two-pass.md"
+    # strong_traditional_sort_file = f"logs/single-join-strong-traditional-sort.md"
+    # weak_traditional_sort_file = f"logs/single-join-weak-traditional-sort.md"
 
-    strong_cam_two_pass_df = read_markdown_table(strong_cam_two_pass_file, "Strong CAM-Two pass", replacement_dict=None,
-                                                 group=3, header=header, other_columns=other_columns)
-    strong_traditional_two_pass_df = read_markdown_table(strong_traditional_two_pass_file, "Strong CPU-Two pass",
-                                                         replacement_dict=None, group=3, header=header,
-                                                         other_columns=other_columns)
-    strong_cam_sort_df = read_markdown_table(strong_cam_sort_file, "Strong CAM-Sort", replacement_dict=None, group=3,
-                                             header=header, other_columns=other_columns)
-    strong_traditional_sort_df = read_markdown_table(strong_traditional_sort_file, "Strong CPU-Sort",
-                                                     replacement_dict=None, group=3, header=header,
-                                                     other_columns=other_columns)
-    weak_cam_two_pass_df = read_markdown_table(weak_cam_two_pass_file, "Weak CAM-Two pass", replacement_dict=None,
-                                               group=3, header=header, other_columns=other_columns)
-    weak_traditional_two_pass_df = read_markdown_table(weak_traditional_two_pass_file, "Weak CPU-Two pass",
-                                                       replacement_dict=None, group=3, header=header,
+    # strong_cam_two_pass_df = read_markdown_table(strong_cam_two_pass_file, "Strong CAM-Two pass", replacement_dict=None,
+    #                                              group=3, header=header, other_columns=other_columns)
+    # strong_traditional_two_pass_df = read_markdown_table(strong_traditional_two_pass_file, "Strong CPU-Two pass",
+    #                                                      replacement_dict=None, group=3, header=header,
+    #                                                      other_columns=other_columns)
+    # strong_cam_sort_df = read_markdown_table(strong_cam_sort_file, "Strong CAM-Sort", replacement_dict=None, group=3,
+    #                                          header=header, other_columns=other_columns)
+    # strong_traditional_sort_df = read_markdown_table(strong_traditional_sort_file, "Strong CPU-Sort",
+    #                                                  replacement_dict=None, group=3, header=header,
+    #                                                  other_columns=other_columns)
+    # weak_cam_two_pass_df = read_markdown_table(weak_cam_two_pass_file, "Weak CAM-Two pass", replacement_dict=None,
+    #                                            group=3, header=header, other_columns=other_columns)
+    # weak_traditional_two_pass_df = read_markdown_table(weak_traditional_two_pass_file, "Weak CPU-Two pass",
+    #                                                    replacement_dict=None, group=3, header=header,
+    #                                                    other_columns=other_columns)
+    # weak_cam_sort_df = read_markdown_table(weak_cam_sort_file, "Weak CAM-Sort", replacement_dict=None, group=3,
+    #                                        header=header, other_columns=other_columns)
+    # weak_traditional_sort_df = read_markdown_table(weak_traditional_sort_file, "Weak CPU-Sort", replacement_dict=None,
+    #                                                group=3, header=header, other_columns=other_columns)
+
+    weak_traditional_two_pass_local_df = read_markdown_table(weak_traditional_two_pass_local_file, "Weak CPU-Two pass local",
+                                                       replacement_dict=None, group=1, header=header,
                                                        other_columns=other_columns)
-    weak_cam_sort_df = read_markdown_table(weak_cam_sort_file, "Weak CAM-Sort", replacement_dict=None, group=3,
-                                           header=header, other_columns=other_columns)
-    weak_traditional_sort_df = read_markdown_table(weak_traditional_sort_file, "Weak CPU-Sort", replacement_dict=None,
-                                                   group=3, header=header, other_columns=other_columns)
+    # print(weak_traditional_two_pass_local_df)
+
 
     # Breakdown charts
-    application = "Single Join"
+    # application = "Single Join"
+    application = "Single Join (local)"
+    show_breakdown_bar_chart_single_join_weak(weak_traditional_two_pass_local_df, "weak_traditional_two_pass_local", breakdown_columns, application)
 
     # show_breakdown_bar_chart_single_join(weak_cam_two_pass_df, "weak_cam_two_pass_df", breakdown_columns, application)
     # show_breakdown_bar_chart_single_join_strong(strong_cam_two_pass_df, "strong_cam_two_pass_df", breakdown_columns, application)
-    dfs = [strong_cam_two_pass_df, strong_traditional_two_pass_df, strong_cam_sort_df, strong_traditional_sort_df]
-    labels = ["CAM Two Pass", "CPU Two Pass", "CAM Sort", "CPU Sort"]
-    show_line_chart_total_time(dfs, labels, application, figure_name="strong_scaling_combined", title="Strong scaling experiment for single join: Input 15M: Output 225M", annotate=False)
-
-    dfs = [weak_cam_two_pass_df, weak_traditional_two_pass_df, weak_cam_sort_df, weak_traditional_sort_df]
-    labels = ["CAM Two Pass", "CPU Two Pass", "CAM Sort", "CPU Sort"]
-    show_line_chart_total_time(dfs, labels, application, figure_name="weak_scaling_combined", title="Weak scaling experiment for single join")
+    # dfs = [strong_cam_two_pass_df, strong_traditional_two_pass_df, strong_cam_sort_df, strong_traditional_sort_df]
+    # labels = ["CAM Two Pass", "CPU Two Pass", "CAM Sort", "CPU Sort"]
+    # show_line_chart_total_time(dfs, labels, application, figure_name="strong_scaling_combined", title="Strong scaling experiment for single join: Input 15M: Output 225M", annotate=False)
+    #
+    # dfs = [weak_cam_two_pass_df, weak_traditional_two_pass_df, weak_cam_sort_df, weak_traditional_sort_df]
+    # labels = ["CAM Two Pass", "CPU Two Pass", "CAM Sort", "CPU Sort"]
+    # show_line_chart_total_time(dfs, labels, application, figure_name="weak_scaling_combined", title="Weak scaling experiment for single join")
 
 
 if __name__ == "__main__":

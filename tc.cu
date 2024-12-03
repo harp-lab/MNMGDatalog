@@ -412,3 +412,4 @@ int main(int argc, char **argv) {
 // make runtc DATA_FILE=data/data_163734.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/skewed_data.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_88234.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// make runtc DATA_FILE=data/data_22.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0

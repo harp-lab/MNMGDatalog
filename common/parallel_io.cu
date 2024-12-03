@@ -40,8 +40,44 @@ int *parallel_read(int rank, int total_rank, const char *input_file, int total_c
     return edge_host;
 }
 
+//int *parallel_generate(int total_rank, int rank, int total_rows, int total_columns, int rand_range,
+//                       long long *row_count, double *compute_time) {
+//    double start_time, end_time, elapsed_time;
+//
+//    // Start timing
+//    start_time = MPI_Wtime();
+//
+//    // Set a seed for reproducibility, using rank to ensure different numbers for each rank
+//    unsigned int seed = rank + 1;
+//    srand(seed);
+//    long long row_size = total_rows;
+//    if (total_rows > 10000000) {
+//        row_size = total_rows / total_rank;
+//    }
+//    long long total_elements = row_size * total_columns;
+//
+//    int *edge_host = (int *) malloc(total_elements * sizeof(int));
+//    int block_start = rank * total_rows;
+//    for (int i = 0; i < row_size; i++) {
+//        edge_host[i] = block_start + i;
+//        edge_host[i+1] = block_start + i + 1;
+//    }
+////    for (int i = 0; i < total_elements; i++) {
+////        edge_host[i] = (rand() % rand_range) + 1;
+////    }
+//
+//    *row_count = row_size;
+//
+//    // End timing
+//    end_time = MPI_Wtime();
+//    elapsed_time = end_time - start_time;
+//    *compute_time = elapsed_time;
+//
+//    return edge_host;
+//}
+
 int *parallel_generate(int total_rank, int rank, int total_rows, int total_columns, int rand_range,
-                   long long *row_count, double *compute_time) {
+                       long long *row_count, double *compute_time) {
     double start_time, end_time, elapsed_time;
 
     // Start timing
@@ -70,7 +106,6 @@ int *parallel_generate(int total_rank, int rank, int total_rows, int total_colum
 
     return edge_host;
 }
-
 
 void parallel_write(int rank, int total_rank, const char *output_file_name,
                     int *ar_host, int *displacement,

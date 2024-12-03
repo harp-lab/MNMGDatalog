@@ -1,3 +1,39 @@
+### Single join scaling local
+```shell
+mpirun -np 1 ./single_join.out 5000000 0 0 1000000
+| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5,000,000 | 1 | 1 | 24,996,544 |   0.7898 |   0.0067 |   0.3193 |   0.0004 |   0.0102 |   0.0155 |   0.1427 |   0.0523 |   0.3389 |   0.0449 |   0.0223 |   0.1558 | 5000000_singlejoin.bin |
+(venv) ➜  mnmgJOIN git:(main) ✗ mpirun -np 2 ./single_join.out 5000000 0 0 2000000
+| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10,000,000 | 2 | 1 | 49,990,939 |   1.0375 |   0.0090 |   0.3376 |   0.0007 |   0.0177 |   0.0283 |   0.1864 |   0.0800 |   0.4072 |   0.0925 |   0.0311 |   0.1847 | 5000000_singlejoin.bin |
+(venv) ➜  mnmgJOIN git:(main) ✗ mpirun -np 4 ./single_join.out 5000000 0 0 4000000
+| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 20,000,000 | 4 | 1 | 99,997,111 |   1.2997 |   0.0158 |   0.3409 |   0.0012 |   0.0377 |   0.0448 |   0.2182 |   0.0892 |   0.4632 |   0.1770 |   0.0453 |   0.2072 | 5000000_singlejoin.bin |
+(venv) ➜  mnmgJOIN git:(main) ✗ mpirun -np 8 ./single_join.out 5000000 0 0 8000000
+| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 40,000,000 | 8 | 1 | 199,992,052 |   1.9454 |   0.0302 |   0.3990 |   0.0056 |   0.0667 |   0.0360 |   0.3068 |   0.1290 |   0.6875 |   0.3070 |   0.1070 |   0.2697 | 5000000_singlejoin.bin |
+
+
+mpirun -np 1 ./single_join.out 5000000 0 0 500000 
+| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5,000,000 | 1 | 1 | 50,000,035 |   1.2603 |   0.0062 |   0.2571 |   0.0005 |   0.0189 |   0.0154 |   0.1328 |   0.1030 |   0.5939 |   0.0870 |   0.0281 |   0.2746 | 5000000_singlejoin.bin |
+(venv) ➜  mnmgJOIN git:(main) ✗ mpirun -np 2 ./single_join.out 5000000 0 0 1000000
+| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10,000,000 | 2 | 1 | 99,981,585 |   1.6752 |   0.0090 |   0.3287 |   0.0008 |   0.0314 |   0.0314 |   0.1517 |   0.1516 |   0.7418 |   0.1778 |   0.0391 |   0.3405 | 5000000_singlejoin.bin |
+(venv) ➜  mnmgJOIN git:(main) ✗ mpirun -np 4 ./single_join.out 5000000 0 0 2000000
+| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Finalization | Output |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 20,000,000 | 4 | 1 | 199,991,033 |   2.1132 |   0.0172 |   0.3404 |   0.0062 |   0.0524 |   0.0442 |   0.1874 |   0.1627 |   0.8982 |   0.3140 |   0.0650 |   0.3659 | 5000000_singlejoin.bin |
+```
+
+
+
 ### Data distribution
 ```shell
 Data ego facebook 

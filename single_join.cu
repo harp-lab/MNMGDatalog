@@ -53,12 +53,16 @@ void benchmark(int argc, char **argv) {
     double finalization_time = 0.0, max_finalization_time = 0.0;
     double file_io_time = 0.0, max_fileio_time = 0.0;
     double max_join_time = 0.0, max_merge_time = 0.0;
-    double max_buffer_preparation_time = 0.0, max_communication_time = 0.0;
-    double buffer_preparation_time = 0.0, communication_time = 0.0;
+    double max_buffer_preparation_time_before_join = 0.0, max_communication_time_before_join = 0.0;
+    double max_buffer_preparation_time_after_join = 0.0, max_communication_time_after_join = 0.0;
+    double buffer_preparation_time_before_join = 0.0, communication_time_before_join = 0.0;
+    double buffer_preparation_time_after_join = 0.0, communication_time_after_join = 0.0;
     double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
     double join_time = 0.0, merge_time = 0.0;
     double deduplication_time = 0.0, max_deduplication_time = 0.0;;
     double hashtable_build_time = 0.0, max_hashtable_build_time = 0.0;
+    double clear_time = 0.0, max_clear_time = 0.0;;
+    double copy_to_host_time = 0.0, max_copy_to_host_time = 0.0;;
 
     double total_time = 0.0, max_total_time = 0.0;
     int total_rank, rank;
@@ -100,7 +104,8 @@ void benchmark(int argc, char **argv) {
     double temp_file_io_time = 0.0;
     long long row_size = 0;
     int *local_data_host = parallel_generate(total_rank, rank, total_rows, total_columns, rand_range,
-                                         &row_size, &temp_file_io_time);
+                                             &row_size, &temp_file_io_time);
+
     long long local_count = row_size * total_columns;
     long long global_row_size = 0;
     MPI_Allreduce(&row_size, &global_row_size, 1, MPI_LONG_LONG_INT, MPI_SUM,
@@ -132,8 +137,8 @@ void benchmark(int argc, char **argv) {
                                                 grid_size, block_size, cuda_aware_mpi,
                                                 &input_relation_size, comm_method,
                                                 &buffer_preparation_time_temp, &communication_time_temp, iterations);
-    buffer_preparation_time += buffer_preparation_time_temp;
-    communication_time += communication_time_temp;
+    buffer_preparation_time_before_join += buffer_preparation_time_temp;
+    communication_time_before_join += communication_time_temp;
 #ifdef DEBUG
     cout << "Rank: " << rank << ", input_relation_size: " << input_relation_size << endl;
 #endif
@@ -146,7 +151,6 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
-//    show_device_entity_variable(input_relation, input_relation_size, rank, "input_relation", 0);
 #ifdef DEBUG
     cout << "Rank: " << rank << ", input_relation_size after deduplication: " << input_relation_size << endl;
 #endif
@@ -160,8 +164,8 @@ void benchmark(int argc, char **argv) {
                                                   grid_size, block_size, cuda_aware_mpi, &reverse_relation_size,
                                                   comm_method,
                                                   &buffer_preparation_time_temp, &communication_time_temp, iterations);
-    buffer_preparation_time += buffer_preparation_time_temp;
-    communication_time += communication_time_temp;
+    buffer_preparation_time_before_join += buffer_preparation_time_temp;
+    communication_time_before_join += communication_time_temp;
 #ifdef DEBUG
     cout << "Rank: " << rank << ", reverse_relation_size: " << reverse_relation_size << endl;
 #endif
@@ -208,8 +212,8 @@ void benchmark(int argc, char **argv) {
                                                          comm_method,
                                                          &buffer_preparation_time_temp, &communication_time_temp,
                                                          iterations);
-    buffer_preparation_time += buffer_preparation_time_temp;
-    communication_time += communication_time_temp;
+    buffer_preparation_time_after_join += buffer_preparation_time_temp;
+    communication_time_after_join += communication_time_temp;
 #ifdef DEBUG
     cout << "Rank: " << rank << ", distributed_join_result_size: " << distributed_join_result_size << endl;
 #endif
@@ -217,7 +221,7 @@ void benchmark(int argc, char **argv) {
     // Deduplicate distributed join result
     start_time = MPI_Wtime();
     thrust::sort(thrust::device, distributed_join_result,
-                        distributed_join_result + distributed_join_result_size, set_cmp());
+                 distributed_join_result + distributed_join_result_size, set_cmp());
     distributed_join_result_size = (thrust::unique(thrust::device,
                                                    distributed_join_result,
                                                    distributed_join_result + distributed_join_result_size,
@@ -246,8 +250,12 @@ void benchmark(int argc, char **argv) {
                          distributed_join_result_size * total_columns * sizeof(int)));
     get_reverse_int_ar_from_entity_ar<<<grid_size, block_size>>>(distributed_join_result, distributed_join_result_size,
                                                                  distributed_join_result_ar);
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    finalization_time += elapsed_time;
 
     // Copy to host for file write
+    start_time = MPI_Wtime();
     int *distributed_join_result_ar_host = (int *) malloc(distributed_join_result_size * total_columns * sizeof(int));
     cudaMemcpy(distributed_join_result_ar_host, distributed_join_result_ar,
                distributed_join_result_size * total_columns * sizeof(int), cudaMemcpyDeviceToHost);
@@ -263,7 +271,7 @@ void benchmark(int argc, char **argv) {
     }
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    finalization_time += elapsed_time;
+    copy_to_host_time += elapsed_time;
 
     if (job_run == 0) {
         // Write the t full to an offset of the output file
@@ -289,35 +297,28 @@ void benchmark(int argc, char **argv) {
     free(local_data_host);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    finalization_time += elapsed_time;
+    clear_time += elapsed_time;
 
-//    MPI_Allreduce(&initialization_time, &max_initialization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-//    MPI_Allreduce(&deduplication_time, &max_deduplication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-//    MPI_Allreduce(&join_time, &max_join_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-//    MPI_Allreduce(&merge_time, &max_merge_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-//    MPI_Allreduce(&buffer_preparation_time, &max_buffer_preparation_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-//    MPI_Allreduce(&communication_time, &max_communication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-//    MPI_Allreduce(&hashtable_build_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-//    MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-//    MPI_Allreduce(&finalization_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     total_time = initialization_time + hashtable_build_time + join_time +
-                 buffer_preparation_time + communication_time + deduplication_time + merge_time +
-                 finalization_time;
+                 buffer_preparation_time_before_join + communication_time_before_join +
+                 buffer_preparation_time_after_join + communication_time_after_join +
+                 deduplication_time + merge_time + clear_time + finalization_time + copy_to_host_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     // Breakdown time is the breakdown times of the slowest process
-    if(total_time == max_total_time) {
+    if (total_time == max_total_time) {
         max_initialization_time = initialization_time;
         max_deduplication_time = deduplication_time;
         max_join_time = join_time;
         max_merge_time = merge_time;
-        max_buffer_preparation_time = buffer_preparation_time;
-        max_communication_time = communication_time;
+        max_buffer_preparation_time_before_join = buffer_preparation_time_before_join;
+        max_communication_time_before_join = communication_time_before_join;
+        max_buffer_preparation_time_after_join = buffer_preparation_time_after_join;
+        max_communication_time_after_join = communication_time_after_join;
         max_hashtable_build_time = hashtable_build_time;
         max_fileio_time = file_io_time;
+        max_clear_time = clear_time;
         max_finalization_time = finalization_time;
-    }
-
-    if (rank == 0) {
+        max_copy_to_host_time = copy_to_host_time;
         output.block_size = block_size;
         output.grid_size = grid_size;
         output.input_rows = global_row_size;
@@ -331,21 +332,21 @@ void benchmark(int argc, char **argv) {
         output.fileio_time = max_fileio_time;
         output.hashtable_build_time = max_hashtable_build_time;
         output.join_time = max_join_time;
-        output.buffer_preparation_time = max_buffer_preparation_time;
-        output.communication_time = max_communication_time;
         output.deduplication_time = max_deduplication_time;
         output.merge_time = max_merge_time;
         output.finalization_time = max_finalization_time;
         if (job_run == 0) {
             printf("| # Input | # Process | # Iterations | # Join | Total Time ");
-            printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
-            printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+            printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Copy | Finalization | Output |\n");
+            printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
         }
-        printf("| %'d | %'d | %'d | %'lld | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
+        printf("| %'d | %'d | %'d | %'lld | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.total_time,
                output.initialization_time, output.fileio_time, output.hashtable_build_time, output.join_time,
-               output.buffer_preparation_time, output.communication_time, output.deduplication_time, output.merge_time,
+               max_buffer_preparation_time_before_join, max_communication_time_before_join,
+               max_buffer_preparation_time_after_join, max_communication_time_after_join,
+               output.deduplication_time, max_clear_time, max_copy_to_host_time,
                output.finalization_time,
                output.output_file_name);
     }
@@ -358,7 +359,9 @@ int main(int argc, char **argv) {
 }
 // METHOD 0 = two pass method, 1 = sorting method
 // DATA_FILE>10000000, strong scaling, otherwise weak scaling;
-// make runsinglejoin DATA_FILE=100 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000
+// make runsinglejoin DATA_FILE=100 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=100
+
+// make runsinglejoin DATA_FILE=10 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=100
 
 // make runsinglejoin DATA_FILE=100 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // Weak scaling
@@ -366,3 +369,22 @@ int main(int argc, char **argv) {
 // make runsinglejoin DATA_FILE=100 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000
 // Strong scaling
 // make runsinglejoin DATA_FILE=20000000 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+
+// Exp 1: control output size linearly
+// make runsinglejoin DATA_FILE=5000000 NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000000
+// mpirun -np 1 ./single_join.out 5000000 0 0 1000000
+// mpirun -np 2 ./single_join.out 5000000 0 0 2000000
+// mpirun -np 4 ./single_join.out 5000000 0 0 4000000
+// mpirun -np 8 ./single_join.out 5000000 0 0 8000000
+// make runsinglejoin DATA_FILE=5000000 NPROCS=2 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000000
+// make runsinglejoin DATA_FILE=5000000 NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=500000
+
+// Exp 2: do not control output size
+
+
+// Exp 3: Smaller range
+
+
+// Polaris exp 1
+// mpirun -np 1 ./single_join.out 10000000 0 0 1000000
+// mpirun -np 2 ./single_join.out 10000000 0 0 2000000
