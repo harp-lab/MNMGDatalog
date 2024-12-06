@@ -468,6 +468,109 @@ arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 4
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
 CC single_join.cu -o single_join_interactive.out
+// 12/03/2024
+// weak scaling
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 100000
+| 10,000,000 | 1 | 1 | 950,725,901 |   6.3978 |   0.2090 |   0.1566 |   0.0002 |   0.1377 |   0.0483 |   0.0564 |   1.8798 |   2.5842 |   0.3831 |   0.0246 |   1.0741 |   0.0005 | 10000000_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 200000
+| 20,000,000 | 2 | 1 | 1,949,821,541 |   5.4102 |   0.2163 |   0.1558 |   0.0002 |   0.1402 |   0.0294 |   0.0558 |   1.1003 |   1.6775 |   0.3817 |   0.0434 |   1.7646 |   0.0006 | 10000000_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 400000
+| 40,000,000 | 4 | 1 | 3,949,369,160 |   5.4904 |   0.0846 |   0.1584 |   0.0002 |   0.1532 |   0.0543 |   0.5516 |   0.6769 |   1.7996 |   0.3885 |   0.0721 |   1.7086 |   0.0008 | 10000000_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 800000
+| 80,000,000 | 8 | 1 | 7,949,098,464 |   5.0200 |   0.0157 |   0.1575 |   0.0004 |   0.1514 |   0.0172 |   0.1066 |   0.6669 |   1.5968 |   0.4167 |   0.2192 |   1.8281 |   0.0010 | 10000000_singlejoin.bin |
+
+
+
+
+arsho::x3003c0s7b0n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 100000
+| 10,000,000 | 1 | 1 | 950,725,901 |   6.4307 |   0.2094 |   0.1564 |   0.0003 |   0.1513 |   0.0497 |   0.0570 |   1.8982 |   2.5841 |   0.3837 |   0.0244 |   1.0720 |   0.0005 | 10000000_singlejoin.bin |
+arsho::x3003c0s7b0n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 200000
+| 20,000,000 | 2 | 1 | 1,949,821,541 |   5.2831 |   0.2085 |   0.1557 |   0.0003 |   0.1419 |   0.0295 |   0.0531 |   1.1020 |   1.6805 |   0.3826 |   0.0428 |   1.6414 |   0.0006 | 10000000_singlejoin.bin |
+arsho::x3003c0s7b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 400000
+| 40,000,000 | 4 | 1 | 3,949,369,160 |   5.4713 |   0.1131 |   0.1585 |   0.0003 |   0.1425 |   0.0182 |   0.5544 |   0.6842 |   1.8170 |   0.3802 |   0.0728 |   1.6840 |   0.0044 | 10000000_singlejoin.bin |
+
+
+
+// strong scaling
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 25000000 1 0 600000
+| 25,000,000 | 1 | 1 | 1,040,085,195 |   6.8031 |   0.2232 |   0.3896 |   0.0011 |   0.1162 |   0.1107 |   0.1350 |   1.9607 |   2.6909 |   0.4077 |   0.0287 |   1.1282 |   0.0005 | 25000000_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 25000000 1 0 600000
+| 25,000,000 | 2 | 1 | 1,040,045,356 |   3.0516 |   0.2127 |   0.1950 |   0.0003 |   0.0689 |   0.0361 |   0.0638 |   0.5770 |   0.8965 |   0.1963 |   0.0234 |   0.9763 |   0.0004 | 25000000_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 25000000 1 0 600000
+| 25,000,000 | 4 | 1 | 1,040,025,762 |   2.0496 |   0.5331 |   0.0993 |   0.0003 |   0.0352 |   0.0165 |   0.0963 |   0.2029 |   0.5867 |   0.0972 |   0.0203 |   0.4607 |   0.0003 | 25000000_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 25000000 1 0 600000
+| 25,000,000 | 8 | 1 | 1,040,068,949 |   0.7638 |   0.0094 |   0.0499 |   0.0003 |   0.0183 |   0.0077 |   0.0778 |   0.1041 |   0.2191 |   0.0487 |   0.0374 |   0.2338 |   0.0072 | 25000000_singlejoin.bin |
+
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000001 1 0 90000
+| 10,000,001 | 1 | 1 | 1,037,050,773 |   6.9916 |   0.2100 |   0.1565 |   0.0003 |   0.1457 |   0.0496 |   0.0572 |   2.0903 |   2.8797 |   0.4404 |   0.0268 |   1.0910 |   0.0005 | 10000001_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000001 1 0 90000
+| 10,000,000 | 2 | 1 | 1,037,135,566 |   3.0584 |   0.2083 |   0.0786 |   0.0002 |   0.0830 |   0.0149 |   0.0360 |   0.6155 |   0.9361 |   0.2119 |   0.0239 |   0.9284 |   0.0004 | 10000001_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000001 1 0 90000
+| 10,000,000 | 4 | 1 | 1,037,065,333 |   2.0923 |   0.5375 |   0.0403 |   0.0003 |   0.0425 |   0.0080 |   0.0869 |   0.2305 |   0.6064 |   0.1023 |   0.0201 |   0.4532 |   0.0045 | 10000001_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000001 1 0 90000
+| 10,000,000 | 8 | 1 | 1,037,152,902 |   0.7877 |   0.0060 |   0.0201 |   0.0003 |   0.0223 |   0.0043 |   0.0731 |   0.1097 |   0.2451 |   0.0508 |   0.0384 |   0.2270 |   0.0107 | 10000001_singlejoin.bin |
+
+// sold
+
+
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 0 250000
+GPUassert: out of memory single_join.cu 250
+x3006c0s1b0n0.hsn.cm.polaris.alcf.anl.gov: rank 0 exited with code 2
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 0 250000
+| 20,000,000 | 2 | 1 | 1,579,218,042 |   4.3675 |   0.0470 |   0.1565 |   0.0002 |   0.1215 |   0.0295 |   0.2229 |   0.8919 |   1.3471 |   0.3038 |   0.0348 |   1.3653 |   0.0034 | 20000000_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 0 250000
+| 20,000,000 | 4 | 1 | 1,579,189,785 |   2.7462 |   0.0875 |   0.0794 |   0.0003 |   0.0615 |   0.0422 |   0.5273 |   0.2908 |   0.8703 |   0.1507 |   0.0294 |   0.6861 |   0.0004 | 20000000_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 8 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 0 250000
+| 20,000,000 | 8 | 1 | 1,579,170,357 |   3.6407 |   1.2937 |   0.0397 |   0.0024 |   0.0728 |   0.0098 |   0.2120 |   0.2117 |   1.2947 |   0.1595 |   0.0283 |   0.3521 |   0.0036 | 20000000_singlejoin.bin |
+arsho::x3006c0s1b0n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 8 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 1 250000
+| 20,000,000 | 8 | 1 | 1,579,170,357 |   3.5352 |   0.0401 |   0.0415 |   0.0006 |   0.0585 |   0.2519 |   1.2215 |   0.0301 |   1.3845 |   0.1711 |   0.0188 |   0.3571 |   0.0011 | 20000000_singlejoin.bin |
+
+
+
+
+arsho::x3003c0s7b0n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 25000000 1 0 1000000
+| 25,000,000 | 1 | 1 | 624,794,306 |   4.2975 |   0.2192 |   0.3909 |   0.0010 |   0.0722 |   0.1127 |   0.1349 |   1.1870 |   1.6116 |   0.2502 |   0.0192 |   0.6892 |   0.0004 | 25000000_singlejoin.bin |
+arsho::x3003c0s7b0n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 25000000 1 0 1000000
+| 25,000,000 | 2 | 1 | 624,789,421 |   1.9098 |   0.0457 |   0.1960 |   0.0004 |   0.0408 |   0.0363 |   0.2305 |   0.3603 |   0.5260 |   0.1201 |   0.0141 |   0.5341 |   0.0014 | 25000000_singlejoin.bin |
+arsho::x3003c0s7b0n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 25000000 1 0 1000000
+| 25,000,000 | 4 | 1 | 624,766,007 |   1.4980 |   0.5365 |   0.0988 |   0.0003 |   0.0212 |   0.0168 |   0.0910 |   0.1416 |   0.3430 |   0.0597 |   0.0133 |   0.2741 |   0.0004 | 25000000_singlejoin.bin |
+
+
+
+
+make runsinglejoin DATA_FILE=5000000 NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000000
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 1
+| 10,000,000 | 1 | 1 | 99,998,429 |   0.9461 |   0.2151 |   0.1531 |   0.0003 |   0.0142 |   0.2433 |   0.3159 |   0.0416 |   0.0000 |   0.0034 | 10000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 1
+| 20,000,000 | 2 | 1 | 399,908,167 |   1.3714 |   0.2134 |   0.1579 |   0.0003 |   0.0299 |   0.2909 |   0.5646 |   0.0769 |   0.0000 |   0.0095 | 10000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 1
+| 40,000,000 | 4 | 1 | 1,598,655,482 |   2.8059 |   0.5440 |   0.1586 |   0.0003 |   0.0613 |   0.3473 |   1.4377 |   0.1526 |   0.0000 |   0.0300 | 10000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 1 1
+| 10,000,000 | 1 | 1 | 99,998,429 |   0.7626 |   0.2169 |   0.1573 |   0.0002 |   0.0143 |   0.0085 |   0.3607 |   0.0415 |   0.0000 |   0.0036 | 10000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 1 1
+| 20,000,000 | 2 | 1 | 399,908,167 |   1.1807 |   0.2104 |   0.1625 |   0.0003 |   0.0300 |   0.0179 |   0.6248 |   0.0790 |   0.0000 |   0.0082 | 10000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 1 1
+| 40,000,000 | 4 | 1 | 1,598,655,482 |   2.6139 |   0.5433 |   0.1590 |   0.0004 |   0.0611 |   0.0428 |   1.5121 |   0.1595 |   0.0000 |   0.0244 | 10000000_singlejoin.bin |
+
+// strong scaling
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 0 1
+| 20,000,000 | 1 | 1 | 399,913,369 |   2.8520 |   0.2149 |   0.3051 |   0.0003 |   0.0497 |   0.8487 |   1.1439 |   0.1584 |   0.0000 |   0.0113 | 20000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 0 1
+| 20,000,000 | 2 | 1 | 399,908,167 |   1.3823 |   0.2103 |   0.1573 |   0.0003 |   0.0298 |   0.2966 |   0.5512 |   0.0767 |   0.0000 |   0.0099 | 20000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 0 1
+| 20,000,000 | 4 | 1 | 399,890,633 |   1.1807 |   0.5391 |   0.0808 |   0.0004 |   0.0155 |   0.1097 |   0.7120 |   0.0385 |   0.0000 |   0.0093 | 20000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 1 1
+| 20,000,000 | 1 | 1 | 399,913,369 |   2.1892 |   0.2230 |   0.3146 |   0.0003 |   0.0599 |   0.0252 |   1.2640 |   0.1602 |   0.0000 |   0.0113 | 20000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 1 1
+| 20,000,000 | 2 | 1 | 399,908,167 |   1.1459 |   0.2094 |   0.1578 |   0.0003 |   0.0303 |   0.0169 |   0.6214 |   0.0788 |   0.0000 |   0.0081 | 20000000_singlejoin.bin |
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 20000000 1 1 1
+| 20,000,000 | 4 | 1 | 399,890,633 |   1.1213 |   0.5387 |   0.0804 |   0.0003 |   0.0154 |   0.0491 |   0.7433 |   0.0427 |   0.0000 |   0.0074 | 20000000_singlejoin.bin |
+
+
+
+
+
+
 // weak scaling
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 1
 | 10,000,000 | 1 | 1 | 99,998,429 |   0.9461 |   0.2151 |   0.1531 |   0.0003 |   0.0142 |   0.2433 |   0.3159 |   0.0416 |   0.0000 |   0.0034 | 10000000_singlejoin.bin |

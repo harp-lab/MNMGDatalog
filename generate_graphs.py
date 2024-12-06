@@ -12,15 +12,27 @@ def read_markdown_table(file_path, method, replacement_dict=None, group=5, heade
     with open(file_path, 'r') as file:
         lines = [line for line in file if line.startswith('|')]
 
+    lines = [line.replace("|\n", "\n") for line in lines]
+
     if header:
         lines.insert(0, header)
+
+    # print(lines)
 
     # Join the filtered lines into a single string and use StringIO to read into pandas
     data = StringIO(''.join(lines))
 
     # Load the filtered data into a DataFrame
-    df = pd.read_table(data, sep="|", header=0, skipinitialspace=True).dropna(axis=1, how='all').iloc[0:]
+    df = pd.read_table(data, sep="|", header=0, skipinitialspace=True).dropna(axis=1, how='all')
+    # df.drop('Unnamed: 0', axis=1, inplace=True)
+    # print(df)
+
     df.columns = df.columns.str.strip()
+
+    # df.drop('Unnamed: 0', axis=1, inplace=True)
+    # if "Unnamed: 0" in df.columns:
+    #     df.columns = df.columns[1:]
+    # print(df.columns)
     drop_column = "Output"
     if drop_column in df.columns:
         df = df.drop(columns=[drop_column])
@@ -45,6 +57,20 @@ def read_markdown_table(file_path, method, replacement_dict=None, group=5, heade
         grouped["Other"] = 0
         for other_column in other_columns:
             grouped["Other"] += grouped[other_column]
+
+    # # Drop the 'Unnamed: 0' column
+    # grouped = grouped.drop(columns=['Unnamed: 0'])
+    #
+    # # Verify the DataFrame
+    # print(grouped.head())
+    # print(grouped.columns)
+    # if "Unnamed: 0" in grouped.columns:
+    #     grouped.columns = grouped.columns[1:]
+    # print(len(grouped.columns), grouped.columns)
+
+    # print(grouped['Unnamed: 0'])
+    # print(grouped.head(1))
+    # print(grouped['Unnamed: 0'], grouped['# Process'], grouped['# Iterations'])
     return grouped
 
 
@@ -92,14 +118,15 @@ def show_line_chart(df, figure_name=None, application=None):
     print(f"Figure saved in {figure_path}")
 
 
-def show_breakdown_bar_chart(df, figure_name=None, breakdown_columns=None, application=None):
+def show_breakdown_bar_chart(df, figure_name=None, breakdown_columns=None, application=None, title=None):
     total_time_column = 'Total Time'
     bar_width = 4  # Adjust this value to make the bars wider (default is 0.8)
     # Loop through each dataset
     datasets = df['Dataset'].unique()
     for dataset in datasets:
         # Create a new figure and axis
-        fig, ax = plt.subplots()
+        # fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(12, 8))
         # Filter the subset of data for the current dataset
         subset = df[df['Dataset'] == dataset]
         # Plot stacked bar chart for breakdown columns
@@ -124,7 +151,10 @@ def show_breakdown_bar_chart(df, figure_name=None, breakdown_columns=None, appli
 
         # Set titles and labels
         method = subset["Method"].unique()[0]
-        ax.set_title(f'{method}: {dataset}')
+        if title:
+            ax.set_title(f'{title}')
+        else:
+            ax.set_title(f'{method}: {dataset}')
         ax.set_xlabel('Process Count')
         ax.set_ylabel('Time (S)')
 
@@ -155,7 +185,7 @@ def show_breakdown_bar_chart(df, figure_name=None, breakdown_columns=None, appli
         plt.close(fig)
 
 
-def show_breakdown_bar_chart_single_join_strong(df, figure_name=None, breakdown_columns=None, application=None):
+def show_breakdown_bar_chart_single_join_strong(df, figure_name=None, breakdown_columns=None, application=None, title=None):
     total_time_column = 'Total Time'
     bar_width = 0.6  # Adjusted for better visual spacing
 
@@ -163,7 +193,7 @@ def show_breakdown_bar_chart_single_join_strong(df, figure_name=None, breakdown_
     datasets = df['Dataset'].unique()
     for dataset in datasets:
         # Create a new figure and axis
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(12, 8))
 
         # Filter the subset of data for the current dataset
         subset = df[df['Dataset'] == dataset]
@@ -188,12 +218,15 @@ def show_breakdown_bar_chart_single_join_strong(df, figure_name=None, breakdown_
         # Annotate the total time values on top of the points
         for i, process in enumerate(subset['# Process']):
             ax.text(process, subset[total_time_column].iloc[i] + (0.02 * subset[total_time_column].max()),
-                    f'{subset[total_time_column].iloc[i]:.2f}',
+                    f'{subset[total_time_column].iloc[i]:.2f}s',
                     ha='center', va='baseline', fontsize=12, color='black')
 
         # Set titles and labels
         method = subset["Method"].unique()[0]
-        ax.set_title(f'{method}: {dataset}')
+        if title:
+            ax.set_title(f'{title}')
+        else:
+            ax.set_title(f'{method}: {dataset}')
         ax.set_xlabel('Process Count')
         ax.set_ylabel('Time (s)')
 
@@ -222,7 +255,9 @@ def show_breakdown_bar_chart_single_join_strong(df, figure_name=None, breakdown_
         # Close the figure to avoid too many open figures
         plt.close(fig)
 
-def show_breakdown_bar_chart_single_join_weak(df, figure_name=None, breakdown_columns=None, application=None):
+
+def show_breakdown_bar_chart_single_join_weak(df, figure_name=None, breakdown_columns=None, application=None,
+                                              title="Weak scaling bar chart #Input 10M/Rank, #Rand Range 100K/Rank"):
     # # X-axis: Number of processes
     x = df['# Process']
     # Define the total time column
@@ -257,33 +292,30 @@ def show_breakdown_bar_chart_single_join_weak(df, figure_name=None, breakdown_co
 
     # Annotate the total time values on top of the points
     for i, process in enumerate(x):
-        input_million = int(df["# Input"].iloc[i].replace(',', '')) / 1e6
-        output_million = int(df["# Join"].iloc[i].replace(',', '')) / 1e6
+        try:
+            input_million = int(df["# Input"].iloc[i].replace(',', '')) / 1e6
+            output_million = int(df["# Join"].iloc[i].replace(',', '')) / 1e6
+        except:
+            input_million = int(df["# Input"].iloc[i]) / 1e6
+            output_million = int(df["# Join"].iloc[i]) / 1e6
+        # print(input_million, output_million)
         ax.text(
             str(process),
             df[total_time_column].iloc[i] + (0.02 * df[total_time_column].max()),
-            f'Input={input_million:.1f}M, '
-            f'Output={output_million:.1f}M, '
-            f'Time={df[total_time_column].iloc[i]:.2f}s',
+            f'{input_million:.1f}M, '
+            f'{output_million:.1f}M, '
+            f'{df[total_time_column].iloc[i]:.2f}s',
             ha='center',
             va='baseline',
             fontsize=12,
             color='black',
-            )
-    # ax.text(
-        #     str(process),
-        #     df[total_time_column].iloc[i] + (0.02 * df[total_time_column].max()),
-        #     f'{df[total_time_column].iloc[i]:.2f}',
-        #     ha='center',
-        #     va='baseline',
-        #     fontsize=12,
-        #     color='black',
-        #     )
+        )
 
     # Add labels and legend
     ax.set_xlabel("# Processes", fontsize=14)
     ax.set_ylabel("Time (s)", fontsize=14)
-    ax.set_title("Weak scaling bar chart #Input 5M/Rank, #Rand Range 1M/Rank", fontsize=16)
+    if title:
+        ax.set_title(title, fontsize=16)
     ax.legend(title="Breakdown & Total Time", fontsize=10)
 
     plt.tight_layout()
@@ -301,6 +333,7 @@ def show_breakdown_bar_chart_single_join_weak(df, figure_name=None, breakdown_co
 
     # Close the figure to avoid too many open figures
     plt.close(fig)
+
 
 def show_breakdown_bar_chart_single_join(df, figure_name=None, breakdown_columns=None, application=None):
     total_time_column = 'Total Time'
@@ -528,7 +561,8 @@ def generate_charts(application="TC"):
 
 def show_single_join():
     breakdown_columns = ['Join', 'Buffer preparation (before)', 'Communication (before)',
-                         'Buffer preparation (after)', 'Communication (after)', 'Deduplication', 'Other']
+                         'Buffer preparation (after)', 'Communication (after)', 'Deduplication', "Copy",
+                         'Other']
     # replacement_dict = None
     # if application == "TC":
     #     row_numbers = ["409,593", "165,435", "147,892", "1,049,866", "552,020"]
@@ -542,9 +576,13 @@ def show_single_join():
     #     replacement_dict = dict(zip(row_numbers, dataset_names))
     # Define the header line
     # header = "| # Input | # Process | # Iterations | # Output | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n"
-    header = "| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Finalization | Output |\n"
+    header = "| # Input | # Process | # Iterations | # Join | Total Time | Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Copy | Finalization | Output |\n"
     other_columns = ["Initialization", "Clear", "Hashtable", "Finalization"]
-    weak_traditional_two_pass_local_file = f"logs/single-join-weak-traditional-two-pass-local.md"
+    # weak_traditional_two_pass_local_file = f"logs/single-join-weak-traditional-two-pass-local.md"
+    # weak_traditional_two_pass_local_file = f"logs/single-join-weak-traditional-two-pass-local.md"
+    weak_cam_two_pass_polaris_file = f"logs/single-join-weak-cam-two-pass-polaris-2.md"
+    strong_cam_two_pass_polaris_file = f"logs/single-join-strong-cam-two-pass-polaris-2.md"
+    strong_cam_two_pass_polaris_file_2 = f"logs/single-join-strong-cam-two-pass-polaris-2_2.md"
     # strong_cam_two_pass_file = f"logs/single-join-strong-cam-two-pass.md"
     # weak_cam_two_pass_file = f"logs/single-join-weak-cam-two-pass.md"
     # strong_cam_sort_file = f"logs/single-join-strong-cam-sort.md"
@@ -574,16 +612,28 @@ def show_single_join():
     # weak_traditional_sort_df = read_markdown_table(weak_traditional_sort_file, "Weak CPU-Sort", replacement_dict=None,
     #                                                group=3, header=header, other_columns=other_columns)
 
-    weak_traditional_two_pass_local_df = read_markdown_table(weak_traditional_two_pass_local_file, "Weak CPU-Two pass local",
-                                                       replacement_dict=None, group=1, header=header,
-                                                       other_columns=other_columns)
-    # print(weak_traditional_two_pass_local_df)
+    weak_cam_two_pass_df = read_markdown_table(weak_cam_two_pass_polaris_file, "Weak CAM-Two pass",
+                                               replacement_dict=None, group=1, header=header,
+                                               other_columns=other_columns)
 
-
+    strong_cam_two_pass_df = read_markdown_table(strong_cam_two_pass_polaris_file, "Strong CAM-Two pass",
+                                               replacement_dict=None, group=1, header=header,
+                                               other_columns=other_columns)
+    strong_cam_two_pass_df_2 = read_markdown_table(strong_cam_two_pass_polaris_file_2, "Strong CAM-Two pass",
+                                                 replacement_dict=None, group=1, header=header,
+                                                 other_columns=other_columns)
     # Breakdown charts
-    # application = "Single Join"
-    application = "Single Join (local)"
-    show_breakdown_bar_chart_single_join_weak(weak_traditional_two_pass_local_df, "weak_traditional_two_pass_local", breakdown_columns, application)
+    application = "Single Join Polaris 2 nodes"
+    title = "Weak scaling (#Input 10M/Rank, #Rand Range 100K/Rank)"
+    show_breakdown_bar_chart_single_join_weak(weak_cam_two_pass_df, "weak_cam_two_pass_df", breakdown_columns, application, title)
+
+    title = "Strong scaling (#Input 10M, #Rand Range 90K)"
+    show_breakdown_bar_chart_single_join_strong(strong_cam_two_pass_df, "strong_cam_two_pass_df", breakdown_columns, application, title)
+
+    title = "Strong scaling (#Input 25M, #Rand Range 60K)"
+    show_breakdown_bar_chart_single_join_strong(strong_cam_two_pass_df_2, "strong_cam_two_pass_df_2", breakdown_columns, application, title)
+
+
 
     # show_breakdown_bar_chart_single_join(weak_cam_two_pass_df, "weak_cam_two_pass_df", breakdown_columns, application)
     # show_breakdown_bar_chart_single_join_strong(strong_cam_two_pass_df, "strong_cam_two_pass_df", breakdown_columns, application)
