@@ -40,6 +40,9 @@ testwcc:
 buildsinglejoin:
 	nvcc $(SRC_SINGLE_JOIN) -o $(TARGET_SINGLE_JOIN).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
+buildsinglejoinlocal:
+	mpicxx $(SRC_SINGLE_JOIN) -DDEBUG -o $(TARGET_SINGLE_JOIN).out $(COMPILER_FLAGS)
+
 testsinglejoin:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_SINGLE_JOIN).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD) $(RAND_RANGE)
 
