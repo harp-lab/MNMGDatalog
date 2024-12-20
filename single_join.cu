@@ -367,15 +367,10 @@ int main(int argc, char **argv) {
 // METHOD 0 = two pass method, 1 = sorting method
 // DATA_FILE>10000000, strong scaling, otherwise weak scaling;
 // make runsinglejoin DATA_FILE=100 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=100
-
 // make runsinglejoin DATA_FILE=10 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=100
-
-// make runsinglejoin DATA_FILE=100 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
-// Weak scaling
-// make runsinglejoin DATA_FILE=10000000 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
-// make runsinglejoin DATA_FILE=100 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000
-// Strong scaling
-// make runsinglejoin DATA_FILE=20000000 NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
+// DATA_FILE>10M, strong scaling, otherwise weak scaling;
+// make runsinglejoin DATA_FILE=10000000 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=100000
+// make runsinglejoin DATA_FILE=20000000 NPROCS=4 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000000
 
 // Exp 1: control output size linearly
 // make runsinglejoin DATA_FILE=5000000 NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0 RAND_RANGE=1000000
