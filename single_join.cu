@@ -25,13 +25,6 @@
 #include <thrust/set_operations.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-#include <thrust/scan.h>
-#include <thrust/for_each.h>
-
-namespace debug {
-int debug_counter = 0;
-}
-
 #include "common/error_handler.cu"
 #include "common/utils.cu"
 #include "common/kernels.cu"
@@ -41,6 +34,7 @@ int debug_counter = 0;
 #include "common/join.cu"
 
 using namespace std;
+
 
 void benchmark(int argc, char **argv) {
     MPI_Init(&argc, &argv);
@@ -138,7 +132,6 @@ void benchmark(int argc, char **argv) {
     int input_relation_size = 0;
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
-    checkCuda(cudaDeviceSynchronize());
     Entity *input_relation = get_split_relation(rank, local_data,
                                                 row_size, total_columns, total_rank,
                                                 grid_size, block_size, cuda_aware_mpi,
