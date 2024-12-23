@@ -412,6 +412,11 @@ Also change the path of the source repository.
 Currently, it is spawning 4 ranks per node and sets 1 GPU per MPI rank.
 
 ```shell
+qsub single-join-small3.sh 
+3117548.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
+qstat -u $USER
+qstat -Qf small
+
 ssh arsho@polaris.alcf.anl.gov
 cd mnmgJOIN/
 make clean

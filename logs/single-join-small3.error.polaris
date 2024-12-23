@@ -1,0 +1,60 @@
+cat single-join-small3.error
+terminate called after throwing an instance of 'thrust::system::detail::bad_alloc'
+  what():  std::bad_alloc: cudaErrorIllegalAddress: an illegal memory access was encountered
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 0 died from signal 6 and dumped core
+make: *** [Makefile:71: testpolarissinglejoin] Error 134
+GPUassert: out of memory common/join.cu 80
+GPUassert: out of memory common/join.cu 80
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 0 exited with code 2
+make: *** [Makefile:71: testpolarissinglejoin] Error 2
+GPUassert: out of memory single_join.cu 250
+GPUassert: out of memory single_join.cu 250
+GPUassert: out of memory single_join.cu 250
+GPUassert: out of memory single_join.cu 250
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 3 exited with code 2
+make: *** [Makefile:71: testpolarissinglejoin] Error 2
+GPUassert: an illegal memory access was encountered common/comm.cu 11
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 0 exited with code 188
+make: *** [Makefile:71: testpolarissinglejoin] Error 188
+GPUassert: out of memory common/join.cu 80
+GPUassert: out of memory common/join.cu 80
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 0 exited with code 2
+make: *** [Makefile:71: testpolarissinglejoin] Error 2
+GPUassert: out of memory single_join.cu 250
+GPUassert: out of memory single_join.cu 250
+GPUassert: out of memory single_join.cu 250
+GPUassert: out of memory single_join.cu 250
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 2 exited with code 2
+make: *** [Makefile:71: testpolarissinglejoin] Error 2
+terminate called after throwing an instance of 'thrust::system::detail::bad_alloc'
+  what():  std::bad_alloc: cudaErrorIllegalAddress: an illegal memory access was encountered
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 0 died from signal 6 and dumped core
+make: *** [Makefile:71: testpolarissinglejoin] Error 134
+GPUassert: out of memory common/join.cu 80
+GPUassert: out of memory common/join.cu 80
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 0 exited with code 2
+make: *** [Makefile:71: testpolarissinglejoin] Error 2
+GPUassert: out of memory single_join.cu 250
+GPUassert: out of memory single_join.cu 250
+GPUassert: out of memory single_join.cu 250
+GPUassert: out of memory single_join.cu 250
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 2 exited with code 2
+make: *** [Makefile:71: testpolarissinglejoin] Error 2
+GPUassert: an illegal memory access was encountered common/comm.cu 11
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 0 exited with code 188
+make: *** [Makefile:71: testpolarissinglejoin] Error 188
+GPUassert: out of memory common/join.cu 80
+GPUassert: out of memory common/join.cu 80
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 0 exited with code 2
+make: *** [Makefile:71: testpolarissinglejoin] Error 2
+terminate called after throwing an instance of 'thrust::system::detail::bad_alloc'
+  what():  std::bad_alloc: cudaErrorMemoryAllocation: out of memory
+terminate called after throwing an instance of 'thrust::system::detail::bad_alloc'
+  what():  std::bad_alloc: cudaErrorMemoryAllocation: out of memory
+terminate called after throwing an instance of 'thrust::system::detail::bad_alloc'
+  what():  std::bad_alloc: cudaErrorMemoryAllocation: out of memory
+terminate called after throwing an instance of 'thrust::system::detail::bad_alloc'
+  what():  std::bad_alloc: cudaErrorMemoryAllocation: out of memory
+x3101c0s13b0n0.hsn.cm.polaris.alcf.anl.gov: rank 1 died from signal 6 and dumped core
+make: *** [Makefile:71: testpolarissinglejoin] Error 134
+

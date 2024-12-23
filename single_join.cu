@@ -336,7 +336,7 @@ void benchmark(int argc, char **argv) {
         output.merge_time = max_merge_time;
         output.finalization_time = max_finalization_time;
         if (job_run == 0) {
-            printf("| # Input | # Process | # Iterations | # Join | Total Time ");
+            printf("| # Input | # Process | # Iterations | # Output | Total Time ");
             printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation (before) | Communication (before) | Buffer preparation (after) | Communication (after) | Deduplication | Clear | Copy | Finalization | Output |\n");
             printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
         }
