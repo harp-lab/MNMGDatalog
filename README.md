@@ -135,7 +135,7 @@ python generate_graphs.py
     - `CUDA_AWARE_MPI=<0/1>` to use CUDA AWARE MPI. Set it to `1` if system supports CUDA AWARE MPI, otherwise `0`.
     - `METHOD=<0/1>` to use two pass approach (0) or sorting technique (1) for all to all communication.
 
-#### Transitive Closure (TC) semi naive evaluation
+#### Transitive Closure (TC)
 
 - Run the `tc.cu` program to generate transitive closure for a given data file.
 
@@ -165,7 +165,42 @@ It generated `data/data_23874.bin_tc.bin` file that contains all paths of the tr
 ```shell
 python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_23874_tc.txt
 ```
+- Polaris 1 node interactive
+```shell
+cd mnmgJOIN
+chmod +x set_affinity_gpu_polaris.sh
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+CC tc.cu -o tc_interactive.out
 
+#com-dblp - 14.30
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 1 | 31 | 1,911,754,892 |  20.1979 |   0.2017 |   0.0188 |   0.0002 |   1.3893 |   0.0000 |   0.0000 |   2.9334 |   1.4300 |  14.2434 | data/com-dblpungraph.bin_tc.bin |
+mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 2 | 31 | 1,911,754,892 |  16.9147 |   0.0351 |   0.4292 |   0.0002 |   0.2715 |   0.5826 |   9.1730 |   1.5862 |   3.2707 |   1.9955 | data/com-dblpungraph.bin_tc.bin |
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 4 | 31 | 1,911,754,892 |   8.8858 |   0.5305 |   0.3805 |   0.0003 |   0.1309 |   0.1155 |   5.5199 |   0.5811 |   1.1258 |   0.8817 | data/com-dblpungraph.bin_tc.bin |
+
+#fe_ocean - 23.36
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 1 1 1
+| 409,593 | 1 | 247 | 1,669,750,513 |  21.8135 |   0.2091 |   0.0127 |   0.0001 |   0.3486 |   0.0000 |   0.0000 |   2.1447 |   8.5031 |  10.6078 | data/data_409593.bin_tc.bin |
+
+#vsp_finan - 21.91
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1 1
+| 552,020 | 1 | 520 | 910,070,918 |  14.2646 |   0.2021 |   0.0131 |   0.0001 |   0.4662 |   0.0000 |   0.0000 |   1.2426 |  11.1180 |   1.2356 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+
+#Gnutella31 - 5.58
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_147892.bin 1 1 1
+| 147,892 | 1 | 31 | 884,179,859 |   3.2809 |   0.2048 |   0.0073 |   0.0001 |   0.2065 |   0.0000 |   0.0000 |   1.0148 |   0.6502 |   1.2045 | data/data_147892.bin_tc.bin |
+
+#fe body - 3.76
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_163734.bin 1 1 1
+| 163,734 | 1 | 188 | 156,120,489 |   1.4591 |   0.1998 |   0.0066 |   0.0001 |   0.0935 |   0.0000 |   0.0000 |   0.3116 |   0.6891 |   0.1650 | data/data_163734.bin_tc.bin |
+
+#SF.cedge - 1.63
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_223001.bin 1 1 1
+| 223,001 | 1 | 287 | 80,498,014 |   1.0177 |   0.2050 |   0.0094 |   0.0001 |   0.0846 |   0.0000 |   0.0000 |   0.1312 |   0.5108 |   0.0860 | data/data_223001.bin_tc.bin |
+```
 #### Same Generation (SG)
 
 - Run the `sg.cu` program to generate same generation graph for a given data file.
@@ -195,6 +230,46 @@ It generated `data/data_7035.bin_sg.bin` file that contains all paths of the tra
 
 ```shell
 python3 binary_file_utils.py bin_to_txt data/data_7035.bin_sg.bin data/data_7035_sg.txt
+```
+
+- Polaris 2 nodes interactive
+```shell
+cd mnmgJOIN
+chmod +x set_affinity_gpu_polaris.sh
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+CC sg.cu -o sg_interactive.out
+
+#fe body - 5.05
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_163734.bin 1 1 1
+| 163,734 | 1 | 125 | 408,443,204 |   5.5708 |   0.2013 |   0.0084 |   0.0001 |   0.2675 |   0.0000 |   0.0000 |   1.6325 |   2.9163 |   0.5532 | data/data_163734.bin_sg.bin |
+| 163,734 | 1 | 125 | 408,443,204 |   5.6140 |   0.2017 |   0.0026 |   0.0001 |   0.2816 |   0.0000 |   0.0000 |   1.6384 |   2.9219 |   0.5703 | data/data_163734.bin_sg.bin |
+
+#loc-Brightkite - 3.42
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_214078.bin 1 1 1
+| 214,078 | 1 | 18 | 92,398,050 |   1.8324 |   0.2029 |   0.0083 |   0.0001 |   0.2452 |   0.0000 |   0.0000 |   1.2248 |   0.0542 |   0.1052 | data/data_214078.bin_sg.bin |
+| 214,078 | 1 | 18 | 92,398,050 |   1.8317 |   0.2046 |   0.0030 |   0.0001 |   0.2443 |   0.0000 |   0.0000 |   1.2238 |   0.0544 |   0.1044 | data/data_214078.bin_sg.bin |
+
+#fe_sphere - 2.36
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_49152.bin 1 1 1
+| 49,152 | 1 | 127 | 205,814,096 |   1.8048 |   0.2022 |   0.0056 |   0.0001 |   0.1425 |   0.0000 |   0.0000 |   0.7244 |   0.5023 |   0.2333 | data/data_49152.bin_sg.bin |
+| 49,152 | 1 | 127 | 205,814,096 |   1.7949 |   0.2005 |   0.0020 |   0.0001 |   0.1422 |   0.0000 |   0.0000 |   0.7216 |   0.5019 |   0.2286 | data/data_49152.bin_sg.bin |
+
+#SF.cedge - 5.54
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_223001.bin 1 1 1
+| 223,001 | 1 | 269 | 382,418,182 |   6.1150 |   0.2040 |   0.0089 |   0.0001 |   0.2055 |   0.0000 |   0.0000 |   0.5715 |   4.6278 |   0.5062 | data/data_223001.bin_sg.bin |
+| 223,001 | 1 | 269 | 382,418,182 |   6.1083 |   0.2022 |   0.0031 |   0.0001 |   0.2158 |   0.0000 |   0.0000 |   0.5597 |   4.6178 |   0.5127 | data/data_223001.bin_sg.bin |
+
+#CA-HepTh - 2.79
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_51971.bin 1 1 1
+| 51,971 | 1 | 9 | 74,618,689 |   0.8156 |   0.2028 |   0.0056 |   0.0001 |   0.0789 |   0.0000 |   0.0000 |   0.4295 |   0.0215 |   0.0828 | data/data_51971.bin_sg.bin |
+| 51,971 | 1 | 9 | 74,618,689 |   0.8158 |   0.2020 |   0.0019 |   0.0001 |   0.0787 |   0.0000 |   0.0000 |   0.4294 |   0.0214 |   0.0842 | data/data_51971.bin_sg.bin |
+
+#ego facebook - 1.23
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_88234.bin 1 1 1
+| 88,234 | 1 | 13 | 15,018,986 |   0.6668 |   0.2051 |   0.0022 |   0.0001 |   0.0963 |   0.0000 |   0.0000 |   0.3365 |   0.0105 |   0.0182 | data/data_88234.bin_sg.bin |
+| 88,234 | 1 | 13 | 15,018,986 |   0.6555 |   0.2023 |   0.0022 |   0.0001 |   0.0938 |   0.0000 |   0.0000 |   0.3311 |   0.0105 |   0.0176 | data/data_88234.bin_sg.bin |
+
 ```
 
 #### Connected Component (CC)
@@ -229,6 +304,14 @@ It generated `data/dummy.bin_cc.bin` file that contains all paths of the transit
 
 ```shell
 python3 binary_file_utils.py bin_to_txt data/dummy.bin_cc.bin data/dummy_cc.txt
+```
+- Polaris 1 node interactive
+```shell
+cd mnmgJOIN
+chmod +x set_affinity_gpu_polaris.sh
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+CC wcc.cu -o wcc_interactive.out
 ```
 
 ## Run using Docker (`CUDA_AWARE_MPI` = 1)

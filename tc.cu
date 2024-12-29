@@ -49,16 +49,14 @@ void benchmark(int argc, char **argv) {
     grid_size = 32 * number_of_sm;
     setlocale(LC_ALL, "");
     double start_time, end_time, elapsed_time;
-    double initialization_time = 0.0, max_initialization_time = 0.0;
-    double finalization_time = 0.0, max_finalization_time = 0.0;
-    double file_io_time = 0.0, max_fileio_time = 0.0;
-    double max_join_time = 0.0, max_merge_time = 0.0;
-    double max_buffer_preparation_time = 0.0, max_communication_time = 0.0;
+    double initialization_time = 0.0;
+    double finalization_time = 0.0;
+    double file_io_time = 0.0;
     double buffer_preparation_time = 0.0, communication_time = 0.0;
     double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
     double join_time = 0.0, merge_time = 0.0;
-    double deduplication_time = 0.0, max_deduplication_time = 0.0;;
-    double hashtable_build_time = 0.0, max_hashtable_build_time = 0.0;
+    double deduplication_time = 0.0;
+    double hashtable_build_time = 0.0;
     double set_diff_time = 0.0, cuda_merge_time = 0.0, t_full_copy_time = 0.0, inner_clear_time = 0.0, t_full_size_all_to_all_time = 0.0;
     double inner_sorting_time = 0.0, inner_concat_time = 0.0;
 
@@ -104,8 +102,6 @@ void benchmark(int argc, char **argv) {
                                          &row_size, &total_rows, &temp_file_io_time);
     int local_count = row_size * total_columns;
     file_io_time += temp_file_io_time;
-//    show_variable_generic(local_data_host, "local_data_host", row_size, "int",
-//                          "host", rank, iterations, "", 0);
 
     start_time = MPI_Wtime();
     int *local_data_device;
@@ -120,10 +116,6 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     initialization_time += elapsed_time;
-//    show_variable_generic(local_data, "local_data", row_size, "Entity",
-//                          "device", rank, iterations, "", 0);
-//    show_variable_generic(local_data_reverse, "local_data_reverse", row_size, "Entity",
-//                          "device", rank, iterations, "", 0);
 
     int input_relation_size = 0;
     buffer_preparation_time_temp = 0.0;
@@ -133,14 +125,8 @@ void benchmark(int argc, char **argv) {
                                                 grid_size, block_size, cuda_aware_mpi,
                                                 &input_relation_size, comm_method,
                                                 &buffer_preparation_time_temp, &communication_time_temp, iterations);
-    show_variable_generic(input_relation, "input_relation", input_relation_size, "Entity",
-                          "device", rank, iterations, "", 1);
     // Calculate LIR and CV
-    auto [lir, cv, max_min] = calculate_load_metrics(input_relation_size, total_rank);
-    if (rank == 0) {
-        cout << "Input relation distribution stats: Load imbalance ratio: " << lir
-             << ", Coefficient of Variation (CV): " << cv << ", max min ratio: " << max_min<< endl;
-    }
+//    auto [lir, cv, max_min] = calculate_load_metrics(input_relation_size, total_rank);
 
     if (total_rank > 1) {
         buffer_preparation_time += buffer_preparation_time_temp;
@@ -154,8 +140,6 @@ void benchmark(int argc, char **argv) {
                                          row_size, total_columns, total_rank,
                                          grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
                                          &buffer_preparation_time_temp, &communication_time_temp, iterations);
-//    show_variable_generic(t_delta, "t_delta", t_delta_size, "Entity",
-//                          "device", rank, iterations, "", 0);
     if (total_rank > 1) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
@@ -202,10 +186,6 @@ void benchmark(int argc, char **argv) {
 
     Entity *new_t_full;
     while (true) {
-//        show_variable_generic(input_relation, "input_relation", input_relation_size, "Entity",
-//                              "device", rank, iterations, "", 1);
-//        show_variable_generic(t_delta, "t_delta", t_delta_size, "Entity",
-//                              "device", rank, iterations, "", 1);
 
         double temp_join_time = 0.0;
         int join_result_size = 0;
@@ -278,7 +258,6 @@ void benchmark(int argc, char **argv) {
         inner_clear_time += elapsed_time;
         // Check if the global t full size has changed in this iteration
         start_time = MPI_Wtime();
-//        cout << "Rank: " << rank << ", iteration: " << iterations << ", t_delta_size: "<< t_delta_size << ", t_full_size: " << t_full_size << endl;
         long long old_global_t_full_size = global_t_full_size;
         MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
         iterations++;
@@ -290,10 +269,10 @@ void benchmark(int argc, char **argv) {
             break;
         }
     }
-    cout << "Rank: " << rank << ", set diff: " << set_diff_time << ", concat: " << inner_concat_time << ", sort: "
-         << inner_sorting_time << ", merge: " << cuda_merge_time << ", t full cpy: "
-         << t_full_copy_time << ", t full all to all: " << t_full_size_all_to_all_time << ", inner clear: "
-         << inner_clear_time << endl;
+//    cout << "Rank: " << rank << ", set diff: " << set_diff_time << ", concat: " << inner_concat_time << ", sort: "
+//         << inner_sorting_time << ", merge: " << cuda_merge_time << ", t full cpy: "
+//         << t_full_copy_time << ", t full all to all: " << t_full_size_all_to_all_time << ", inner clear: "
+//         << inner_clear_time << endl;
 
     start_time = MPI_Wtime();
     // Reverse the t_full as we stored it in reverse order initially
@@ -345,21 +324,13 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
     finalization_time += elapsed_time;
 
-    MPI_Allreduce(&initialization_time, &max_initialization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&deduplication_time, &max_deduplication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&join_time, &max_join_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&merge_time, &max_merge_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&buffer_preparation_time, &max_buffer_preparation_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&communication_time, &max_communication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&hashtable_build_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&elapsed_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     total_time = initialization_time + hashtable_build_time + join_time +
                  buffer_preparation_time + communication_time + deduplication_time + merge_time +
                  finalization_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
-    if (rank == 0) {
+    // Breakdown time is the breakdown times of the slowest process
+    if (total_time == max_total_time) {
         output.block_size = block_size;
         output.grid_size = grid_size;
         output.input_rows = total_rows;
@@ -369,15 +340,15 @@ void benchmark(int argc, char **argv) {
         output.output_size = global_t_full_size;
 
         output.total_time = max_total_time;
-        output.initialization_time = max_initialization_time;
-        output.fileio_time = max_fileio_time;
-        output.hashtable_build_time = max_hashtable_build_time;
-        output.join_time = max_join_time;
-        output.buffer_preparation_time = max_buffer_preparation_time;
-        output.communication_time = max_communication_time;
-        output.deduplication_time = max_deduplication_time;
-        output.merge_time = max_merge_time;
-        output.finalization_time = max_finalization_time;
+        output.initialization_time = initialization_time;
+        output.fileio_time = file_io_time;
+        output.hashtable_build_time = hashtable_build_time;
+        output.join_time = join_time;
+        output.buffer_preparation_time = buffer_preparation_time;
+        output.communication_time = communication_time;
+        output.deduplication_time = deduplication_time;
+        output.merge_time = merge_time;
+        output.finalization_time = finalization_time;
         if (job_run == 0) {
             printf("| # Input | # Process | # Iterations | # TC | Total Time ");
             printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");

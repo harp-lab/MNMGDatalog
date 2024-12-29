@@ -50,15 +50,12 @@ void benchmark(int argc, char **argv) {
     grid_size = 32 * number_of_sm;
     setlocale(LC_ALL, "");
     double start_time, end_time, elapsed_time;
-    double max_fileio_time = 0.0, max_initialization_time = 0.0, max_finalization_time = 0.0;
-    double max_join_time = 0.0, max_merge_time = 0.0, max_deduplication_time = 0.0;
-    double max_buffer_preparation_time = 0.0, max_communication_time = 0.0;
     double buffer_preparation_time = 0.0, communication_time = 0.0;
     double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
     double join_time = 0.0, merge_time = 0.0, deduplication_time = 0.0;
     double initialization_time = 0.0, finalization_time = 0.0;
     double file_io_time = 0.0;
-    double hashtable_build_time = 0.0, max_hashtable_build_time = 0.0;
+    double hashtable_build_time = 0.0;
     double total_time = 0.0, max_total_time = 0.0;
     int total_rank, rank;
     int i;
@@ -377,21 +374,14 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
     finalization_time += elapsed_time;
 
-    MPI_Allreduce(&initialization_time, &max_initialization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&join_time, &max_join_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&deduplication_time, &max_deduplication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&merge_time, &max_merge_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&buffer_preparation_time, &max_buffer_preparation_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&communication_time, &max_communication_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&hashtable_build_time, &max_hashtable_build_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&file_io_time, &max_fileio_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&finalization_time, &max_finalization_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
     total_time = initialization_time + hashtable_build_time + join_time +
                  buffer_preparation_time + communication_time + merge_time + deduplication_time +
                  finalization_time;
-    MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
-    if (rank == 0) {
+    MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    // Breakdown time is the breakdown times of the slowest process
+    if (total_time == max_total_time) {
         output.block_size = block_size;
         output.grid_size = grid_size;
         output.input_rows = total_rows;
@@ -401,15 +391,15 @@ void benchmark(int argc, char **argv) {
         output.output_size = global_t_full_size;
 
         output.total_time = max_total_time;
-        output.initialization_time = max_initialization_time;
-        output.fileio_time = max_fileio_time;
-        output.hashtable_build_time = max_hashtable_build_time;
-        output.join_time = max_join_time;
-        output.buffer_preparation_time = max_buffer_preparation_time;
-        output.communication_time = max_communication_time;
-        output.merge_time = max_merge_time;
-        output.deduplication_time = max_deduplication_time;
-        output.finalization_time = max_finalization_time;
+        output.initialization_time = initialization_time;
+        output.fileio_time = file_io_time;
+        output.hashtable_build_time = hashtable_build_time;
+        output.join_time = join_time;
+        output.buffer_preparation_time = buffer_preparation_time;
+        output.communication_time = communication_time;
+        output.merge_time = merge_time;
+        output.deduplication_time = deduplication_time;
+        output.finalization_time = finalization_time;
         if (job_run == 0) {
             printf("| # Input | # Process | # Iterations | # SG | Total Time ");
             printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
@@ -423,6 +413,8 @@ void benchmark(int argc, char **argv) {
                output.finalization_time,
                output.output_file_name);
     }
+
+
     MPI_Finalize();
 }
 
