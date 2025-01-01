@@ -176,6 +176,17 @@ CC tc.cu -o tc_interactive.out
 #com-dblp - 14.30
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
 | 1,049,866 | 1 | 31 | 1,911,754,892 |  20.1979 |   0.2017 |   0.0188 |   0.0002 |   1.3893 |   0.0000 |   0.0000 |   2.9334 |   1.4300 |  14.2434 | data/com-dblpungraph.bin_tc.bin |
+terminate called after throwing an instance of 'thrust::system::detail::bad_alloc'
+  what():  std::bad_alloc: cudaErrorMemoryAllocation: out of memory
+x3006c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 0 died from signal 6 and dumped core
+| 1,049,866 | 1 | 27 | 1,011,443,166 |   4.2598 |   0.2090 |   0.0058 |   0.0002 |   0.3042 |   0.0000 |   0.0000 |   1.6898 |   0.6828 |   1.3740 | data/com-dblpungraph.bin_tc.bin |
+| 1,049,866 | 1 | 31 | 1,911,754,892 |  20.1021 |   0.2057 |   0.0063 |   0.0002 |   1.3897 |   0.0000 |   0.0000 |   2.9332 |   1.4511 |  14.1222 | data/com-dblpungraph.bin_tc.bin |
+| 1,049,866 | 1 | 27 | 1,019,585,527 |   3.9884 |   0.2069 |   0.0167 |   0.0002 |   0.2611 |   0.0000 |   0.0000 |   1.3571 |   0.6271 |   1.5360 | data/com-dblpungraph.bin_tc.bin |
+
+CC tc.cu -o tc_interactive.out -O3
+arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 1 | 31 | 1,911,754,892 |  18.8484 |   0.2011 |   0.0058 |   0.0002 |   1.1148 |   0.0000 |   0.0000 |   2.3508 |   1.5294 |  13.6522 | data/com-dblpungraph.bin_tc.bin |
+
 mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
 | 1,049,866 | 2 | 31 | 1,911,754,892 |  16.9147 |   0.0351 |   0.4292 |   0.0002 |   0.2715 |   0.5826 |   9.1730 |   1.5862 |   3.2707 |   1.9955 | data/com-dblpungraph.bin_tc.bin |
 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
@@ -184,22 +195,32 @@ mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 #fe_ocean - 23.36
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 1 1 1
 | 409,593 | 1 | 247 | 1,669,750,513 |  21.8135 |   0.2091 |   0.0127 |   0.0001 |   0.3486 |   0.0000 |   0.0000 |   2.1447 |   8.5031 |  10.6078 | data/data_409593.bin_tc.bin |
+| 409,593 | 1 | 247 | 1,669,750,513 |  21.9415 |   0.2000 |   0.0108 |   0.0001 |   0.3286 |   0.0000 |   0.0000 |   2.1519 |   8.5073 |  10.7537 | data/data_409593.bin_tc.bin |
+| 409,593 | 1 | 247 | 1,669,750,513 |  20.2177 |   0.2073 |   0.0105 |   0.0001 |   0.2899 |   0.0000 |   0.0000 |   1.7266 |   7.7905 |  10.2033 | data/data_409593.bin_tc.bin |
 
 #vsp_finan - 21.91
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1 1
 | 552,020 | 1 | 520 | 910,070,918 |  14.2646 |   0.2021 |   0.0131 |   0.0001 |   0.4662 |   0.0000 |   0.0000 |   1.2426 |  11.1180 |   1.2356 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+| 552,020 | 1 | 520 | 910,070,918 |  14.2217 |   0.2000 |   0.0111 |   0.0001 |   0.4312 |   0.0000 |   0.0000 |   1.2365 |  11.1372 |   1.2167 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+
 
 #Gnutella31 - 5.58
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_147892.bin 1 1 1
 | 147,892 | 1 | 31 | 884,179,859 |   3.2809 |   0.2048 |   0.0073 |   0.0001 |   0.2065 |   0.0000 |   0.0000 |   1.0148 |   0.6502 |   1.2045 | data/data_147892.bin_tc.bin |
+terminate called after throwing an instance of 'thrust::system::detail::bad_alloc'
+  what():  std::bad_alloc: cudaErrorMemoryAllocation: out of memory
+x3006c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 0 died from signal 6 and dumped core
+| 147,892 | 1 | 31 | 884,179,859 |   3.2601 |   0.2001 |   0.0025 |   0.0001 |   0.1947 |   0.0000 |   0.0000 |   1.0087 |   0.6427 |   1.2138 | data/data_147892.bin_tc.bin |
 
 #fe body - 3.76
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_163734.bin 1 1 1
 | 163,734 | 1 | 188 | 156,120,489 |   1.4591 |   0.1998 |   0.0066 |   0.0001 |   0.0935 |   0.0000 |   0.0000 |   0.3116 |   0.6891 |   0.1650 | data/data_163734.bin_tc.bin |
+| 163,734 | 1 | 188 | 156,120,489 |   1.6100 |   0.2050 |   0.0026 |   0.0001 |   0.0777 |   0.0000 |   0.0000 |   0.2996 |   0.6849 |   0.3426 | data/data_163734.bin_tc.bin |
 
 #SF.cedge - 1.63
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_223001.bin 1 1 1
 | 223,001 | 1 | 287 | 80,498,014 |   1.0177 |   0.2050 |   0.0094 |   0.0001 |   0.0846 |   0.0000 |   0.0000 |   0.1312 |   0.5108 |   0.0860 | data/data_223001.bin_tc.bin |
+| 223,001 | 1 | 287 | 80,498,014 |   1.0105 |   0.2019 |   0.0031 |   0.0001 |   0.0801 |   0.0000 |   0.0000 |   0.1311 |   0.5114 |   0.0860 | data/data_223001.bin_tc.bin |
 ```
 #### Same Generation (SG)
 
@@ -244,32 +265,38 @@ CC sg.cu -o sg_interactive.out
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_163734.bin 1 1 1
 | 163,734 | 1 | 125 | 408,443,204 |   5.5708 |   0.2013 |   0.0084 |   0.0001 |   0.2675 |   0.0000 |   0.0000 |   1.6325 |   2.9163 |   0.5532 | data/data_163734.bin_sg.bin |
 | 163,734 | 1 | 125 | 408,443,204 |   5.6140 |   0.2017 |   0.0026 |   0.0001 |   0.2816 |   0.0000 |   0.0000 |   1.6384 |   2.9219 |   0.5703 | data/data_163734.bin_sg.bin |
+| 163,734 | 1 | 125 | 408,443,204 |   6.6550 |   0.2038 |   0.0075 |   0.0001 |   0.3069 |   0.0000 |   0.0000 |   2.0244 |   3.5404 |   0.5794 | data/data_163734.bin_sg.bin |
 
 #loc-Brightkite - 3.42
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_214078.bin 1 1 1
 | 214,078 | 1 | 18 | 92,398,050 |   1.8324 |   0.2029 |   0.0083 |   0.0001 |   0.2452 |   0.0000 |   0.0000 |   1.2248 |   0.0542 |   0.1052 | data/data_214078.bin_sg.bin |
 | 214,078 | 1 | 18 | 92,398,050 |   1.8317 |   0.2046 |   0.0030 |   0.0001 |   0.2443 |   0.0000 |   0.0000 |   1.2238 |   0.0544 |   0.1044 | data/data_214078.bin_sg.bin |
+| 214,078 | 1 | 18 | 92,398,050 |   2.1486 |   0.2007 |   0.0077 |   0.0001 |   0.2847 |   0.0000 |   0.0000 |   1.4990 |   0.0602 |   0.1039 | data/data_214078.bin_sg.bin |
 
 #fe_sphere - 2.36
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_49152.bin 1 1 1
 | 49,152 | 1 | 127 | 205,814,096 |   1.8048 |   0.2022 |   0.0056 |   0.0001 |   0.1425 |   0.0000 |   0.0000 |   0.7244 |   0.5023 |   0.2333 | data/data_49152.bin_sg.bin |
 | 49,152 | 1 | 127 | 205,814,096 |   1.7949 |   0.2005 |   0.0020 |   0.0001 |   0.1422 |   0.0000 |   0.0000 |   0.7216 |   0.5019 |   0.2286 | data/data_49152.bin_sg.bin |
+| 49,152 | 1 | 127 | 205,814,096 |   2.0049 |   0.2010 |   0.0054 |   0.0001 |   0.1564 |   0.0000 |   0.0000 |   0.8721 |   0.5534 |   0.2219 | data/data_49152.bin_sg.bin |
 
 #SF.cedge - 5.54
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_223001.bin 1 1 1
 | 223,001 | 1 | 269 | 382,418,182 |   6.1150 |   0.2040 |   0.0089 |   0.0001 |   0.2055 |   0.0000 |   0.0000 |   0.5715 |   4.6278 |   0.5062 | data/data_223001.bin_sg.bin |
 | 223,001 | 1 | 269 | 382,418,182 |   6.1083 |   0.2022 |   0.0031 |   0.0001 |   0.2158 |   0.0000 |   0.0000 |   0.5597 |   4.6178 |   0.5127 | data/data_223001.bin_sg.bin |
+| 223,001 | 1 | 269 | 382,418,182 |   7.5101 |   0.2011 |   0.0030 |   0.0001 |   0.2115 |   0.0000 |   0.0000 |   0.6655 |   5.9154 |   0.5165 | data/data_223001.bin_sg.bin |
+
 
 #CA-HepTh - 2.79
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_51971.bin 1 1 1
 | 51,971 | 1 | 9 | 74,618,689 |   0.8156 |   0.2028 |   0.0056 |   0.0001 |   0.0789 |   0.0000 |   0.0000 |   0.4295 |   0.0215 |   0.0828 | data/data_51971.bin_sg.bin |
 | 51,971 | 1 | 9 | 74,618,689 |   0.8158 |   0.2020 |   0.0019 |   0.0001 |   0.0787 |   0.0000 |   0.0000 |   0.4294 |   0.0214 |   0.0842 | data/data_51971.bin_sg.bin |
+| 51,971 | 1 | 9 | 74,618,689 |   0.9230 |   0.2005 |   0.0054 |   0.0001 |   0.0896 |   0.0000 |   0.0000 |   0.5168 |   0.0238 |   0.0921 | data/data_51971.bin_sg.bin |
 
 #ego facebook - 1.23
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_88234.bin 1 1 1
 | 88,234 | 1 | 13 | 15,018,986 |   0.6668 |   0.2051 |   0.0022 |   0.0001 |   0.0963 |   0.0000 |   0.0000 |   0.3365 |   0.0105 |   0.0182 | data/data_88234.bin_sg.bin |
 | 88,234 | 1 | 13 | 15,018,986 |   0.6555 |   0.2023 |   0.0022 |   0.0001 |   0.0938 |   0.0000 |   0.0000 |   0.3311 |   0.0105 |   0.0176 | data/data_88234.bin_sg.bin |
-
+| 88,234 | 1 | 13 | 15,018,986 |   0.7453 |   0.2005 |   0.0065 |   0.0001 |   0.1091 |   0.0000 |   0.0000 |   0.4069 |   0.0115 |   0.0172 | data/data_88234.bin_sg.bin |
 ```
 
 #### Connected Component (CC)
@@ -305,13 +332,100 @@ It generated `data/dummy.bin_cc.bin` file that contains all paths of the transit
 ```shell
 python3 binary_file_utils.py bin_to_txt data/dummy.bin_cc.bin data/dummy_cc.txt
 ```
-- Polaris 1 node interactive
+- Polaris 2 nodes interactive
 ```shell
 cd mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
 CC wcc.cu -o wcc_interactive.out
+
+# com-Orkut
+mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 8 | 9 | 1 (3,072,441) |   1.2998 |   0.0268 |   0.1772 |   0.0026 |   0.4890 |   0.0177 |   0.4939 |   0.1021 |   0.1477 |   0.0198 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 4 | 9 | 1 (3,072,441) |   2.8721 |   0.5793 |   0.9730 |   0.0034 |   0.9084 |   0.0299 |   1.1042 |   0.1938 |   0.0460 |   0.0071 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 2 | 9 | 1 (3,072,441) |   4.1715 |   0.2706 |   0.2071 |   0.0028 |   1.4599 |   0.0471 |   1.9622 |   0.3650 |   0.0575 |   0.0064 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 1 | 9 | 1 (3,072,441) |  10.1011 |   0.2695 |   0.3955 |   0.0041 |   3.3361 |   0.0877 |   5.4889 |   0.8764 |   0.0294 |   0.0090 | data/large_datasets/com-Orkut.bin_cc.bin |
+
+# without scan chunk
+mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 8 | 9 | 1 (3,072,441) |   1.2685 |   0.0270 |   0.0521 |   0.0026 |   0.4941 |   0.0186 |   0.4853 |   0.1030 |   0.1197 |   0.0181 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 4 | 9 | 1 (3,072,441) |   2.8543 |   0.5563 |   0.4734 |   0.0032 |   0.8910 |   0.0295 |   1.1320 |   0.1878 |   0.0472 |   0.0072 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 2 | 9 | 1 (3,072,441) |   4.1878 |   0.2683 |   0.1934 |   0.0028 |   1.4250 |   0.0470 |   2.0135 |   0.3677 |   0.0573 |   0.0062 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 1 | 9 | 1 (3,072,441) |  10.1171 |   0.2686 |   0.3785 |   0.0058 |   3.3745 |   0.0880 |   5.4646 |   0.8776 |   0.0305 |   0.0074 | data/large_datasets/com-Orkut.bin_cc.bin |
+
+
+mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-Stanford.bin 1 1 1
+MPICH ERROR [Rank 1] [job id f3126f45-3cda-4447-9206-b2d7a042ec95] [Tue Dec 31 05:41:01 2024] [x3006c0s19b1n0] - Abort(69804303) (rank 1 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386)......: MPI_Alltoallv(sbuf=0x145507000000, scnts=0x3b19610, sdispls=0x3b17a30, dtype=0x4c00083e, rbuf=0x145507033c00, rcnts=0x3b19640, rdispls=0x3b193a0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1168): 
+MPIC_Irecv(594)..........: 
+MPID_Irecv(529)..........: 
+MPIDI_irecv_unsafe(163)..: 
+MPIDI_OFI_do_irecv(356)..: OFI tagged recv failed (ofi_recv.h:356:MPIDI_OFI_do_irecv:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386)......: MPI_Alltoallv(sbuf=0x145507000000, scnts=0x3b19610, sdispls=0x3b17a30, dtype=0x4c00083e, rbuf=0x145507033c00, rcnts=0x3b19640, rdispls=0x3b193a0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1168): 
+MPIC_Irecv(594)..........: 
+MPID_Irecv(529)..........: 
+MPIDI_irecv_unsafe(163)..: 
+MPIDI_OFI_do_irecv(356)..: OFI tagged recv failed (ofi_recv.h:356:MPIDI_OFI_do_irecv:Resource temporarily unavailable)
+MPICH ERROR [Rank 4] [job id f3126f45-3cda-4447-9206-b2d7a042ec95] [Tue Dec 31 05:41:01 2024] [x3006c0s1b0n0] - Abort(606675215) (rank 4 in comm 0): Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386)......: MPI_Alltoallv(sbuf=0x14b38d200000, scnts=0x33daa50, sdispls=0x33a8230, dtype=0x4c00083e, rbuf=0x14b38d22c800, rcnts=0x33b2130, rdispls=0x33c0fa0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1168): 
+MPIC_Irecv(594)..........: 
+MPID_Irecv(529)..........: 
+MPIDI_irecv_unsafe(163)..: 
+MPIDI_OFI_do_irecv(356)..: OFI tagged recv failed (ofi_recv.h:356:MPIDI_OFI_do_irecv:Resource temporarily unavailable)
+
+aborting job:
+Fatal error in PMPI_Alltoallv: Other MPI error, error stack:
+PMPI_Alltoallv(386)......: MPI_Alltoallv(sbuf=0x14b38d200000, scnts=0x33daa50, sdispls=0x33a8230, dtype=0x4c00083e, rbuf=0x14b38d22c800, rcnts=0x33b2130, rdispls=0x33c0fa0, datatype=dtype=0x4c00083e, comm=MPI_COMM_WORLD) failed
+MPIR_CRAY_Alltoallv(1168): 
+MPIC_Irecv(594)..........: 
+MPID_Irecv(529)..........: 
+MPIDI_irecv_unsafe(163)..: 
+MPIDI_OFI_do_irecv(356)..: OFI tagged recv failed (ofi_recv.h:356:MPIDI_OFI_do_irecv:Resource temporarily unavailable)
+x3006c0s1b0n0.hsn.cm.polaris.alcf.anl.gov: rank 4 exited with code 255
+x3006c0s1b0n0.hsn.cm.polaris.alcf.anl.gov: rank 7 died from signal 15
+
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-Google.bin 1 1 1
+| 5,105,039 | 8 | 17 | 2,746 (855,802) |   0.3724 |   0.0077 |   0.0196 |   0.0003 |   0.0552 |   0.0077 |   0.2643 |   0.0134 |   0.0210 |   0.0029 | data/large_datasets/web-Google.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-Google.bin 1 1 1
+| 5,105,039 | 4 | 17 | 2,746 (855,802) |   0.9053 |   0.5305 |   0.3966 |   0.0003 |   0.1024 |   0.0087 |   0.2283 |   0.0150 |   0.0185 |   0.0016 | data/large_datasets/web-Google.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-Google.bin 1 1 1
+| 5,105,039 | 2 | 17 | 2,746 (855,802) |   0.4793 |   0.2081 |   0.0115 |   0.0002 |   0.1213 |   0.0097 |   0.0989 |   0.0245 |   0.0155 |   0.0012 | data/large_datasets/web-Google.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-Google.bin 1 1 1
+| 5,105,039 | 1 | 17 | 2,746 (855,802) |   0.6451 |   0.2052 |   0.0190 |   0.0003 |   0.1937 |   0.0104 |   0.1824 |   0.0385 |   0.0135 |   0.0012 | data/large_datasets/web-Google.bin_cc.bin |
+
+mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-BerkStan.bin 1 1 1
+| 7,600,595 | 8 | 415 | 1,062 (654,782) |  11.9438 |   0.0076 |   0.0256 |   0.0003 |   5.9112 |   0.0569 |   5.6887 |   0.0567 |   0.2181 |   0.0043 | data/large_datasets/web-BerkStan.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-BerkStan.bin 1 1 1
+| 7,600,595 | 4 | 415 | 1,062 (654,782) |  14.1927 |   0.5352 |   0.7663 |   0.0004 |   6.1700 |   0.0590 |   7.0381 |   0.0634 |   0.3250 |   0.0017 | data/large_datasets/web-BerkStan.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-BerkStan.bin 1 1 1
+| 7,600,595 | 2 | 415 | 1,062 (654,782) |  20.6240 |   0.2060 |   0.0157 |   0.0003 |  19.0949 |   0.0607 |   0.9582 |   0.0765 |   0.2260 |   0.0014 | data/large_datasets/web-BerkStan.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-BerkStan.bin 1 1 1
+| 7,600,595 | 1 | 415 | 1,062 (654,782) |  18.5480 |   0.2109 |   0.0286 |   0.0004 |  17.7052 |   0.0716 |   0.2506 |   0.1145 |   0.1936 |   0.0014 | data/large_datasets/web-BerkStan.bin_cc.bin |
+
+
+mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/WikiTalk.bin 1 1 1
+| 5,021,410 | 8 | 9 | 2,555 (2,388,953) |   1.3098 |   0.0095 |   0.0201 |   0.0003 |   0.3356 |   0.0069 |   0.9173 |   0.0153 |   0.0219 |   0.0029 | data/large_datasets/WikiTalk.bin_cc.bin |
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/WikiTalk.bin 1 1 1
+| 5,021,410 | 4 | 9 | 2,555 (2,388,953) |   2.6532 |   0.5292 |   0.0192 |   0.0003 |   1.9380 |   0.0071 |   0.1432 |   0.0170 |   0.0164 |   0.0020 | data/large_datasets/WikiTalk.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/WikiTalk.bin 1 1 1
+| 5,021,410 | 2 | 9 | 2,555 (2,388,953) |   2.8883 |   0.2072 |   0.0112 |   0.0002 |   2.5651 |   0.0065 |   0.0778 |   0.0191 |   0.0112 |   0.0012 | data/large_datasets/WikiTalk.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/WikiTalk.bin 1 1 1
+| 5,021,410 | 1 | 9 | 2,555 (2,388,953) |   4.5979 |   0.2069 |   0.0191 |   0.0003 |   4.1794 |   0.0077 |   0.1580 |   0.0352 |   0.0091 |   0.0014 | data/large_datasets/WikiTalk.bin_cc.bin |
+
+
 ```
 
 ## Run using Docker (`CUDA_AWARE_MPI` = 1)

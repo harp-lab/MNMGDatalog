@@ -67,18 +67,18 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
 
     get_join_result_size_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
                                                            relation, relation_size, join_offset);
-//    checkCuda(cudaDeviceSynchronize());
+    checkCuda(cudaDeviceSynchronize());
     result_size = thrust::reduce(thrust::device, join_offset, join_offset + relation_size, 0, thrust::plus<int>());
     int step = 90'000'000;
     for (int i = 0; i < relation_size; i += step) {
         int end = i + step;
-        if (i + step >= relation_size) {
-            end = relation_size - i;
+        if (end > relation_size) {
+            end = relation_size;
         }
         thrust::exclusive_scan(thrust::device, join_offset + i, join_offset + end, join_offset + i);
+        checkCuda(cudaDeviceSynchronize());
     }
-
-    //    thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
+//    thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
 #ifdef DEBUG
     cout << "result_size * sizeof(Entity): " << result_size * sizeof(Entity) << endl;
 #endif

@@ -58,7 +58,7 @@ void benchmark(int argc, char **argv) {
     double deduplication_time = 0.0;
     double hashtable_build_time = 0.0;
     double set_diff_time = 0.0, cuda_merge_time = 0.0, t_full_copy_time = 0.0, inner_clear_time = 0.0, t_full_size_all_to_all_time = 0.0;
-    double inner_sorting_time = 0.0, inner_concat_time = 0.0;
+//    double inner_sorting_time = 0.0, inner_concat_time = 0.0;
 
     double total_time = 0.0, max_total_time = 0.0;
     int total_rank, rank;
@@ -384,3 +384,4 @@ int main(int argc, char **argv) {
 // make runtc DATA_FILE=data/skewed_data.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_88234.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_22.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
+// make runtc DATA_FILE=data/com-dblpungraph.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=1
