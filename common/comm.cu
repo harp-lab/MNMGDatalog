@@ -191,7 +191,6 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
     prep_time += elapsed_time;
     start_time = MPI_Wtime();
     if (cuda_aware_mpi) {
-        std::cout << "Rank: " << rank << ", Size: " << total_receive << std::endl;
         mpi_error = MPI_Alltoallv(local_data_device, send_count_host.data(), send_displacements_host.data(),
                                   MPI_UINT64_T,
                                   receive_data, receive_count_host.data(), receive_displacements_host.data(),

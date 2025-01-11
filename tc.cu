@@ -48,16 +48,7 @@ void benchmark(int argc, char **argv) {
     int number_of_sm;
     cudaGetDevice(&device_id);
     cudaDeviceGetAttribute(&number_of_sm, cudaDevAttrMultiProcessorCount, device_id);
-
-    // Initialize gpu
-
-//    int num_devices;
-//    cudaGetDeviceCount(&num_devices); // should just be one per MPI rank
-//
-//    if(rank == 0) printf("rnk= %i :  # of devices detected= %i\n",rank, num_devices);
-//    MPI_Barrier(MPI_COMM_WORLD);
-//
-//    printf("Device id: %d, number of sm: %d\n", device_id, number_of_sm);    int block_size, grid_size;
+    int block_size, grid_size;
     block_size = 512;
     grid_size = 32 * number_of_sm;
     setlocale(LC_ALL, "");
@@ -71,7 +62,6 @@ void benchmark(int argc, char **argv) {
     double deduplication_time = 0.0;
     double hashtable_build_time = 0.0;
     double set_diff_time = 0.0, cuda_merge_time = 0.0, t_full_copy_time = 0.0, inner_clear_time = 0.0, t_full_size_all_to_all_time = 0.0;
-//    double inner_sorting_time = 0.0, inner_concat_time = 0.0;
 
     double total_time = 0.0, max_total_time = 0.0;
     warm_up_kernel<<<1, 1>>>();
