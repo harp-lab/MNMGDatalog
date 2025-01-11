@@ -171,7 +171,7 @@ cd mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
-CC tc.cu -o tc_interactive.out
+CC tc.cu -o tc_interactive.out -O3
 
 #com-dblp - 14.30
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
@@ -182,21 +182,41 @@ x3006c0s19b1n0.hsn.cm.polaris.alcf.anl.gov: rank 0 died from signal 6 and dumped
 | 1,049,866 | 1 | 27 | 1,011,443,166 |   4.2598 |   0.2090 |   0.0058 |   0.0002 |   0.3042 |   0.0000 |   0.0000 |   1.6898 |   0.6828 |   1.3740 | data/com-dblpungraph.bin_tc.bin |
 | 1,049,866 | 1 | 31 | 1,911,754,892 |  20.1021 |   0.2057 |   0.0063 |   0.0002 |   1.3897 |   0.0000 |   0.0000 |   2.9332 |   1.4511 |  14.1222 | data/com-dblpungraph.bin_tc.bin |
 | 1,049,866 | 1 | 27 | 1,019,585,527 |   3.9884 |   0.2069 |   0.0167 |   0.0002 |   0.2611 |   0.0000 |   0.0000 |   1.3571 |   0.6271 |   1.5360 | data/com-dblpungraph.bin_tc.bin |
+mpiexec --np 8 --ppn 4 ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1 
 
 CC tc.cu -o tc_interactive.out -O3
-arsho::x3005c0s7b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
-| 1,049,866 | 1 | 31 | 1,911,754,892 |  18.8484 |   0.2011 |   0.0058 |   0.0002 |   1.1148 |   0.0000 |   0.0000 |   2.3508 |   1.5294 |  13.6522 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3104c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 1 | 31 | 1,911,754,892 |  18.8999 |   0.2022 |   0.0191 |   0.0002 |   1.1083 |   0.0000 |   0.0000 |   2.3365 |   1.5259 |  13.7268 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3104c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 2 | 31 | 1,911,754,892 |  13.6110 |   0.2039 |   0.0050 |   0.0002 |   0.2268 |   0.4538 |   7.8429 |   1.1555 |   1.7960 |   1.9319 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3104c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 4 | 31 | 1,911,754,892 |   8.2607 |   0.5250 |   0.3803 |   0.0003 |   0.1284 |   0.1215 |   4.9298 |   0.5946 |   1.0587 |   0.9024 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3104c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 8 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 8 | 31 | 1,911,754,892 |  11.4128 |   1.2253 |   0.0069 |   0.0005 |   0.1585 |   0.1310 |   6.7658 |   0.6399 |   0.5335 |   1.9584 | data/com-dblpungraph.bin_tc.bin |
 
-mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
-| 1,049,866 | 2 | 31 | 1,911,754,892 |  16.9147 |   0.0351 |   0.4292 |   0.0002 |   0.2715 |   0.5826 |   9.1730 |   1.5862 |   3.2707 |   1.9955 | data/com-dblpungraph.bin_tc.bin |
-mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
-| 1,049,866 | 4 | 31 | 1,911,754,892 |   8.8858 |   0.5305 |   0.3805 |   0.0003 |   0.1309 |   0.1155 |   5.5199 |   0.5811 |   1.1258 |   0.8817 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 1 | 31 | 1,911,754,892 |  18.9352 |   0.2012 |   0.0058 |   0.0002 |   1.1120 |   0.0000 |   0.0000 |   2.3377 |   1.5288 |  13.7554 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 2 | 31 | 1,911,754,892 |  12.9632 |   0.0352 |   0.4245 |   0.0002 |   0.2354 |   0.4494 |   7.9797 |   1.1617 |   1.1316 |   1.9700 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 4 | 31 | 1,911,754,892 |   9.0869 |   0.5318 |   0.0038 |   0.0003 |   0.1241 |   0.1144 |   4.9327 |   0.5804 |   0.9790 |   1.8241 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 8 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 1 1 1
+| 1,049,866 | 8 | 31 | 1,911,754,892 |  11.3944 |   1.2386 |   0.0068 |   0.0009 |   0.1613 |   0.1485 |   6.7672 |   0.6464 |   0.5067 |   1.9248 | data/com-dblpungraph.bin_tc.bin |
+
+
 
 #fe_ocean - 23.36
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 1 1 1
 | 409,593 | 1 | 247 | 1,669,750,513 |  21.8135 |   0.2091 |   0.0127 |   0.0001 |   0.3486 |   0.0000 |   0.0000 |   2.1447 |   8.5031 |  10.6078 | data/data_409593.bin_tc.bin |
 | 409,593 | 1 | 247 | 1,669,750,513 |  21.9415 |   0.2000 |   0.0108 |   0.0001 |   0.3286 |   0.0000 |   0.0000 |   2.1519 |   8.5073 |  10.7537 | data/data_409593.bin_tc.bin |
 | 409,593 | 1 | 247 | 1,669,750,513 |  20.2177 |   0.2073 |   0.0105 |   0.0001 |   0.2899 |   0.0000 |   0.0000 |   1.7266 |   7.7905 |  10.2033 | data/data_409593.bin_tc.bin |
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 1 1 1
+mpiexec --np 2 --ppn 2 --depth=2 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 1 1 1
+mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 1 1 1
+mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 1 1 1
+
+
+
 
 #vsp_finan - 21.91
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 1 1 1
@@ -221,6 +241,11 @@ mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_223001.bin 1 1 1
 | 223,001 | 1 | 287 | 80,498,014 |   1.0177 |   0.2050 |   0.0094 |   0.0001 |   0.0846 |   0.0000 |   0.0000 |   0.1312 |   0.5108 |   0.0860 | data/data_223001.bin_tc.bin |
 | 223,001 | 1 | 287 | 80,498,014 |   1.0105 |   0.2019 |   0.0031 |   0.0001 |   0.0801 |   0.0000 |   0.0000 |   0.1311 |   0.5114 |   0.0860 | data/data_223001.bin_tc.bin |
+
+
+
+
+
 ```
 #### Same Generation (SG)
 
@@ -259,7 +284,7 @@ cd mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
-CC sg.cu -o sg_interactive.out
+CC sg.cu -o sg_interactive.out -O3
 
 #fe body - 5.05
 mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_163734.bin 1 1 1
@@ -338,7 +363,7 @@ cd mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=1
-CC wcc.cu -o wcc_interactive.out
+CC wcc.cu -o wcc_interactive.out -O3
 
 # com-Orkut
 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
@@ -351,6 +376,17 @@ arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bi
 | 117,185,083 | 1 | 9 | 1 (3,072,441) |  10.1011 |   0.2695 |   0.3955 |   0.0041 |   3.3361 |   0.0877 |   5.4889 |   0.8764 |   0.0294 |   0.0090 | data/large_datasets/com-Orkut.bin_cc.bin |
 
 # without scan chunk
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 8 | 9 | 1 (3,072,441) |   1.2908 |   0.0458 |   0.1573 |   0.0025 |   0.4730 |   0.0190 |   0.5292 |   0.1021 |   0.1013 |   0.0179 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 4 | 9 | 1 (3,072,441) |   2.7515 |   0.5941 |   0.4889 |   0.0030 |   0.9006 |   0.0293 |   1.0061 |   0.1876 |   0.0241 |   0.0067 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 2 | 9 | 1 (3,072,441) |   3.7114 |   0.2472 |   0.1885 |   0.0028 |   1.4531 |   0.0473 |   1.5621 |   0.3721 |   0.0210 |   0.0058 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
+| 117,185,083 | 1 | 9 | 1 (3,072,441) |   8.7129 |   0.2709 |   0.3644 |   0.0055 |   2.7477 |   0.0839 |   4.8167 |   0.7507 |   0.0286 |   0.0089 | data/large_datasets/com-Orkut.bin_cc.bin |
+
+
+
 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
 | 117,185,083 | 8 | 9 | 1 (3,072,441) |   1.2685 |   0.0270 |   0.0521 |   0.0026 |   0.4941 |   0.0186 |   0.4853 |   0.1030 |   0.1197 |   0.0181 | data/large_datasets/com-Orkut.bin_cc.bin |
 arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
@@ -359,6 +395,20 @@ arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=2 --cpu-bi
 | 117,185,083 | 2 | 9 | 1 (3,072,441) |   4.1878 |   0.2683 |   0.1934 |   0.0028 |   1.4250 |   0.0470 |   2.0135 |   0.3677 |   0.0573 |   0.0062 | data/large_datasets/com-Orkut.bin_cc.bin |
 arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 1 1 1
 | 117,185,083 | 1 | 9 | 1 (3,072,441) |  10.1171 |   0.2686 |   0.3785 |   0.0058 |   3.3745 |   0.0880 |   5.4646 |   0.8776 |   0.0305 |   0.0074 | data/large_datasets/com-Orkut.bin_cc.bin |
+
+
+
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 8 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/data_223001.bin 1 1 1
+| 223,001 | 8 | 306 | 17 (115,921) |  13.7426 |   1.2358 |   0.0284 |   0.0007 |   0.4593 |   0.7464 |  10.4917 |   0.3734 |   0.4339 |   0.0013 | data/data_223001.bin_cc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 8 --depth=8 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/data_223001.bin 1 1 1
+| 223,001 | 8 | 306 | 17 (115,921) |  13.8059 |   1.2655 |   0.0251 |   0.0007 |   0.4575 |   0.7638 |  10.5083 |   0.3700 |   0.4386 |   0.0014 | data/data_223001.bin_cc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/data_223001.bin 1 1 1
+| 223,001 | 4 | 306 | 17 (115,921) |   4.2328 |   0.5257 |   0.3885 |   0.0003 |   0.0350 |   0.0596 |   3.4471 |   0.0686 |   0.0959 |   0.0006 | data/data_223001.bin_cc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/data_223001.bin 1 1 1
+| 223,001 | 2 | 306 | 17 (115,921) |   0.9828 |   0.2027 |   0.0025 |   0.0002 |   0.0383 |   0.0749 |   0.4826 |   0.0726 |   0.1110 |   0.0006 | data/data_223001.bin_cc.bin |
+arsho::x3006c0s1b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/data_223001.bin 1 1 1
+| 223,001 | 1 | 306 | 17 (115,921) |   0.6414 |   0.2022 |   0.0028 |   0.0001 |   0.0450 |   0.0783 |   0.1000 |   0.0809 |   0.1341 |   0.0008 | data/data_223001.bin_cc.bin |
+
 
 
 mpiexec --np 8 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-Stanford.bin 1 1 1

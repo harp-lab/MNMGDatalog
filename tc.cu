@@ -39,12 +39,25 @@ using namespace std;
 void benchmark(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Barrier(MPI_COMM_WORLD);
+    int total_rank, rank;
+    int i;
+    MPI_Comm_size(MPI_COMM_WORLD, &total_rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     Output output;
     int device_id;
     int number_of_sm;
     cudaGetDevice(&device_id);
     cudaDeviceGetAttribute(&number_of_sm, cudaDevAttrMultiProcessorCount, device_id);
-    int block_size, grid_size;
+
+    // Initialize gpu
+
+//    int num_devices;
+//    cudaGetDeviceCount(&num_devices); // should just be one per MPI rank
+//
+//    if(rank == 0) printf("rnk= %i :  # of devices detected= %i\n",rank, num_devices);
+//    MPI_Barrier(MPI_COMM_WORLD);
+//
+//    printf("Device id: %d, number of sm: %d\n", device_id, number_of_sm);    int block_size, grid_size;
     block_size = 512;
     grid_size = 32 * number_of_sm;
     setlocale(LC_ALL, "");
@@ -61,10 +74,6 @@ void benchmark(int argc, char **argv) {
 //    double inner_sorting_time = 0.0, inner_concat_time = 0.0;
 
     double total_time = 0.0, max_total_time = 0.0;
-    int total_rank, rank;
-    int i;
-    MPI_Comm_size(MPI_COMM_WORLD, &total_rank);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     warm_up_kernel<<<1, 1>>>();
     int iterations = 0;
     // Should pass the input filename in command line argument

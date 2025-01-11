@@ -68,17 +68,43 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
     get_join_result_size_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
                                                            relation, relation_size, join_offset);
     checkCuda(cudaDeviceSynchronize());
+
+    int *join_offset_host;
+    join_offset_host = (int *) malloc(relation_size * sizeof(int));
+    checkCuda(cudaMemcpy(join_offset_host, join_offset, relation_size * sizeof(int), cudaMemcpyDeviceToHost));
+    int totol_reduce_host = join_offset_host[0];
+    for (int i = 1; i < relation_size; i++) {
+        totol_reduce_host += join_offset_host[i];
+        join_offset_host[i] += join_offset_host[i - 1];
+    }
+//    std::cout << " Scanned result : " << join_offset_host[relation_size - 1] << std::endl;
+
     result_size = thrust::reduce(thrust::device, join_offset, join_offset + relation_size, 0, thrust::plus<int>());
-//    int step = 90'000'000;
-//    for (int i = 0; i < relation_size; i += step) {
-//        int end = i + step;
-//        if (end > relation_size) {
-//            end = relation_size;
-//        }
-//        thrust::exclusive_scan(thrust::device, join_offset + i, join_offset + end, join_offset + i);
-//        checkCuda(cudaDeviceSynchronize());
-//    }
-    thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
+
+    int step = 90'000'000;
+    for (int i = 0; i < relation_size; i += step) {
+        int end = i + step;
+        if (end > relation_size) {
+            end = relation_size;
+        }
+        thrust::exclusive_scan(thrust::device, join_offset + i, join_offset + end, join_offset + i);
+        checkCuda(cudaDeviceSynchronize());
+    }
+    int *join_offset_host_2;
+    join_offset_host_2 = (int *) malloc(relation_size * sizeof(int));
+    checkCuda(cudaMemcpy(join_offset_host_2, join_offset, relation_size * sizeof(int), cudaMemcpyDeviceToHost));
+
+    if(join_offset_host_2[relation_size - 1] != join_offset_host[relation_size - 1])
+        std::cout << "(join_offset_host[relation_size - 1] == join_offset_host_2[relation_size - 1]): " << (join_offset_host_2[relation_size - 1] == join_offset_host[relation_size - 1]) << std::endl;
+
+    if(totol_reduce_host != result_size)
+        std::cout << "(totol_reduce_host == result_size): " << (totol_reduce_host == result_size) << std::endl;
+
+
+//    std::cout << " Scanned result exclusive scan : " << join_offset_host_2[relation_size - 1] << std::endl;
+
+
+//    thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
 #ifdef DEBUG
     cout << "result_size * sizeof(Entity): " << result_size * sizeof(Entity) << endl;
 #endif
