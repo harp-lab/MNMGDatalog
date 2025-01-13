@@ -167,6 +167,7 @@ python3 binary_file_utils.py bin_to_txt data/data_23874.bin_tc.bin data/data_238
 ```
 - Polaris 1 node interactive
 ```shell
+3126113.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 cd mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
 module load craype-accel-nvidia80
@@ -992,6 +993,321 @@ arsho::x3006c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=4 --cpu-bi
 
 
 ```
+
+#### 2 nodes interactive
+```shell
+cd mnmgJOIN/
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> CC wcc.cu -o wcc_interactive.out -O3
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> CC sg.cu -o sg_interactive.out -O3
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> CC tc.cu -o tc_interactive.out -O3
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 2 LOCAL_RANK= 2 gpu= 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 3 LOCAL_RANK= 3 gpu= 0
+RANK= 7 LOCAL_RANK= 3 gpu= 0
+RANK= 6 LOCAL_RANK= 2 gpu= 1
+| 1,049,866 | 8 | 31 | 1,911,754,892 |   8.6955 |   0.6886 |   0.0104 |   0.0002 |   0.0828 |   0.0613 |   6.2124 |   0.3004 |   0.4455 |   0.9044 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 1 gpu= 2
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+| 1,049,866 | 4 | 31 | 1,911,754,892 |   9.5981 |   0.3695 |   0.0044 |   0.0002 |   0.1214 |   0.0945 |   6.6275 |   0.5859 |   0.8840 |   0.9151 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+| 1,049,866 | 2 | 31 | 1,911,754,892 |  12.4213 |   0.2111 |   0.0049 |   0.0001 |   0.2272 |   0.1644 |   8.5185 |   1.1515 |   0.8970 |   1.2514 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 1,049,866 | 1 | 31 | 1,911,754,892 |  18.8074 |   0.2084 |   0.0127 |   0.0001 |   1.1164 |   0.0000 |   0.0000 |   2.3534 |   1.5498 |  13.5792 | data/com-dblpungraph.bin_tc.bin |
+
+mpiexec --np 8 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+RANK= 7 LOCAL_RANK= 3 gpu= 0
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 3 gpu= 0
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 2 LOCAL_RANK= 2 gpu= 1
+RANK= 6 LOCAL_RANK= 2 gpu= 1
+| 552,020 | 8 | 520 | 910,070,918 |  11.0017 |   0.6915 |   0.0102 |   0.0003 |   0.2858 |   0.2836 |   2.0057 |   0.3073 |   6.9654 |   0.4620 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 1 gpu= 2
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+| 552,020 | 4 | 520 | 910,070,918 |  21.2181 |   0.3747 |   0.0040 |   0.0001 |   0.4355 |   0.2786 |   2.9973 |   0.3833 |  16.3224 |   0.4261 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+| 552,020 | 2 | 520 | 910,070,918 |  42.1815 |   0.2110 |   0.0037 |   0.0001 |   0.6223 |   0.3285 |   5.0203 |   0.6300 |  34.6974 |   0.6718 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 552,020 | 1 | 520 | 910,070,918 |  15.0477 |   0.2092 |   0.0095 |   0.0001 |   0.4248 |   0.0000 |   0.0000 |   1.0428 |  12.1542 |   1.2166 | data/vsp_finan512_scagr7-2c_rlfddd.bin_tc.bin |
+
+
+
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/web-BerkStan.bin 0 1 1
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 2 gpu= 1
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 7 LOCAL_RANK= 3 gpu= 0
+RANK= 3 LOCAL_RANK= 3 gpu= 0
+RANK= 6 LOCAL_RANK= 2 gpu= 1
+| 7,600,595 | 8 | 415 | 1,062 (654,782) |  11.8458 |   0.6871 |   0.0225 |   0.0003 |   4.2078 |   0.0565 |   6.7423 |   0.0535 |   0.0966 |   0.0018 | data/web-BerkStan.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/web-BerkStan.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 1 gpu= 2
+| 7,600,595 | 4 | 415 | 1,062 (654,782) |  10.6977 |   0.3693 |   0.0097 |   0.0002 |   6.2381 |   0.0573 |   3.7873 |   0.0602 |   0.1839 |   0.0013 | data/web-BerkStan.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/web-BerkStan.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+| 7,600,595 | 2 | 415 | 1,062 (654,782) |  19.9283 |   0.2165 |   0.0168 |   0.0002 |  19.2586 |   0.0608 |   0.1274 |   0.0745 |   0.1892 |   0.0011 | data/web-BerkStan.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/web-BerkStan.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 7,600,595 | 1 | 415 | 1,062 (654,782) |  14.7150 |   0.2146 |   0.0519 |   0.0003 |  13.9301 |   0.0649 |   0.2221 |   0.0993 |   0.1823 |   0.0013 | data/web-BerkStan.bin_cc.bin |
+
+
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 0 1 1
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 3 gpu= 0
+RANK= 6 LOCAL_RANK= 2 gpu= 1
+RANK= 2 LOCAL_RANK= 2 gpu= 1
+RANK= 7 LOCAL_RANK= 3 gpu= 0
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+| 117,185,083 | 8 | 9 | 1 (3,072,441) |   3.2544 |   0.7546 |   0.1536 |   0.0073 |   0.5029 |   0.0177 |   1.8030 |   0.1014 |   0.0586 |   0.0088 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 0 1 1
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 1 gpu= 2
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+| 117,185,083 | 4 | 9 | 1 (3,072,441) |   3.5715 |   0.4259 |   0.0977 |   0.0023 |   0.9044 |   0.0264 |   1.9854 |   0.1899 |   0.0311 |   0.0062 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 0 1 1
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 117,185,083 | 2 | 9 | 1 (3,072,441) |   5.3965 |   0.2481 |   0.2005 |   0.0023 |   1.4475 |   0.0457 |   3.2553 |   0.3655 |   0.0272 |   0.0048 | data/large_datasets/com-Orkut.bin_cc.bin |
+arsho::x3006c0s19b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/com-Orkut.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 117,185,083 | 1 | 9 | 1 (3,072,441) |   7.9856 |   0.2723 |   0.6487 |   0.0040 |   2.7078 |   0.0837 |   4.1282 |   0.7536 |   0.0284 |   0.0075 | data/large_datasets/com-Orkut.bin_cc.bin |
+
+
+mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 1 1
+| 165,435 | 16 | 606 | 871,365,688 |   4.7046 |   0.7309 |   0.0076 |   0.0001 |   0.1227 |   0.2551 |   0.4902 |   0.1815 |   2.7050 |   0.2190 | data/data_165435.bin_tc.bin |
+
+mpiexec --np 8 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 6 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 1 gpu= 2
+RANK= 7 LOCAL_RANK= 1 gpu= 2
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+| 165,435 | 8 | 606 | 871,365,688 |   9.1849 |   0.3582 |   0.0031 |   0.0000 |   0.1825 |   0.2294 |   0.6252 |   0.2165 |   7.0752 |   0.4980 | data/data_165435.bin_tc.bin |
+
+mpiexec --np 4 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 1 1
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+| 165,435 | 4 | 606 | 871,365,688 |  18.3993 |   0.2032 |   0.0028 |   0.0001 |   0.2090 |   0.2099 |   1.2066 |   0.2565 |  15.9878 |   0.3260 | data/data_165435.bin_tc.bin |
+
+
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+| 165,435 | 2 | 606 | 871,365,688 |  35.2705 |   0.2126 |   0.0025 |   0.0001 |   0.3135 |   0.2524 |   2.7006 |   0.3514 |  30.7872 |   0.6527 | data/data_165435.bin_tc.bin |
+
+
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 165,435 | 1 | 606 | 871,365,688 |  13.6750 |   0.2048 |   0.0024 |   0.0001 |   0.2094 |   0.0000 |   0.0000 |   0.5549 |  11.5157 |   1.1900 | data/data_165435.bin_tc.bin |
+
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 0 1 1
+RANK= 2 LOCAL_RANK= 2 gpu= 1
+RANK= 3 LOCAL_RANK= 3 gpu= 0
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 9 LOCAL_RANK= 1 gpu= 2
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 10 LOCAL_RANK= 2 gpu= 1
+RANK= 15 LOCAL_RANK= 3 gpu= 0
+RANK= 8 LOCAL_RANK= 0 gpu= 3
+RANK= 13 LOCAL_RANK= 1 gpu= 2
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 7 LOCAL_RANK= 3 gpu= 0
+RANK= 6 LOCAL_RANK= 2 gpu= 1
+RANK= 14 LOCAL_RANK= 2 gpu= 1
+RANK= 12 LOCAL_RANK= 0 gpu= 3
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 11 LOCAL_RANK= 3 gpu= 0
+| 409,593 | 16 | 247 | 1,669,750,513 |   5.4289 |   0.6854 |   0.0091 |   0.0000 |   0.1247 |   0.1792 |   2.0171 |   0.1987 |   1.7935 |   0.4301 | data/data_409593.bin_tc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 0 1 1
+RANK= 6 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 7 LOCAL_RANK= 1 gpu= 2
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 1 gpu= 2
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+| 409,593 | 8 | 247 | 1,669,750,513 |   9.0351 |   0.3668 |   0.0034 |   0.0000 |   0.1375 |   0.1593 |   3.0093 |   0.3046 |   4.6591 |   0.3983 | data/data_409593.bin_tc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 0 1 1
+RANK= 3 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+| 409,593 | 4 | 247 | 1,669,750,513 |  16.8942 |   0.2046 |   0.0030 |   0.0001 |   0.1743 |   0.1710 |   4.9874 |   0.4981 |  10.3184 |   0.5404 | data/data_409593.bin_tc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 0 1 1
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 409,593 | 2 | 247 | 1,669,750,513 |  32.4046 |   0.2092 |   0.0067 |   0.0001 |   0.2463 |   0.2434 |  11.0998 |   0.9104 |  18.6174 |   1.0781 | data/data_409593.bin_tc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 409,593 | 1 | 247 | 1,669,750,513 |  21.6120 |   0.2026 |   0.0081 |   0.0001 |   0.3176 |   0.0000 |   0.0000 |   1.7500 |   9.1817 |  10.1601 | data/data_409593.bin_tc.bin |
+
+
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1 
+RANK= 14 LOCAL_RANK= 2 gpu= 1
+RANK= 11 LOCAL_RANK= 3 gpu= 0
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 2 gpu= 1
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 12 LOCAL_RANK= 0 gpu= 3
+RANK= 15 LOCAL_RANK= 3 gpu= 0
+RANK= 8 LOCAL_RANK= 0 gpu= 3
+RANK= 7 LOCAL_RANK= 3 gpu= 0
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 3 LOCAL_RANK= 3 gpu= 0
+RANK= 10 LOCAL_RANK= 2 gpu= 1
+RANK= 6 LOCAL_RANK= 2 gpu= 1
+RANK= 13 LOCAL_RANK= 1 gpu= 2
+RANK= 9 LOCAL_RANK= 1 gpu= 2
+| 552,020 | 16 | 513 | 864,761,518 |   8.3643 |   0.6817 |   0.0091 |   0.0000 |   0.2763 |   0.4367 |   3.6704 |   0.4343 |   2.6447 |   0.2202 | data/vsp_finan512_scagr7-2c_rlfddd.bin_sg.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 6 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 7 LOCAL_RANK= 1 gpu= 2
+RANK= 3 LOCAL_RANK= 1 gpu= 2
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+| 552,020 | 8 | 513 | 864,761,518 |  13.4807 |   0.3545 |   0.0037 |   0.0000 |   0.3047 |   0.4356 |   4.2720 |   0.5899 |   7.2923 |   0.2317 | data/vsp_finan512_scagr7-2c_rlfddd.bin_sg.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+RANK= 3 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+  | 552,020 | 4 | 513 | 864,761,518 |  25.5519 |   0.2038 |   0.0034 |   0.0001 |   0.3481 |   0.4872 |   6.6472 |   0.9282 |  16.6852 |   0.2520 | data/vsp_finan512_scagr7-2c_rlfddd.bin_sg.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+| 552,020 | 2 | 513 | 864,761,518 |  42.2482 |   0.2042 |   0.0078 |   0.0001 |   0.6020 |   0.0015 |   0.0129 |   1.6682 |  39.1890 |   0.5702 | data/vsp_finan512_scagr7-2c_rlfddd.bin_sg.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+GPUassert: out of memory sg.cu 306
+x3205c0s13b1n0.hsn.cm.polaris.alcf.anl.gov: rank 0 exited with code 2
+
+
+
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-BerkStan.bin 0 1 1
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 13 LOCAL_RANK= 1 gpu= 2
+RANK= 6 LOCAL_RANK= 2 gpu= 1
+RANK= 7 LOCAL_RANK= 3 gpu= 0
+RANK= 10 LOCAL_RANK= 2 gpu= 1
+RANK= 8 LOCAL_RANK= 0 gpu= 3
+RANK= 11 LOCAL_RANK= 3 gpu= 0
+RANK= 12 LOCAL_RANK= 0 gpu= 3
+RANK= 9 LOCAL_RANK= 1 gpu= 2
+RANK= 15 LOCAL_RANK= 3 gpu= 0
+RANK= 2 LOCAL_RANK= 2 gpu= 1
+RANK= 14 LOCAL_RANK= 2 gpu= 1
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 3 LOCAL_RANK= 3 gpu= 0
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+| 7,600,595 | 16 | 415 | 1,062 (654,782) |  14.1805 |   0.6840 |   0.0067 |   0.0003 |   3.6663 |   0.0599 |   9.6573 |   0.0540 |   0.0570 |   0.0017 | data/large_datasets/web-BerkStan.bin_cc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-BerkStan.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 6 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 3 LOCAL_RANK= 1 gpu= 2
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 7 LOCAL_RANK= 1 gpu= 2
+| 7,600,595 | 8 | 415 | 1,062 (654,782) |  11.4848 |   0.3622 |   0.0074 |   0.0002 |   4.2463 |   0.0559 |   6.6695 |   0.0526 |   0.0970 |   0.0012 | data/large_datasets/web-BerkStan.bin_cc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-BerkStan.bin 0 1 1
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+| 7,600,595 | 4 | 415 | 1,062 (654,782) |  10.4554 |   0.2052 |   0.0090 |   0.0002 |   6.2155 |   0.0574 |   3.7631 |   0.0600 |   0.1529 |   0.0011 | data/large_datasets/web-BerkStan.bin_cc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-BerkStan.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+| 7,600,595 | 2 | 415 | 1,062 (654,782) |  20.1154 |   0.2129 |   0.0337 |   0.0002 |  19.4342 |   0.0613 |   0.1281 |   0.0745 |   0.2030 |   0.0011 | data/large_datasets/web-BerkStan.bin_cc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc_interactive.out data/large_datasets/web-BerkStan.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 7,600,595 | 1 | 415 | 1,062 (654,782) |  14.9013 |   0.2095 |   0.0516 |   0.0004 |  14.0890 |   0.0654 |   0.2270 |   0.0999 |   0.2086 |   0.0014 | data/large_datasets/web-BerkStan.bin_cc.bin |
+
+
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+RANK= 6 LOCAL_RANK= 2 gpu= 1
+RANK= 11 LOCAL_RANK= 3 gpu= 0
+RANK= 3 LOCAL_RANK= 3 gpu= 0
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 8 LOCAL_RANK= 0 gpu= 3
+RANK= 9 LOCAL_RANK= 1 gpu= 2
+RANK= 2 LOCAL_RANK= 2 gpu= 1
+RANK= 12 LOCAL_RANK= 0 gpu= 3
+RANK= 7 LOCAL_RANK= 3 gpu= 0
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 13 LOCAL_RANK= 1 gpu= 2
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+RANK= 10 LOCAL_RANK= 2 gpu= 1
+RANK= 15 LOCAL_RANK= 3 gpu= 0
+RANK= 14 LOCAL_RANK= 2 gpu= 1
+| 1,049,866 | 16 | 31 | 1,911,754,892 |   5.1479 |   0.6788 |   0.0032 |   0.0003 |   0.0435 |   0.0380 |   3.5680 |   0.1550 |   0.1898 |   0.4743 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 8 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+RANK= 6 LOCAL_RANK= 0 gpu= 3
+RANK= 4 LOCAL_RANK= 0 gpu= 3
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+RANK= 5 LOCAL_RANK= 1 gpu= 2
+RANK= 7 LOCAL_RANK= 1 gpu= 2
+RANK= 3 LOCAL_RANK= 1 gpu= 2
+RANK= 1 LOCAL_RANK= 1 gpu= 2
+| 1,049,866 | 8 | 31 | 1,911,754,892 |   4.8651 |   0.3644 |   0.0030 |   0.0002 |   0.0673 |   0.0515 |   3.3575 |   0.3000 |   0.2733 |   0.4510 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 4 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 3 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+RANK= 2 LOCAL_RANK= 0 gpu= 3
+| 1,049,866 | 4 | 31 | 1,911,754,892 |   6.5585 |   0.2055 |   0.0032 |   0.0001 |   0.1242 |   0.0907 |   4.4252 |   0.5743 |   0.5423 |   0.5962 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 2 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+RANK= 1 LOCAL_RANK= 0 gpu= 3
+| 1,049,866 | 2 | 31 | 1,911,754,892 |  12.2221 |   0.2089 |   0.0103 |   0.0001 |   0.2269 |   0.1658 |   8.3558 |   1.1517 |   0.8766 |   1.2364 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+RANK= 0 LOCAL_RANK= 0 gpu= 3
+| 1,049,866 | 1 | 31 | 1,911,754,892 |  18.8985 |   0.2042 |   0.0124 |   0.0001 |   1.1160 |   0.0000 |   0.0000 |   2.3375 |   1.5315 |  13.7091 | data/com-dblpungraph.bin_tc.bin |
+
+
+```
+
 
 #### Polaris disk quota manage
 
