@@ -1321,7 +1321,7 @@ arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_
 | 57,156,537 | 4 | 52 | 50,467 (8,863,287) |   2.9429 |   0.7244 |   1.1958 |   0.0044 |   0.3958 |   0.0262 |   1.6037 |   0.1063 |   0.0745 |   0.0076 | data/large_datasets/wb-edu.bin_cc.bin |
 arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 8 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wb-edu.bin 0 1 1
 | 57,156,537 | 8 | 52 | 50,467 (8,863,287) |   2.0077 |   0.6978 |   0.1691 |   0.0005 |   0.2275 |   0.0209 |   0.9171 |   0.0630 |   0.0778 |   0.0030 | data/large_datasets/wb-edu.bin_cc.bin |
-arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wb-edu.bin 0 1 1
+  arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wb-edu.bin 0 1 1
 | 57,156,537 | 16 | 52 | 50,467 (8,863,287) |   1.5631 |   0.6937 |   0.1679 |   0.0004 |   0.1065 |   0.0216 |   0.6192 |   0.0537 |   0.0656 |   0.0025 | data/large_datasets/wb-edu.bin_cc.bin |
 
 arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wiki-topcats.bin 0 1 1
