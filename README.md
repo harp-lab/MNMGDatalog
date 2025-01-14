@@ -79,14 +79,16 @@ This repository hosts code for Datalog applications optimized for multi-node, mu
 
 #### Additional datasets
 
-| Dataset    | # Input | # Iterations | # SG | # SG / Iteration | Path                 |
-|------------|---------|--------------|------|------------------|----------------------|
-| ego-Facebook | 88,234  | x            | x    | x                | data/data_88234.bin  |
-| CA-HepTh   | 51,971  | x            | x    | x                | data/data_51971.bin  |
-| fe_sphere  | 49,152  | x            | x    | x                | data/data_49152.bin  |
-| SF.cedge   | 223,001 | x            | x    | x                | data/data_223001.bin |
-| loc-Brightkite | 214,078 | x            | x    | x                | data/data_214078.bin |
-
+| Dataset    | # Input     | # Iterations | # SG | # SG / Iteration | Path                                |
+|------------|-------------|--------------|------|------------------|-------------------------------------|
+| ego-Facebook | 88,234      | x            | x    | x                | data/data_88234.bin                 |
+| CA-HepTh   | 51,971      | x            | x    | x                | data/data_51971.bin                 |
+| fe_sphere  | 49,152      | x            | x    | x                | data/data_49152.bin                 |
+| SF.cedge   | 223,001     | x            | x    | x                | data/data_223001.bin                |
+| loc-Brightkite | 214,078     | x            | x    | x                | data/data_214078.bin                |
+| [wiki-topcats](https://sparse.tamu.edu/SNAP/wiki-topcats) | 28,511,807  | x            | x    | x                | data/large_datasets/wiki-topcats.bin |
+| [wb-edu](https://sparse.tamu.edu/Gleich/wb-edu) | 57,156,537  | x            | x    | x                | data/large_datasets/wb-edu.bin |
+| [ML_Geer](https://sparse.tamu.edu/Janna/ML_Geer) | 110,879,972 | x            | x    | x                | data/large_datasets/ML_Geer.bin |
 
 
 ## Utility Programs
@@ -1304,7 +1306,41 @@ RANK= 1 LOCAL_RANK= 0 gpu= 3
 arsho::x3205c0s13b1n0 { ~/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
 RANK= 0 LOCAL_RANK= 0 gpu= 3
 | 1,049,866 | 1 | 31 | 1,911,754,892 |  18.8985 |   0.2042 |   0.0124 |   0.0001 |   1.1160 |   0.0000 |   0.0000 |   2.3375 |   1.5315 |  13.7091 | data/com-dblpungraph.bin_tc.bin |
+3126690.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 
+
+#wcc
+qsub -I -l select=4 -l filesystems=home:eagle -l walltime=0:20:00 -q debug-scaling -A dist_relational_alg
+cd /eagle/dist_relational_alg/arsho/mnmgJOIN
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/arabic-2005.bin 0 1 1
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wb-edu.bin 0 1 1
+| 57,156,537 | 1 | 52 | 50,467 (8,863,287) |   3.8267 |   0.2385 |   0.2224 |   0.0024 |   1.2070 |   0.0488 |   1.9137 |   0.3445 |   0.0674 |   0.0044 | data/large_datasets/wb-edu.bin_cc.bin |
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 2 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wb-edu.bin 0 1 1
+| 57,156,537 | 2 | 52 | 50,467 (8,863,287) |   3.0895 |   0.4046 |   0.3742 |   0.0021 |   0.6258 |   0.0325 |   1.7709 |   0.1896 |   0.0593 |   0.0047 | data/large_datasets/wb-edu.bin_cc.bin |
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wb-edu.bin 0 1 1
+| 57,156,537 | 4 | 52 | 50,467 (8,863,287) |   2.9429 |   0.7244 |   1.1958 |   0.0044 |   0.3958 |   0.0262 |   1.6037 |   0.1063 |   0.0745 |   0.0076 | data/large_datasets/wb-edu.bin_cc.bin |
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 8 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wb-edu.bin 0 1 1
+| 57,156,537 | 8 | 52 | 50,467 (8,863,287) |   2.0077 |   0.6978 |   0.1691 |   0.0005 |   0.2275 |   0.0209 |   0.9171 |   0.0630 |   0.0778 |   0.0030 | data/large_datasets/wb-edu.bin_cc.bin |
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wb-edu.bin 0 1 1
+| 57,156,537 | 16 | 52 | 50,467 (8,863,287) |   1.5631 |   0.6937 |   0.1679 |   0.0004 |   0.1065 |   0.0216 |   0.6192 |   0.0537 |   0.0656 |   0.0025 | data/large_datasets/wb-edu.bin_cc.bin |
+
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wiki-topcats.bin 0 1 1
+| 28,511,807 | 1 | 11 | 1 (1,791,489) |   6.3910 |   0.2212 |   0.3139 |   0.0015 |   5.1089 |   0.0215 |   0.8543 |   0.1653 |   0.0138 |   0.0044 | data/large_datasets/wiki-topcats.bin_cc.bin |
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 2 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wiki-topcats.bin 0 1 1
+| 28,511,807 | 2 | 11 | 1 (1,791,489) |   5.2154 |   0.3782 |   0.4107 |   0.0015 |   1.4059 |   0.0146 |   3.3094 |   0.0867 |   0.0146 |   0.0046 | data/large_datasets/wiki-topcats.bin_cc.bin |
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wiki-topcats.bin 0 1 1
+| 28,511,807 | 4 | 11 | 1 (1,791,489) |   4.4767 |   0.7022 |   0.0697 |   0.0005 |   0.8977 |   0.0125 |   2.7732 |   0.0535 |   0.0345 |   0.0028 | data/large_datasets/wiki-topcats.bin_cc.bin |
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 8 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wiki-topcats.bin 0 1 1
+| 28,511,807 | 8 | 11 | 1 (1,791,489) |   3.8137 |   0.7185 |   0.1410 |   0.0004 |   0.6797 |   0.0082 |   2.3634 |   0.0273 |   0.0141 |   0.0021 | data/large_datasets/wiki-topcats.bin_cc.bin |
+arsho::x3005c0s13b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 16 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/wiki-topcats.bin 0 1 1
+| 28,511,807 | 16 | 11 | 1 (1,791,489) |   3.5125 |   0.6832 |   0.0956 |   0.0003 |   0.5971 |   0.0073 |   2.1959 |   0.0174 |   0.0094 |   0.0018 | data/large_datasets/wiki-topcats.bin_cc.bin |
+
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./wcc.out data/large_datasets/ML_Geer.bin 0 1 1
+| 110,879,972 | 1 | 502 | 1 (1,504,002) | 102.3792 |   0.2693 |   0.3933 |   0.0023 |   6.2916 |   1.8305 |  82.4424 |  10.7197 |   0.8165 |   0.0069 | data/large_datasets/ML_Geer.bin_cc.bin |
+| 110,879,972 | 2 | 502 | 1 (1,504,002) |  85.0804 |   0.4228 |   0.2233 |   0.0020 |   3.8255 |   1.1666 |  73.2835 |   5.5231 |   0.8526 |   0.0043 | data/large_datasets/ML_Geer.bin_cc.bin |
+| 110,879,972 | 4 | 502 | 1 (1,504,002) |  76.2588 |   0.7414 |   1.5478 |   0.0090 |   2.6249 |   0.9137 |  67.4665 |   3.3802 |   1.1147 |   0.0084 | data/large_datasets/ML_Geer.bin_cc.bin |
+| 110,879,972 | 8 | 502 | 1 (1,504,002) |  37.9955 |   0.7193 |   0.3963 |   0.0006 |   1.3009 |   0.6368 |  32.6325 |   1.7252 |   0.9774 |   0.0027 | data/large_datasets/ML_Geer.bin_cc.bin |
+| 110,879,972 | 16 | 502 | 1 (1,504,002) |  19.4647 |   0.7044 |   0.2680 |   0.0004 |   0.8686 |   0.4782 |  15.6550 |   0.9914 |   0.7644 |   0.0021 | data/large_datasets/ML_Geer.bin_cc.bin |
 
 ```
 
@@ -1408,9 +1444,17 @@ sed -n '/^[0-9]\+ [0-9]\+$/,$p' com-Orkut.mtx > com-Orkut.txt
 sed -n '/^[0-9]\+ [0-9]\+ [0-9]\+$/,$p' stokes.mtx > stokes.txt
 sed -i -e '1,1d' stokes.txt
 ```
+- Create the bin file and check the edges length matches with the `soc-LiveJournal1.txt` file:
+```shell
+python3 binary_file_utils.py txt_to_bin stokes.txt stokes.bin
+g++ row_size.cpp -o row
+./row stokes.bin
+stokes.bin: X
+```
 - Upload all data files from a local directory to Polaris:
 ```shell
 scp -r . arsho@polaris.alcf.anl.gov:/home/arsho/mnmgJOIN/data/large_datasets
+scp ML_Geer.bin arsho@polaris.alcf.anl.gov:/eagle/dist_relational_alg/arsho/mnmgJOIN/data/large_datasets
 ```
 
 ## Results

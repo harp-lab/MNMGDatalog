@@ -1,0 +1,45 @@
+flowchart TD
+    subgraph "Buffer Preparation"
+        Input[Input Tuples] --> PrepChoice{Preparation Choice}
+        
+        PrepChoice -->|Method 1| SortBased[Sorting-based Preparation]
+        PrepChoice -->|Method 2| TwoPass[Two-pass Preparation]
+        
+        subgraph "Sorting-based"
+            SortBased --> Sort[Sort by Destination Rank]
+            Sort --> Scan[Exclusive Scan for Offsets]
+            Scan --> Reduce[Reduce by Key]
+            Reduce --> SortedBuf[Sorted Send Buffer]
+        end
+        
+        subgraph "Two-pass"
+            TwoPass --> Pass1[Pass 1: Count Tuples per Rank]
+            Pass1 --> AtomicCount[Atomic Operations for Counting]
+            AtomicCount --> Pass2[Pass 2: Write Tuples to Buffer]
+            Pass2 --> UnsortedBuf[Send Buffer]
+        end
+    end
+    
+    SortedBuf --> CommChoice{Communication Method}
+    UnsortedBuf --> CommChoice
+    
+    subgraph "All-to-All Communication"
+        CommChoice -->|Method 1| CUDA[CUDA-aware MPI]
+        CommChoice -->|Method 2| CPUBuf[CPU Buffer-based]
+        
+        subgraph "CUDA-aware MPI Path"
+            CUDA --> DirectGPU[Direct GPU-to-GPU Transfer]
+            DirectGPU -->|GPUDirect RDMA| NetworkCard[Network Interface Card]
+            DirectGPU -->|NVLink| LocalGPU[Local GPU Transfer]
+        end
+        
+        subgraph "CPU Buffer Path"
+            CPUBuf --> GPU2CPU[GPU to CPU Copy]
+            GPU2CPU --> MPIComm[MPI Communication]
+            MPIComm --> CPU2GPU[CPU to GPU Copy]
+        end
+    end
+    
+    NetworkCard --> DestGPU[Destination GPUs]
+    LocalGPU --> DestGPU
+    CPU2GPU --> DestGPU
