@@ -542,6 +542,12 @@ mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_
 /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 8 ./cc.out data/roadNet-CA.bin 1 0
 ## Sort method
 mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 4 ./cc.out data/dummy.bin 1 1
+
+
+## Paper WCC demo example
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpicxx wcc.cu -DDEBUG -o cc.out
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 2 ./cc.out data/paper.bin 1 1
+mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 2 ./cc.out data/dummy.bin 1 1
 ```
 
 ## Run in Polaris
@@ -1342,6 +1348,8 @@ MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./
 | 110,879,972 | 8 | 502 | 1 (1,504,002) |  37.9955 |   0.7193 |   0.3963 |   0.0006 |   1.3009 |   0.6368 |  32.6325 |   1.7252 |   0.9774 |   0.0027 | data/large_datasets/ML_Geer.bin_cc.bin |
 | 110,879,972 | 16 | 502 | 1 (1,504,002) |  19.4647 |   0.7044 |   0.2680 |   0.0004 |   0.8686 |   0.4782 |  15.6550 |   0.9914 |   0.7644 |   0.0021 | data/large_datasets/ML_Geer.bin_cc.bin |
 
+
+3127452.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 ```
 
 
@@ -1456,6 +1464,8 @@ stokes.bin: X
 scp -r . arsho@polaris.alcf.anl.gov:/home/arsho/mnmgJOIN/data/large_datasets
 scp ML_Geer.bin arsho@polaris.alcf.anl.gov:/eagle/dist_relational_alg/arsho/mnmgJOIN/data/large_datasets
 ```
+
+### SLOG 
 
 ## Results
 

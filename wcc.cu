@@ -150,8 +150,9 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
-    // show_device_entity_variable(edge, edge_size, rank, "edge", 0);
-
+#ifdef DEBUG
+     show_device_entity_variable(edge, edge_size, rank, "edge", 0);
+#endif
     // Distribute edge
     int distributed_edge_size = 0;
     buffer_preparation_time_temp = 0.0;
@@ -228,7 +229,9 @@ void benchmark(int argc, char **argv) {
                                        t_delta, t_delta_size,
                                        &join_result_size, &temp_join_time);
         join_time += temp_join_time;
-        // show_device_entity_variable(join_result, join_result_size, rank, "join_result", 0);
+#ifdef DEBUG
+//        show_device_entity_variable(join_result, join_result_size, rank, "join_result", 0);
+#endif
 
         // Scatter the join result with reverse among relevant processes
         buffer_preparation_time_temp = 0.0;
@@ -256,7 +259,9 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         deduplication_time += elapsed_time;
-        // show_device_entity_variable(distributed_join_result, distributed_join_result_size, rank, "distributed_join_result deduplicated", 0);
+#ifdef DEBUG
+//        show_device_entity_variable(distributed_join_result, distributed_join_result_size, rank, "distributed_join_result deduplicated", 0);
+#endif
 
         // Set union of two sets (sorted cc and distributed join result)
         start_time = MPI_Wtime();
@@ -270,7 +275,7 @@ void benchmark(int argc, char **argv) {
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
-//        // show_device_entity_variable(new_cc, new_cc_size, rank, "new_cc merged dedpulicated", 0);
+        // show_device_entity_variable(new_cc, new_cc_size, rank, "new_cc merged dedpulicated", 0);
 
         // Deduplicate new cc by keeping only the minimum component ID for each node
         start_time = MPI_Wtime();
@@ -298,7 +303,7 @@ void benchmark(int argc, char **argv) {
         cc_size = new_cc_size;
         cudaFree(cc);
         cc = new_cc;
-        // show_device_entity_variable(cc, cc_size, rank, "cc", 0);
+//        show_device_entity_variable(cc, cc_size, rank, "cc", 0);
         long long t_delta_size_temp_loop = t_delta_size;
         long long old_global_t_delta_size = global_t_delta_size;
         MPI_Allreduce(&t_delta_size_temp_loop, &global_t_delta_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
@@ -312,6 +317,9 @@ void benchmark(int argc, char **argv) {
         if (old_global_t_delta_size == global_t_delta_size) {
             break;
         }
+#ifdef DEBUG
+        cout << "Iteration " << iterations << " ends" << endl;
+#endif
     }
 
     // We are interested only the unique component ID, thus we make the component ID as key and got rid of node
@@ -488,3 +496,4 @@ int main(int argc, char **argv) {
 // make runwcc DATA_FILE=data/data/large_datasets/com-Orkut.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/hpcx/bin/mpirun -np 8 ./cc.out data/roadNet-CA.bin 1 0
 // make runwcc DATA_FILE=data/data_cc.bin NPROCS=2 CUDA_AWARE_MPI=0 METHOD=0
+// make runwccdebug DATA_FILE=data/paper.bin NPROCS=2 CUDA_AWARE_MPI=0 METHOD=0

@@ -34,6 +34,9 @@ testsg:
 buildwcc:
 	nvcc $(SRC_CC) -o $(TARGET_CC).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
+buildwccdebug:
+	nvcc $(SRC_CC) -DDEBUG -o $(TARGET_CC).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+
 testwcc:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_CC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
 
@@ -83,6 +86,8 @@ runtc: buildtc testtc
 runsg: buildsg testsg
 
 runwcc: buildwcc testwcc
+
+runwccdebug: buildwccdebug testwcc
 
 runsinglejoin: buildsinglejoin testsinglejoin
 

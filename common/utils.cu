@@ -351,6 +351,43 @@ void show_device_variable(int *device_data, int device_data_size, int group, int
     free(host_data);
 }
 
+void show_host_vector(const thrust::host_vector<int> &host_vector_data,
+                      int group, int rank, const std::string &message, int size_only) {
+    cout << "Rank " << rank << ", size " << host_vector_data.size()
+              << " : " << message << " ----------------" << endl;
+
+    if (size_only != 1) {
+        for (size_t i = 0; i < host_vector_data.size() / group; i++) {
+            for (int j = 0; j < group; j++) {
+                cout << host_vector_data[(i * group) + j] << " ";
+            }
+            if (host_vector_data.size() < group) {
+                cout << ", ";
+            } else {
+                cout << endl;
+            }
+        }
+        cout << endl;
+    }
+}
+
+void show_host_variable(int *host_data, int data_size, int group, int rank, string message, int size_only) {
+    cout << "Rank " << rank << ", size " << data_size << " : " << message << " ----------------" << endl;
+    if (size_only != 1) {
+        for (int i = 0; i < data_size / group; i++) {
+            for (int j = 0; j < group; j++) {
+                cout << host_data[(i * group) + j] << " ";
+            }
+            if (data_size <= 20) {
+                cout << ", ";
+            } else {
+                cout << endl;
+            }
+        }
+        cout << endl;
+    }
+}
+
 // show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table");
 void show_device_entity_variable(Entity *device_data, int device_data_size, int rank, string message, int size_only) {
     Entity *host_data = (Entity *) malloc(device_data_size * sizeof(Entity));

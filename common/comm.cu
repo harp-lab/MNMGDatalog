@@ -19,10 +19,21 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
     get_send_count<<<grid_size, block_size>>>(local_data_device, row_size, send_count, total_rank);
     thrust::exclusive_scan(thrust::device, send_count, send_count + total_rank, send_displacements);
     cudaMemcpy(send_displacements_temp, send_displacements, total_rank * sizeof(int), cudaMemcpyDeviceToDevice);
+#ifdef DEBUG
+    if(iterations == 0){
+        show_device_variable(send_count, total_rank, total_rank, rank, "send_count", 0);
+        show_device_variable(send_displacements, total_rank, total_rank, rank, "send_displacements", 0);
+    }
+#endif
+
     Entity *send_data;
     checkCuda(cudaMalloc((void **) &send_data, row_size * sizeof(Entity)));
     get_rank_data<<<grid_size, block_size>>>(local_data_device, row_size, send_displacements_temp,
                                              total_rank, send_data);
+#ifdef DEBUG
+    if(iterations == 0)
+        show_device_entity_variable(send_data, row_size, rank, "send_data", 0);
+#endif
     int mpi_error;
 
     int *send_count_host = (int *) malloc(total_rank * sizeof(int));
@@ -97,6 +108,11 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
         free(receive_data_host);
     }
     end_time = MPI_Wtime();
+#ifdef DEBUG
+    if(iterations == 0)
+        show_device_entity_variable(receive_data, total_receive, rank, "receive_data", 0);
+#endif
+
     elapsed_time = end_time - start_time;
     comm_time += elapsed_time;
     start_time = MPI_Wtime();
@@ -136,8 +152,16 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
             return (uint8_t)(get_rank(entity.key, total_rank));
     });
 
-    thrust::stable_sort_by_key(thrust::device, row_mapping.begin(), row_mapping.end(), local_data_device);
+#ifdef DEBUG
+    if (iterations == 0)
+        show_device_entity_variable(local_data_device, row_size, rank, "initial_data", 0);
+#endif
 
+    thrust::stable_sort_by_key(thrust::device, row_mapping.begin(), row_mapping.end(), local_data_device);
+#ifdef DEBUG
+    if (iterations == 0)
+        show_device_entity_variable(local_data_device, row_size, rank, "sorted_local_data", 0);
+#endif
     thrust::device_vector<int> unique_rank_row_count(total_rank);
     thrust::device_vector<uint8_t> unique_rank(total_rank);
 
@@ -186,6 +210,13 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
     Entity *receive_data;
     checkCuda(cudaMalloc((void **) &receive_data, total_receive * sizeof(Entity)));
 
+#ifdef DEBUG
+    if(iterations == 0){
+        show_host_vector(send_count_host, total_rank, rank, "send_count_host", 0);
+        show_host_vector(send_displacements_host, total_rank, rank, "send_displacements_host", 0);
+        show_device_entity_variable(local_data_device, row_size, rank, "send_data", 0);
+    }
+#endif
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     prep_time += elapsed_time;
@@ -223,6 +254,10 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
         free(send_data_host);
         free(receive_data_host);
     }
+#ifdef DEBUG
+    if(iterations == 0)
+        show_device_entity_variable(receive_data, total_receive, rank, "receive_data", 0);
+#endif
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     comm_time += elapsed_time;
