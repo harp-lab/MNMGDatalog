@@ -1,0 +1,25 @@
+cmake -B build .
+ 5117  git config --global --add safe.directory /mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/rmm-src
+ 5118  cmake -B build .
+ 5119  git config --global --add safe.directory /mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/fmt-src
+ 5120  cmake -B build .
+ 5121  git config --global --add safe.directory /mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/spdlog-src
+ 5122  cmake -B build .
+ 5123  cd build
+ 5124  make
+ 5125  whereis mpi
+ 5126  mpicc --version
+ 5127  mpirun --version
+ 5128  whereis mpirun
+ 5129  whereis mpic++
+ 5130  cmake -B build .
+ 5131  cd build
+ 5132  cd ..
+ 5133  cmake -B build .
+ 5134  cd build
+ 5135  make
+ 5136  cd ..
+ 5137  cmake -B build .
+ 5138  cd build
+ 5139  make -j
+
