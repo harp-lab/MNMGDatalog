@@ -555,13 +555,44 @@ mnmgjoin@afe1ab5e7adc:/opt/mnmgjoin$ /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_
 ### 1 node interactive node
 ```shell
 qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A dist_relational_alg
-cd mnmgJOIN
+cd /eagle/dist_relational_alg/arsho/mnmgJOIN
 chmod +x set_affinity_gpu_polaris.sh
 ## Traditional MPI
-CC tc.cu -o tc_interactive.out
-CC sg.cu -o sg_interactive.out
+CC tc.cu -o tc_interactive.out -O3
+CC sg.cu -o sg_interactive.out -O3
 CC wcc.cu -o wcc_interactive.out
 CC single_join.cu -o single_join_interactive.out 
+
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+| 1,049,866 | 1 | 31 | 1,911,754,892 |  24.8847 |   0.2070 |   0.0411 |   0.0001 |   1.1072 |   1.7247 |  16.4639 |   2.3376 |   1.5306 |   1.5136 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 2 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+| 1,049,866 | 2 | 31 | 1,911,754,892 |  17.5904 |   0.3586 |   0.3623 |   0.0002 |   0.2291 |   0.1760 |  13.8451 |   1.1652 |   1.5930 |   0.2233 | data/com-dblpungraph.bin_tc.bin |
+arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+| 1,049,866 | 4 | 31 | 1,911,754,892 |  15.1505 |   0.6850 |   0.0358 |   0.0003 |   0.1405 |   0.1151 |  12.4484 |   0.6476 |   1.0465 |   0.0673 | data/com-dblpungraph.bin_tc.bin |
+
+arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 0 1 1
+| 409,593 | 1 | 247 | 1,669,750,513 |  35.1795 |   0.2079 |   0.0394 |   0.0001 |   0.3089 |   0.3568 |  22.2446 |   1.7527 |   9.1904 |   1.1180 | data/data_409593.bin_tc.bin |
+arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 2 --ppn 2 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 0 1 1
+| 409,593 | 2 | 247 | 1,669,750,513 |  25.4926 |   0.3654 |   0.3691 |   0.0002 |   0.1791 |   0.2582 |  14.5107 |   0.9974 |   8.9708 |   0.2109 | data/data_409593.bin_tc.bin |
+mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 0 1 1
+| 409,593 | 4 | 247 | 1,669,750,513 |  19.1945 |   0.6842 |   0.0596 |   0.0003 |   0.1836 |   0.2484 |  10.5937 |   0.6223 |   6.7592 |   0.1027 | data/data_409593.bin_tc.bin |
+
+
+mpiexec --np 1 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_163734.bin 0 1 1
+| 163,734 | 1 | 125 | 408,443,204 |  20.7008 |   0.2114 |   0.5112 |   0.0001 |   0.2722 |   0.3669 |  13.1163 |   1.6435 |   4.9918 |   0.0986 | data/data_163734.bin_sg.bin |
+arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 2 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_163734.bin 0 1 1
+| 163,734 | 2 | 125 | 408,443,204 |  14.2544 |   0.3562 |   0.7102 |   0.0002 |   0.1851 |   0.2707 |  10.7780 |   0.9014 |   1.6680 |   0.0948 | data/data_163734.bin_sg.bin |
+arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_163734.bin 0 1 1
+| 163,734 | 4 | 125 | 408,443,204 |  11.3390 |   0.6841 |   1.4622 |   0.0003 |   0.1594 |   0.2202 |   9.1636 |   0.5660 |   0.5025 |   0.0429 | data/data_163734.bin_sg.bin |
+
+arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_223001.bin 0 1 1
+| 223,001 | 1 | 269 | 382,418,182 |  16.3223 |   0.2059 |   0.4668 |   0.0001 |   0.2027 |   0.2776 |   4.6460 |   0.5639 |  10.3404 |   0.0858 | data/data_223001.bin_sg.bin |
+arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 2 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_223001.bin 0 1 1
+| 223,001 | 2 | 269 | 382,418,182 |   8.5495 |   0.3655 |   0.3709 |   0.0002 |   0.1870 |   0.2595 |   2.9065 |   0.3822 |   4.3612 |   0.0874 | data/data_223001.bin_sg.bin |
+arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_223001.bin 0 1 1
+| 223,001 | 4 | 269 | 382,418,182 |   4.9440 |   0.6860 |   0.3641 |   0.0002 |   0.2023 |   0.2944 |   2.0081 |   0.3360 |   1.3625 |   0.0544 | data/data_223001.bin_sg.bin |
+
+
 ./single_join_interactive.out data/data_165435.bin 0 1
 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out data/data_165435.bin 0 1
 mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 1

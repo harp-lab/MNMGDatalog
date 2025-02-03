@@ -329,11 +329,19 @@ void benchmark(int argc, char **argv) {
     int *t_full_ar;
     checkCuda(cudaMalloc((void **) &t_full_ar, t_full_size * total_columns * sizeof(int)));
     get_int_ar_from_entity_ar<<<grid_size, block_size>>>(t_full, t_full_size, t_full_ar);
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    finalization_time += elapsed_time;
 
+    start_time = MPI_Wtime();
     // Copy t full to host for file write
     int *t_full_ar_host = (int *) malloc(t_full_size * total_columns * sizeof(int));
     cudaMemcpy(t_full_ar_host, t_full_ar, t_full_size * total_columns * sizeof(int), cudaMemcpyDeviceToHost);
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    file_io_time += elapsed_time;
 
+    start_time = MPI_Wtime();
     // List the t full counts for each process and calculate the displacements in the final result
     int *t_full_counts = (int *) calloc(total_rank, sizeof(int));
     MPI_Allgather(&t_full_size, 1, MPI_INT,
