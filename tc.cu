@@ -127,10 +127,10 @@ void benchmark(int argc, char **argv) {
     // Calculate LIR and CV
 //    auto [lir, cv, max_min] = calculate_load_metrics(input_relation_size, total_rank);
 
-    if (total_rank > 1) {
+//    if (total_rank > 1) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
-    }
+//    }
 
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
@@ -139,10 +139,10 @@ void benchmark(int argc, char **argv) {
                                          row_size, total_columns, total_rank,
                                          grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
                                          &buffer_preparation_time_temp, &communication_time_temp, iterations);
-    if (total_rank > 1) {
+//    if (total_rank > 1) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
-    }
+//    }
     start_time = MPI_Wtime();
     thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
@@ -170,12 +170,12 @@ void benchmark(int argc, char **argv) {
     MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    if (total_rank > 1) {
+//    if (total_rank > 1) {
 #ifdef DEBUG
         cout << "MPI_Allreduce initialization: " << elapsed_time << endl;
 #endif
         merge_time += elapsed_time;
-    }
+//    }
     // Hash table is Edge
     double temp_hashtable_build_time = 0.0;
     int hash_table_rows = 0;
@@ -204,10 +204,10 @@ void benchmark(int argc, char **argv) {
                                      grid_size, block_size, cuda_aware_mpi, &t_delta_size,
                                      comm_method,
                                      &buffer_preparation_time_temp, &communication_time_temp, iterations);
-        if (total_rank > 1) {
+//        if (total_rank > 1) {
             buffer_preparation_time += buffer_preparation_time_temp;
             communication_time += communication_time_temp;
-        }
+//        }
         start_time = MPI_Wtime();
         // Deduplicate scattered facts
         thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
