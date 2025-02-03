@@ -1,0 +1,3 @@
+include("/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/cmake/CPM_0.38.5.cmake")
+CPMAddPackage("NAME;CCCL;VERSION;2.2.0;FIND_PACKAGE_ARGUMENTS;EXACT;GIT_REPOSITORY;https://github.com/NVIDIA/cccl.git;GIT_TAG;v2.2.0;GIT_SHALLOW;ON;PATCH_COMMAND;/usr/bin/cmake;-P;/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/rapids-cmake/patches/CCCL/patch.cmake;EXCLUDE_FROM_ALL;OFF;OPTIONS;CCCL_ENABLE_INSTALL_RULES ON")
+set(CCCL_FOUND TRUE)

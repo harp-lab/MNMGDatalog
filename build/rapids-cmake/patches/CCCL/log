@@ -1,0 +1,4 @@
+rapids-cmake [CCCL]: applied diff bug_fixes.diff to fix issue: 'CCCL installs header-search.cmake files in nondeterministic order and has a typo in checking target creation that leads to duplicates'
+rapids-cmake [CCCL]: applied diff hide_kernels.diff to fix issue: 'Mark all cub and thrust kernels with hidden visibility [https://github.com/nvidia/cccl/pulls/443]'
+rapids-cmake [CCCL]: applied diff revert_pr_211.diff to fix issue: 'thrust::copy introduced a change in behavior that causes failures with cudaErrorInvalidValue.'
+rapids-cmake [CCCL]: applied diff kernel_pointer_hiding.diff to fix issue: 'Hide APIs that accept kernel pointers [https://github.com/NVIDIA/cccl/pull/1395]'

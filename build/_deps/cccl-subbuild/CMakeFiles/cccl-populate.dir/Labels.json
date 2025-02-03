@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/CMakeFiles/cccl-populate"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/CMakeFiles/cccl-populate.rule"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/CMakeFiles/cccl-populate-complete.rule"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/cccl-populate-prefix/src/cccl-populate-stamp/cccl-populate-build.rule"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/cccl-populate-prefix/src/cccl-populate-stamp/cccl-populate-configure.rule"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/cccl-populate-prefix/src/cccl-populate-stamp/cccl-populate-download.rule"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/cccl-populate-prefix/src/cccl-populate-stamp/cccl-populate-install.rule"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/cccl-populate-prefix/src/cccl-populate-stamp/cccl-populate-mkdir.rule"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/cccl-populate-prefix/src/cccl-populate-stamp/cccl-populate-patch.rule"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/cccl-populate-prefix/src/cccl-populate-stamp/cccl-populate-test.rule"
+		},
+		{
+			"file" : "/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/_deps/cccl-subbuild/cccl-populate-prefix/src/cccl-populate-stamp/cccl-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"cccl-populate"
+		],
+		"name" : "cccl-populate"
+	}
+}

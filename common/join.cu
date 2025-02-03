@@ -51,6 +51,7 @@ void get_join_result_entity(Entity *hash_table, int hash_table_size,
 Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_table_size, Entity *relation,
                  int relation_size, int *join_result_size, double *compute_time) {
     double start_time, end_time, elapsed_time;
+    MPI_Barrier(MPI_COMM_WORLD);
     start_time = MPI_Wtime();
     Entity *join_result = nullptr;
     if (hash_table_size == 0) {
@@ -115,6 +116,7 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
 //    checkCuda(cudaDeviceSynchronize());
     cudaFree(join_offset);
     *join_result_size = result_size;
+    MPI_Barrier(MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     *compute_time = elapsed_time;

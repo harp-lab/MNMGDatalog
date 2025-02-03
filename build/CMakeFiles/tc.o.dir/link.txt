@@ -1,0 +1,1 @@
+/usr/bin/g++-12 @CMakeFiles/tc.o.dir/objects1.rsp -o tc.o @CMakeFiles/tc.o.dir/linkLibs.rsp -L"/usr/lib/x86_64-linux-gnu/stubs" -L"/usr/lib/x86_64-linux-gnu"

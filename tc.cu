@@ -25,6 +25,13 @@
 #include <thrust/set_operations.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+//#include <librmm/
+#include <rmm/device_vector.hpp>
+#include <rmm/exec_policy.hpp>
+#include <rmm/mr/device/cuda_memory_resource.hpp>
+#include <rmm/mr/device/per_device_resource.hpp>
+#include <rmm/mr/device/pool_memory_resource.hpp>
+
 #include "common/error_handler.cu"
 #include "common/utils.cu"
 #include "common/kernels.cu"
@@ -101,7 +108,7 @@ void benchmark(int argc, char **argv) {
                                          &row_size, &total_rows, &temp_file_io_time);
     int local_count = row_size * total_columns;
     file_io_time += temp_file_io_time;
-
+    MPI_Barrier(MPI_COMM_WORLD);
     start_time = MPI_Wtime();
     int *local_data_device;
     checkCuda(cudaMalloc((void **) &local_data_device, local_count * sizeof(int)));
@@ -112,6 +119,7 @@ void benchmark(int argc, char **argv) {
     checkCuda(cudaMalloc((void **) &local_data_reverse, row_size * sizeof(Entity)));
     create_entity_ar<<<grid_size, block_size>>>(local_data, row_size, local_data_device);
     create_entity_ar_reverse<<<grid_size, block_size>>>(local_data_reverse, row_size, local_data_device);
+    MPI_Barrier(MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     initialization_time += elapsed_time;
@@ -151,11 +159,13 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     deduplication_time += elapsed_time;
+    MPI_Barrier(MPI_COMM_WORLD);
     start_time = MPI_Wtime();
     // T_FULL is t delta with first column as key
     Entity *t_full;
     checkCuda(cudaMalloc((void **) &t_full, t_delta_size * sizeof(Entity)));
     cudaMemcpy(t_full, t_delta, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
+    MPI_Barrier(MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
 //    if (total_rank > 1) {
@@ -164,10 +174,12 @@ void benchmark(int argc, char **argv) {
 #endif
     merge_time += elapsed_time;
 //    }
+    MPI_Barrier(MPI_COMM_WORLD);
     start_time = MPI_Wtime();
     long long global_t_full_size;
     long long t_full_size = t_delta_size;
     MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     if (total_rank > 1) {
@@ -208,27 +220,32 @@ void benchmark(int argc, char **argv) {
             buffer_preparation_time += buffer_preparation_time_temp;
             communication_time += communication_time_temp;
         }
+        MPI_Barrier(MPI_COMM_WORLD);
         start_time = MPI_Wtime();
         // Deduplicate scattered facts
         thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
         t_delta_size = (thrust::unique(thrust::device,
                                        t_delta, t_delta + t_delta_size,
                                        is_equal())) - t_delta;
+        MPI_Barrier(MPI_COMM_WORLD);
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         deduplication_time += elapsed_time;
 
+        MPI_Barrier(MPI_COMM_WORLD);
         start_time = MPI_Wtime();
         // Update t delta which is the only new facts which are not in t full and will be used in next iteration
         t_delta_size = thrust::set_difference(thrust::device,
                                               t_delta, t_delta + t_delta_size,
                                               t_full, t_full + t_full_size,
                                               t_delta, set_cmp()) - t_delta;
+        MPI_Barrier(MPI_COMM_WORLD);
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
         set_diff_time += elapsed_time;
         // set union of two sets (sorted t full and t delta)
+        MPI_Barrier(MPI_COMM_WORLD);
         start_time = MPI_Wtime();
         long long new_t_full_size = t_delta_size + t_full_size;
         checkCuda(cudaMalloc((void **) &new_t_full, new_t_full_size * sizeof(Entity)));
@@ -237,14 +254,17 @@ void benchmark(int argc, char **argv) {
                       t_full, t_full + t_full_size,
                       t_delta, t_delta + t_delta_size,
                       new_t_full, set_cmp());
+        MPI_Barrier(MPI_COMM_WORLD);
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
         cuda_merge_time += elapsed_time;
+        MPI_Barrier(MPI_COMM_WORLD);
         start_time = MPI_Wtime();
         cudaFree(t_full);
         t_full = new_t_full;
         t_full_size = new_t_full_size;
+        MPI_Barrier(MPI_COMM_WORLD);
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
         merge_time += elapsed_time;
@@ -272,7 +292,7 @@ void benchmark(int argc, char **argv) {
 //         << inner_sorting_time << ", merge: " << cuda_merge_time << ", t full cpy: "
 //         << t_full_copy_time << ", t full all to all: " << t_full_size_all_to_all_time << ", inner clear: "
 //         << inner_clear_time << endl;
-
+    MPI_Barrier(MPI_COMM_WORLD);
     start_time = MPI_Wtime();
     // Reverse the t_full as we stored it in reverse order initially
     int *t_full_ar;
@@ -292,6 +312,7 @@ void benchmark(int argc, char **argv) {
     for (i = 1; i < total_rank; i++) {
         t_full_displacements[i] = t_full_displacements[i - 1] + (t_full_counts[i - 1] * total_columns);
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     finalization_time += elapsed_time;
@@ -303,7 +324,7 @@ void benchmark(int argc, char **argv) {
                        total_columns, t_full_size, &temp_file_write_time);
         file_io_time += temp_file_write_time;
     }
-
+    MPI_Barrier(MPI_COMM_WORLD);
     start_time = MPI_Wtime();
     cudaFree(local_data_device);
     cudaFree(input_relation);
@@ -319,6 +340,7 @@ void benchmark(int argc, char **argv) {
     free(t_full_counts);
     free(t_full_displacements);
     free(local_data_host);
+    MPI_Barrier(MPI_COMM_WORLD);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     finalization_time += elapsed_time;
@@ -365,6 +387,9 @@ void benchmark(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
+    rmm::mr::cuda_memory_resource cuda_mr{};
+    rmm::mr::pool_memory_resource<rmm::mr::cuda_memory_resource> mr{&cuda_mr, 4 * 256 * 1024};
+    rmm::mr::set_current_device_resource(&mr);
     benchmark(argc, argv);
     return 0;
 }

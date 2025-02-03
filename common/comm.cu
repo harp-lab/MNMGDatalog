@@ -6,6 +6,7 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
                                        double *communication_time, int iterations) {
     double start_time, end_time, elapsed_time;
     double prep_time = 0.0, comm_time = 0.0;
+    MPI_Barrier(MPI_COMM_WORLD);
     start_time = MPI_Wtime();
     int *send_count;
     checkCuda(cudaMalloc((void **) &send_count, total_rank * sizeof(int)));
