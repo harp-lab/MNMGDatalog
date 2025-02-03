@@ -2,7 +2,7 @@
 #include <chrono>
 #include <stdlib.h>
 
-using namespace std;
+//using namespace std;
 
 
 struct Entity {
@@ -154,19 +154,19 @@ __device__ int get_position(int key, int hash_table_row_size) {
     return key & (hash_table_row_size - 1);
 }
 
-void show_time_spent(string message,
-                     chrono::high_resolution_clock::time_point time_point_begin,
-                     chrono::high_resolution_clock::time_point time_point_end) {
-    chrono::duration<double> time_span = time_point_end - time_point_begin;
-    cout << message << ": " << time_span.count() << " seconds" << endl;
+void show_time_spent(std::string message,
+                     std::chrono::high_resolution_clock::time_point time_point_begin,
+                     std::chrono::high_resolution_clock::time_point time_point_end) {
+    std::chrono::duration<double> time_span = time_point_end - time_point_begin;
+    std::cout << message << ": " << time_span.count() << " seconds" << std::endl;
 }
 
-double get_time_spent(string message,
-                      chrono::high_resolution_clock::time_point time_point_begin,
-                      chrono::high_resolution_clock::time_point time_point_end) {
-    chrono::duration<double> time_span = time_point_end - time_point_begin;
+double get_time_spent(std::string message,
+                      std::chrono::high_resolution_clock::time_point time_point_begin,
+                      std::chrono::high_resolution_clock::time_point time_point_end) {
+    std::chrono::duration<double> time_span = time_point_end - time_point_begin;
     if (message != "")
-        cout << message << ": " << time_span.count() << " seconds" << endl;
+        std::cout << message << ": " << time_span.count() << " seconds" << std::endl;
     return time_span.count();
 }
 
@@ -174,8 +174,8 @@ void show_relation(int *data, int total_rows,
                    int total_columns, const char *relation_name,
                    int visible_rows, int skip_zero) {
     int count = 0;
-    cout << "Relation name: " << relation_name << endl;
-    cout << "===================================" << endl;
+    std::cout << "Relation name: " << relation_name << std::endl;
+    std::cout << "===================================" << std::endl;
     for (int i = 0; i < total_rows; i++) {
         int skip = 0;
         for (int j = 0; j < total_columns; j++) {
@@ -183,20 +183,20 @@ void show_relation(int *data, int total_rows,
                 skip = 1;
                 continue;
             }
-            cout << data[(i * total_columns) + j] << " ";
+            std::cout << data[(i * total_columns) + j] << " ";
         }
         if (skip == 1)
             continue;
-        cout << endl;
+        std::cout << std::endl;
         count++;
         if (count == visible_rows) {
-            cout << "Result cropped at row " << count << "\n" << endl;
+            std::cout << "Result cropped at row " << count << "\n" << std::endl;
             return;
         }
 
     }
-    cout << "Result counts " << count << "\n" << endl;
-    cout << "" << endl;
+    std::cout << "Result counts " << count << "\n" << std::endl;
+    std::cout << "" << std::endl;
 }
 
 int *get_relation_from_file(const char *file_path, int total_rows, int total_columns, char separator) {
@@ -257,30 +257,30 @@ void get_reverse_relation_gpu(int *reverse_data, int *data, int total_rows, int 
 
 void show_hash_table(Entity *hash_table, long int hash_table_row_size, const char *hash_table_name) {
     int count = 0;
-    cout << "Hashtable name: " << hash_table_name << endl;
-    cout << "===================================" << endl;
+    std::cout << "Hashtable name: " << hash_table_name << std::endl;
+    std::cout << "===================================" << std::endl;
     for (int i = 0; i < hash_table_row_size; i++) {
         if (hash_table[i].key != -1) {
-            cout << hash_table[i].key << " " << hash_table[i].value << endl;
+            std::cout << hash_table[i].key << " " << hash_table[i].value << std::endl;
             count++;
         }
     }
-    cout << "Row counts " << count << "\n" << endl;
-    cout << "" << endl;
+    std::cout << "Row counts " << count << "\n" << std::endl;
+    std::cout << "" << std::endl;
 }
 
 void show_entity_array(Entity *data, int data_rows, const char *array_name) {
     long int count = 0;
-    cout << "Entity name: " << array_name << endl;
-    cout << "===================================" << endl;
+    std::cout << "Entity name: " << array_name << std::endl;
+    std::cout << "===================================" << std::endl;
     for (int i = 0; i < data_rows; i++) {
         if (data[i].key != -1) {
-            cout << data[i].key << " " << data[i].value << endl;
+            std::cout << data[i].key << " " << data[i].value << std::endl;
             count++;
         }
     }
-    cout << "Row counts " << count << "\n" << endl;
-    cout << "" << endl;
+    std::cout << "Row counts " << count << "\n" << std::endl;
+    std::cout << "" << std::endl;
 }
 
 long int get_row_size(const char *data_path) {
@@ -303,142 +303,142 @@ void update_reverse_relation(Entity *data, int data_rows, int *reverse_relation)
     }
 }
 
-void show_variable(int *host_data, int data_size, int group, int rank, string message) {
-    cout << "Rank " << rank << ": " << message << " ----------------" << endl;
+void show_variable(int *host_data, int data_size, int group, int rank, std::string message) {
+    std::cout << "Rank " << rank << ": " << message << " ----------------" << std::endl;
     for (int i = 0; i < data_size / group; i++) {
         for (int j = 0; j < group; j++) {
-            cout << host_data[(i * group) + j] << " ";
+            std::cout << host_data[(i * group) + j] << " ";
         }
         if (data_size <= 20) {
-            cout << ", ";
+            std::cout << ", ";
         } else {
-            cout << endl;
+            std::cout << std::endl;
         }
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
-void show_variable_entity(Entity *host_data, int data_size, int rank, string message) {
-    cout << "Rank " << rank << ", size " << data_size << " : " << message << " ----------------" << endl;
+void show_variable_entity(Entity *host_data, int data_size, int rank, std::string message) {
+    std::cout << "Rank " << rank << ", size " << data_size << " : " << message << " ----------------" << std::endl;
     for (int i = 0; i < data_size; i++) {
-        cout << host_data[i].key << " " << host_data[i].value;
+        std::cout << host_data[i].key << " " << host_data[i].value;
         if (data_size <= 20) {
-            cout << ", ";
+            std::cout << ", ";
         } else {
-            cout << endl;
+            std::cout << std::endl;
         }
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
-void show_device_variable(int *device_data, int device_data_size, int group, int rank, string message, int size_only) {
+void show_device_variable(int *device_data, int device_data_size, int group, int rank, std::string message, int size_only) {
     int *host_data = (int *) malloc(device_data_size * sizeof(int));
     cudaMemcpy(host_data, device_data, device_data_size * sizeof(int), cudaMemcpyDeviceToHost);
-    cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << endl;
+    std::cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << std::endl;
     if (size_only != 1) {
         for (int i = 0; i < device_data_size / group; i++) {
             for (int j = 0; j < group; j++) {
-                cout << host_data[(i * group) + j] << " ";
+                std::cout << host_data[(i * group) + j] << " ";
             }
             if (device_data_size <= 20) {
-                cout << ", ";
+                std::cout << ", ";
             } else {
-                cout << endl;
+                std::cout << std::endl;
             }
         }
-        cout << endl;
+        std::cout << std::endl;
     }
     free(host_data);
 }
 
 void show_host_vector(const thrust::host_vector<int> &host_vector_data,
                       int group, int rank, const std::string &message, int size_only) {
-    cout << "Rank " << rank << ", size " << host_vector_data.size()
-              << " : " << message << " ----------------" << endl;
+    std::cout << "Rank " << rank << ", size " << host_vector_data.size()
+              << " : " << message << " ----------------" << std::endl;
 
     if (size_only != 1) {
         for (size_t i = 0; i < host_vector_data.size() / group; i++) {
             for (int j = 0; j < group; j++) {
-                cout << host_vector_data[(i * group) + j] << " ";
+                std::cout << host_vector_data[(i * group) + j] << " ";
             }
             if (host_vector_data.size() < group) {
-                cout << ", ";
+                std::cout << ", ";
             } else {
-                cout << endl;
+                std::cout << std::endl;
             }
         }
-        cout << endl;
+        std::cout << std::endl;
     }
 }
 
-void show_host_variable(int *host_data, int data_size, int group, int rank, string message, int size_only) {
-    cout << "Rank " << rank << ", size " << data_size << " : " << message << " ----------------" << endl;
+void show_host_variable(int *host_data, int data_size, int group, int rank, std::string message, int size_only) {
+    std::cout << "Rank " << rank << ", size " << data_size << " : " << message << " ----------------" << std::endl;
     if (size_only != 1) {
         for (int i = 0; i < data_size / group; i++) {
             for (int j = 0; j < group; j++) {
-                cout << host_data[(i * group) + j] << " ";
+                std::cout << host_data[(i * group) + j] << " ";
             }
             if (data_size <= 20) {
-                cout << ", ";
+                std::cout << ", ";
             } else {
-                cout << endl;
+                std::cout << std::endl;
             }
         }
-        cout << endl;
+        std::cout << std::endl;
     }
 }
 
 // show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table");
-void show_device_entity_variable(Entity *device_data, int device_data_size, int rank, string message, int size_only) {
+void show_device_entity_variable(Entity *device_data, int device_data_size, int rank, std::string message, int size_only) {
     Entity *host_data = (Entity *) malloc(device_data_size * sizeof(Entity));
     cudaMemcpy(host_data, device_data, device_data_size * sizeof(Entity), cudaMemcpyDeviceToHost);
-    cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << endl;
+    std::cout << "Rank " << rank << ", size " << device_data_size << " : " << message << " ----------------" << std::endl;
     if (size_only != 1) {
         for (int i = 0; i < device_data_size; i++) {
-            cout << host_data[i].key << " " << host_data[i].value << endl;
+            std::cout << host_data[i].key << " " << host_data[i].value << std::endl;
         }
-        cout << endl;
+        std::cout << std::endl;
     }
     free(host_data);
 }
 
 // Function to print variable details and data
-void show_variable_generic(void *data, string var_name, size_t data_size, string data_type,
-                           string execution_policy, int rank, int iteration,
-                           string message, int size_only) {
-    cout << "Rank: " << rank << ", iteration: " << iteration << ", " << var_name << "(" << execution_policy << ")"
-         << " size: " << data_size << " : " << message << " ----------------" << endl;
+void show_variable_generic(void *data, std::string var_name, size_t data_size, std::string data_type,
+                           std::string execution_policy, int rank, int iteration,
+                           std::string message, int size_only) {
+    std::cout << "Rank: " << rank << ", iteration: " << iteration << ", " << var_name << "(" << execution_policy << ")"
+         << " size: " << data_size << " : " << message << " ----------------" << std::endl;
     if (size_only == 1) return;
     if (execution_policy == "device") {
         if (data_type == "Entity") {
             Entity *host_data = (Entity *) malloc(data_size * sizeof(Entity));
             cudaMemcpy(host_data, data, data_size * sizeof(Entity), cudaMemcpyDeviceToHost);
             for (int i = 0; i < data_size; i++) {
-                cout << host_data[i].key << " " << host_data[i].value << endl;
+                std::cout << host_data[i].key << " " << host_data[i].value << std::endl;
             }
-            cout << endl;
+            std::cout << std::endl;
             free(host_data);
         } else {
             int *host_data = (int *) malloc(data_size * sizeof(int));
             cudaMemcpy(host_data, data, data_size * sizeof(int), cudaMemcpyDeviceToHost);
             for (int i = 0; i < data_size; i++) {
-                cout << host_data[i] << endl;
+                std::cout << host_data[i] << std::endl;
             }
-            cout << endl;
+            std::cout << std::endl;
             free(host_data);
         }
     } else {
         if (data_type == "Entity") {
             Entity *entity_data = static_cast<Entity *>(data);
             for (int i = 0; i < data_size; i++) {
-                cout << entity_data[i].key << " " << entity_data[i].value << endl;
+                std::cout << entity_data[i].key << " " << entity_data[i].value << std::endl;
             }
         } else {
             int *int_data = static_cast<int *>(data);
             for (int i = 0; i < data_size; i++) {
-                cout << int_data[i] << endl;
+                std::cout << int_data[i] << std::endl;
             }
-            cout << endl;
+            std::cout << std::endl;
         }
     }
 }

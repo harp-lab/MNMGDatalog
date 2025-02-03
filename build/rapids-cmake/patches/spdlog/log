@@ -1,1 +1,0 @@
-rapids-cmake [spdlog]: applied diff nvcc_constexpr_fix.diff to fix issue: 'Fix constexpr mismatch between spdlog and fmt [https://github.com/gabime/spdlog/issues/2856]'

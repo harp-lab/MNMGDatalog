@@ -1,3 +1,0 @@
-include("/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/cmake/CPM_0.38.5.cmake")
-CPMAddPackage("NAME;spdlog;VERSION;1.12.0;GIT_REPOSITORY;https://github.com/gabime/spdlog.git;GIT_TAG;v1.12.0;GIT_SHALLOW;ON;PATCH_COMMAND;/usr/bin/cmake;-P;/mnt/9054B61D54B605CE/GithubCodes/mnmgJOIN/build/rapids-cmake/patches/spdlog/patch.cmake;EXCLUDE_FROM_ALL;OFF;OPTIONS;SPDLOG_INSTALL ON;SPDLOG_FMT_EXTERNAL_HO ON")
-set(spdlog_FOUND TRUE)

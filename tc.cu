@@ -25,7 +25,6 @@
 #include <thrust/set_operations.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-//#include <librmm/
 #include <rmm/device_vector.hpp>
 #include <rmm/exec_policy.hpp>
 #include <rmm/mr/device/cuda_memory_resource.hpp>
@@ -40,7 +39,7 @@
 #include "common/hash_table.cu"
 #include "common/join.cu"
 
-using namespace std;
+//using namespace std;
 
 
 void benchmark(int argc, char **argv) {
@@ -96,7 +95,7 @@ void benchmark(int argc, char **argv) {
     } else {
         input_file = "hipc_2019.bin";
     }
-    string output_file = string(input_file) + "_tc.bin";
+    std::string output_file = std::string(input_file) + "_tc.bin";
     const char *output_file_name = output_file.c_str();
 
     // Read file in parallel
@@ -170,7 +169,7 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
 //    if (total_rank > 1) {
 #ifdef DEBUG
-    cout << "t_full initialization: " << elapsed_time << endl;
+    std::cout << "t_full initialization: " << elapsed_time << std::endl;
 #endif
     merge_time += elapsed_time;
 //    }
@@ -184,13 +183,14 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
     if (total_rank > 1) {
 #ifdef DEBUG
-        cout << "MPI_Allreduce initialization: " << elapsed_time << endl;
+        std::cout << "MPI_Allreduce initialization: " << elapsed_time << std::endl;
 #endif
         merge_time += elapsed_time;
     }
     // Hash table is Edge
     double temp_hashtable_build_time = 0.0;
     int hash_table_rows = 0;
+
     Entity *hash_table = get_hash_table(grid_size, block_size, input_relation, input_relation_size,
                                         &hash_table_rows, &temp_hashtable_build_time);
     hashtable_build_time += temp_hashtable_build_time;
@@ -288,10 +288,10 @@ void benchmark(int argc, char **argv) {
             break;
         }
     }
-//    cout << "Rank: " << rank << ", set diff: " << set_diff_time << ", concat: " << inner_concat_time << ", sort: "
+//    std::cout << "Rank: " << rank << ", set diff: " << set_diff_time << ", concat: " << inner_concat_time << ", sort: "
 //         << inner_sorting_time << ", merge: " << cuda_merge_time << ", t full cpy: "
 //         << t_full_copy_time << ", t full all to all: " << t_full_size_all_to_all_time << ", inner clear: "
-//         << inner_clear_time << endl;
+//         << inner_clear_time << std::endl;
     MPI_Barrier(MPI_COMM_WORLD);
     start_time = MPI_Wtime();
     // Reverse the t_full as we stored it in reverse order initially

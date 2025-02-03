@@ -1,1 +1,0 @@
-rapids-cmake [fmt]: applied diff fix_10_1_1_version.diff to fix issue: 'fmt 10.1.1 produces a CMake package with version 10.1.0'
