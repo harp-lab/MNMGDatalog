@@ -564,6 +564,8 @@ CC wcc.cu -o wcc_interactive.out
 CC single_join.cu -o single_join_interactive.out 
 
 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
+            printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
+
 | 1,049,866 | 1 | 31 | 1,911,754,892 |  24.8847 |   0.2070 |   0.0411 |   0.0001 |   1.1072 |   1.7247 |  16.4639 |   2.3376 |   1.5306 |   1.5136 | data/com-dblpungraph.bin_tc.bin |
 arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 2 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
 | 1,049,866 | 2 | 31 | 1,911,754,892 |  17.5904 |   0.3586 |   0.3623 |   0.0002 |   0.2291 |   0.1760 |  13.8451 |   1.1652 |   1.5930 |   0.2233 | data/com-dblpungraph.bin_tc.bin |

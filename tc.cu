@@ -131,6 +131,7 @@ void benchmark(int argc, char **argv) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
 //    }
+    printf("Communication input_relation (initial): %.4lf\n", communication_time_temp);
 
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
@@ -143,6 +144,7 @@ void benchmark(int argc, char **argv) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
 //    }
+    printf("Communication t_delta (initial): %.4lf\n", communication_time_temp);
     start_time = MPI_Wtime();
     thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
@@ -208,6 +210,8 @@ void benchmark(int argc, char **argv) {
             buffer_preparation_time += buffer_preparation_time_temp;
             communication_time += communication_time_temp;
 //        }
+        printf("Iteration %d: Communication t_delta: %.4lf\n", iterations, communication_time_temp);
+
         start_time = MPI_Wtime();
         // Deduplicate scattered facts
         thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
@@ -356,18 +360,13 @@ void benchmark(int argc, char **argv) {
         output.deduplication_time = deduplication_time;
         output.merge_time = merge_time;
         output.finalization_time = finalization_time;
-        if (job_run == 0) {
-            printf("| # Input | # Process | # Iterations | # TC | Total Time ");
-            printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
-            printf("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
-        }
-        printf("| %'d | %'d | %'d | %'lld | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %'8.4lf | %s |\n",
+        printf("# Input,# Process,# Iterations,# TC,Total Time,Initialization,File I/O,Hashtable,Join,Buffer preparation,Communication,Deduplication,Merge,Finalization\n");
+        printf("%d,%d,%d,%lld,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.total_time,
                output.initialization_time, output.fileio_time, output.hashtable_build_time, output.join_time,
                output.buffer_preparation_time, output.communication_time, output.deduplication_time, output.merge_time,
-               output.finalization_time,
-               output.output_file_name);
+               output.finalization_time);
     }
     MPI_Finalize();
 }

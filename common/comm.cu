@@ -51,6 +51,9 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
     prep_time += elapsed_time;
     start_time = MPI_Wtime();
     mpi_error = MPI_Alltoall(send_count_host, 1, MPI_INT, receive_count_host, 1, MPI_INT, MPI_COMM_WORLD);
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    comm_time += elapsed_time;
     if (mpi_error != MPI_SUCCESS) {
         char error_string[BUFSIZ];
         int length_of_error_string;
@@ -58,9 +61,6 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
         fprintf(stderr, "MPI error on MPI_Alltoall call: %s\n", error_string);
         MPI_Abort(MPI_COMM_WORLD, mpi_error);
     }
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    comm_time += elapsed_time;
     start_time = MPI_Wtime();
     int total_receive = thrust::reduce(thrust::host, receive_count_host, receive_count_host + total_rank, 0,
                                        thrust::plus<int>());
@@ -77,11 +77,14 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     prep_time += elapsed_time;
-    start_time = MPI_Wtime();
     if (cuda_aware_mpi) {
+        start_time = MPI_Wtime();
         mpi_error = MPI_Alltoallv(send_data, send_count_host, send_displacements_host, MPI_UINT64_T,
                                   receive_data, receive_count_host, receive_displacements_host, MPI_UINT64_T,
                                   MPI_COMM_WORLD);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        comm_time += elapsed_time;
         if (mpi_error != MPI_SUCCESS) {
             char error_string[BUFSIZ];
             int length_of_error_string;
@@ -90,12 +93,20 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
             MPI_Abort(MPI_COMM_WORLD, mpi_error);
         }
     } else {
+        start_time = MPI_Wtime();
         Entity *send_data_host = (Entity *) malloc(row_size * sizeof(Entity));
         Entity *receive_data_host = (Entity *) malloc(total_receive * sizeof(Entity));
         cudaMemcpy(send_data_host, send_data, row_size * sizeof(Entity), cudaMemcpyDeviceToHost);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        prep_time += elapsed_time;
+        start_time = MPI_Wtime();
         mpi_error = MPI_Alltoallv(send_data_host, send_count_host, send_displacements_host, MPI_UINT64_T,
                                   receive_data_host, receive_count_host, receive_displacements_host, MPI_UINT64_T,
                                   MPI_COMM_WORLD);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        comm_time += elapsed_time;
         if (mpi_error != MPI_SUCCESS) {
             char error_string[BUFSIZ];
             int length_of_error_string;
@@ -103,18 +114,19 @@ Entity *get_split_relation_pass_method(int rank, Entity *local_data_device,
             fprintf(stderr, "MPI error on host MPI_Alltoallv call: %s\n", error_string);
             MPI_Abort(MPI_COMM_WORLD, mpi_error);
         }
+        start_time = MPI_Wtime();
         cudaMemcpy(receive_data, receive_data_host, total_receive * sizeof(Entity), cudaMemcpyHostToDevice);
         free(send_data_host);
         free(receive_data_host);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        prep_time += elapsed_time;
     }
-    end_time = MPI_Wtime();
 #ifdef DEBUG
     if(iterations == 0)
         show_device_entity_variable(receive_data, total_receive, rank, "receive_data", 0);
 #endif
 
-    elapsed_time = end_time - start_time;
-    comm_time += elapsed_time;
     start_time = MPI_Wtime();
     *receive_size = total_receive;
     free(send_count_host);
@@ -186,6 +198,9 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
     start_time = MPI_Wtime();
     mpi_error = MPI_Alltoall(send_count_host.data(), 1, MPI_INT,
                              receive_count_host.data(), 1, MPI_INT, MPI_COMM_WORLD);
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    comm_time += elapsed_time;
     if (mpi_error != MPI_SUCCESS) {
         char error_string[BUFSIZ];
         int length_of_error_string;
@@ -193,9 +208,6 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
         fprintf(stderr, "MPI error on MPI_Alltoall call: %s\n", error_string);
         MPI_Abort(MPI_COMM_WORLD, mpi_error);
     }
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    comm_time += elapsed_time;
 
     start_time = MPI_Wtime();
 
@@ -220,13 +232,16 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     prep_time += elapsed_time;
-    start_time = MPI_Wtime();
     if (cuda_aware_mpi) {
+        start_time = MPI_Wtime();
         mpi_error = MPI_Alltoallv(local_data_device, send_count_host.data(), send_displacements_host.data(),
                                   MPI_UINT64_T,
                                   receive_data, receive_count_host.data(), receive_displacements_host.data(),
                                   MPI_UINT64_T,
                                   MPI_COMM_WORLD);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        comm_time += elapsed_time;
         if (mpi_error != MPI_SUCCESS) {
             char error_string[BUFSIZ];
             int length_of_error_string;
@@ -235,14 +250,22 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
             MPI_Abort(MPI_COMM_WORLD, mpi_error);
         }
     } else {
+        start_time = MPI_Wtime();
         Entity *send_data_host = (Entity *) malloc(row_size * sizeof(Entity));
         Entity *receive_data_host = (Entity *) malloc(total_receive * sizeof(Entity));
         cudaMemcpy(send_data_host, local_data_device, row_size * sizeof(Entity), cudaMemcpyDeviceToHost);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        prep_time += elapsed_time;
+        start_time = MPI_Wtime();
         mpi_error = MPI_Alltoallv(send_data_host, send_count_host.data(), send_displacements_host.data(),
                                   MPI_UINT64_T,
                                   receive_data_host, receive_count_host.data(), receive_displacements_host.data(),
                                   MPI_UINT64_T,
                                   MPI_COMM_WORLD);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        comm_time += elapsed_time;
         if (mpi_error != MPI_SUCCESS) {
             char error_string[BUFSIZ];
             int length_of_error_string;
@@ -250,17 +273,18 @@ Entity *get_split_relation_sort_method(int rank, Entity *local_data_device,
             fprintf(stderr, "MPI error on host MPI_Alltoallv call: %s\n", error_string);
             MPI_Abort(MPI_COMM_WORLD, mpi_error);
         }
+        start_time = MPI_Wtime();
         cudaMemcpy(receive_data, receive_data_host, total_receive * sizeof(Entity), cudaMemcpyHostToDevice);
         free(send_data_host);
         free(receive_data_host);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        prep_time += elapsed_time;
     }
 #ifdef DEBUG
     if(iterations == 0)
         show_device_entity_variable(receive_data, total_receive, rank, "receive_data", 0);
 #endif
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    comm_time += elapsed_time;
     *buffer_preparation_time = prep_time;
     *communication_time = comm_time;
     *size = total_receive;
