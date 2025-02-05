@@ -7,7 +7,7 @@
 #PBS -l filesystems=home:grand:eagle
 #PBS -o small-merged-job.output
 #PBS -e small-merged-job.error
-#PBS -m shovon.sylhet@gmail.com
+#PBS -M shovon.sylhet@gmail.com
 
 cd ${PBS_O_WORKDIR}
 
