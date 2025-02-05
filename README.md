@@ -601,6 +601,7 @@ mpiexec --np 4 --ppn 4 --depth=4 --cpu-bind depth ./set_affinity_gpu_polaris.sh 
 
 
 ./tc_interactive.out data/data_163734.bin 0 1  
+3144021.polaris-pbs-01.hsn.cm.polaris.alcf.anl.gov
 ```
 
 ### Transitive Closure Computation (TC)

@@ -5,8 +5,8 @@
 #PBS -q prod
 #PBS -A dist_relational_alg
 #PBS -l filesystems=home:grand:eagle
-#PBS -o single-join-small3.output
-#PBS -e single-join-small3.error
+#PBS -o single-join-small-job.output
+#PBS -e single-join-small-job.error
 
 cd ${PBS_O_WORKDIR}
 
