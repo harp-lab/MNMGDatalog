@@ -57,11 +57,11 @@ void benchmark(int argc, char **argv) {
     double max_buffer_preparation_time_after_join = 0.0, max_communication_time_after_join = 0.0;
     double buffer_preparation_time_before_join = 0.0, communication_time_before_join = 0.0;
     double buffer_preparation_time_after_join = 0.0, communication_time_after_join = 0.0;
-    double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
-    double join_time = 0.0, merge_time = 0.0;
+    double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0, buffer_memory_clear_time_temp = 0.0;
+    double join_time = 0.0, merge_time = 0.0, memory_clear_time = 0.0;
     double deduplication_time = 0.0, max_deduplication_time = 0.0;;
     double hashtable_build_time = 0.0, max_hashtable_build_time = 0.0;
-    double clear_time = 0.0, max_clear_time = 0.0;;
+    double max_clear_time = 0.0;;
     double copy_to_host_time = 0.0, max_copy_to_host_time = 0.0;;
 
     double total_time = 0.0, max_total_time = 0.0;
@@ -132,13 +132,16 @@ void benchmark(int argc, char **argv) {
     int input_relation_size = 0;
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
+    buffer_memory_clear_time_temp = 0.0;
     Entity *input_relation = get_split_relation(rank, local_data,
                                                 row_size, total_columns, total_rank,
                                                 grid_size, block_size, cuda_aware_mpi,
                                                 &input_relation_size, comm_method,
-                                                &buffer_preparation_time_temp, &communication_time_temp, iterations);
+                                                &buffer_preparation_time_temp, &communication_time_temp,
+                                                &buffer_memory_clear_time_temp, iterations);
     buffer_preparation_time_before_join += buffer_preparation_time_temp;
     communication_time_before_join += communication_time_temp;
+    memory_clear_time += buffer_memory_clear_time_temp;
 #ifdef DEBUG
     cout << "Rank: " << rank << ", input_relation_size: " << input_relation_size << endl;
 #endif
@@ -158,14 +161,17 @@ void benchmark(int argc, char **argv) {
 
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
+    buffer_memory_clear_time_temp = 0.0;
     int reverse_relation_size = 0;
     Entity *reverse_relation = get_split_relation(rank, local_data_reverse,
                                                   row_size, total_columns, total_rank,
                                                   grid_size, block_size, cuda_aware_mpi, &reverse_relation_size,
                                                   comm_method,
-                                                  &buffer_preparation_time_temp, &communication_time_temp, iterations);
+                                                  &buffer_preparation_time_temp, &communication_time_temp,
+                                                  &buffer_memory_clear_time_temp, iterations);
     buffer_preparation_time_before_join += buffer_preparation_time_temp;
     communication_time_before_join += communication_time_temp;
+    memory_clear_time += buffer_memory_clear_time_temp;
 #ifdef DEBUG
     cout << "Rank: " << rank << ", reverse_relation_size: " << reverse_relation_size << endl;
 #endif
@@ -204,6 +210,7 @@ void benchmark(int argc, char **argv) {
     // Scatter the join result among relevant processes
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
+    buffer_memory_clear_time_temp = 0.0;
     int distributed_join_result_size = 0;
     Entity *distributed_join_result = get_split_relation(rank, join_result,
                                                          join_result_size, total_columns, total_rank,
@@ -211,9 +218,11 @@ void benchmark(int argc, char **argv) {
                                                          &distributed_join_result_size,
                                                          comm_method,
                                                          &buffer_preparation_time_temp, &communication_time_temp,
+                                                         &buffer_memory_clear_time_temp,
                                                          iterations);
     buffer_preparation_time_after_join += buffer_preparation_time_temp;
     communication_time_after_join += communication_time_temp;
+    memory_clear_time += buffer_memory_clear_time_temp;
 #ifdef DEBUG
     cout << "Rank: " << rank << ", distributed_join_result_size: " << distributed_join_result_size << endl;
 #endif
@@ -297,12 +306,12 @@ void benchmark(int argc, char **argv) {
     free(local_data_host);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    clear_time += elapsed_time;
+    memory_clear_time += elapsed_time;
 
     total_time = initialization_time + hashtable_build_time + join_time +
                  buffer_preparation_time_before_join + communication_time_before_join +
                  buffer_preparation_time_after_join + communication_time_after_join +
-                 deduplication_time + merge_time + clear_time + finalization_time + copy_to_host_time;
+                 deduplication_time + merge_time + memory_clear_time + finalization_time + copy_to_host_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     // Breakdown time is the breakdown times of the slowest process
     if (total_time == max_total_time) {
@@ -316,7 +325,7 @@ void benchmark(int argc, char **argv) {
         max_communication_time_after_join = communication_time_after_join;
         max_hashtable_build_time = hashtable_build_time;
         max_fileio_time = file_io_time;
-        max_clear_time = clear_time;
+        max_clear_time = memory_clear_time;
         max_finalization_time = finalization_time;
         max_copy_to_host_time = copy_to_host_time;
         output.block_size = block_size;

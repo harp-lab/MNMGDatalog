@@ -34,6 +34,7 @@ struct Output {
     double merge_time;
     double deduplication_time;
     double finalization_time;
+    double memory_clear_time;
 };
 
 struct KernelTimer {

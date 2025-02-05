@@ -48,23 +48,23 @@ void benchmark(int argc, char **argv) {
     int number_of_sm;
     cudaGetDevice(&device_id);
     cudaDeviceGetAttribute(&number_of_sm, cudaDevAttrMultiProcessorCount, device_id);
+    warm_up_kernel<<<1, 1>>>();
+    KernelTimer timer;
+    double start_time, end_time, elapsed_time, kernel_time;
+    start_time = MPI_Wtime();
     int block_size, grid_size;
     block_size = 512;
     grid_size = 32 * number_of_sm;
     setlocale(LC_ALL, "");
-    double start_time, end_time, elapsed_time;
     double initialization_time = 0.0;
-    double finalization_time = 0.0;
+    double finalization_time = 0.0, memory_clear_time = 0.0;
     double file_io_time = 0.0;
     double buffer_preparation_time = 0.0, communication_time = 0.0;
-    double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0;
-    double join_time = 0.0, merge_time = 0.0;
-    double deduplication_time = 0.0;
-    double hashtable_build_time = 0.0;
+    double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0, buffer_memory_clear_time_temp = 0.0;
+    double join_time = 0.0, merge_time = 0.0, deduplication_time = 0.0, hashtable_build_time = 0.0;
     double set_diff_time = 0.0, cuda_merge_time = 0.0, t_full_copy_time = 0.0, inner_clear_time = 0.0, t_full_size_all_to_all_time = 0.0;
 
     double total_time = 0.0, max_total_time = 0.0;
-    warm_up_kernel<<<1, 1>>>();
     int iterations = 0;
     // Should pass the input filename in command line argument
     const char *input_file;
@@ -91,12 +91,16 @@ void benchmark(int argc, char **argv) {
     }
     string output_file = string(input_file) + "_tc.bin";
     const char *output_file_name = output_file.c_str();
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    initialization_time += elapsed_time;
 
     // Read file in parallel
     int total_columns = 2;
     double temp_file_io_time = 0.0;
     int row_size = 0;
     int total_rows = 0;
+
     int *local_data_host = parallel_read(rank, total_rank, input_file, total_columns,
                                          &row_size, &total_rows, &temp_file_io_time);
     int local_count = row_size * total_columns;
@@ -110,49 +114,60 @@ void benchmark(int argc, char **argv) {
     checkCuda(cudaMalloc((void **) &local_data, row_size * sizeof(Entity)));
     Entity *local_data_reverse;
     checkCuda(cudaMalloc((void **) &local_data_reverse, row_size * sizeof(Entity)));
-    create_entity_ar<<<grid_size, block_size>>>(local_data, row_size, local_data_device);
-    create_entity_ar_reverse<<<grid_size, block_size>>>(local_data_reverse, row_size, local_data_device);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     initialization_time += elapsed_time;
 
+    timer.start_timer();
+    create_entity_ar<<<grid_size, block_size>>>(local_data, row_size, local_data_device);
+    create_entity_ar_reverse<<<grid_size, block_size>>>(local_data_reverse, row_size, local_data_device);
+    timer.stop_timer();
+    kernel_time = timer.get_spent_time();
+    initialization_time += kernel_time;
+
     int input_relation_size = 0;
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
+    buffer_memory_clear_time_temp = 0.0;
     Entity *input_relation = get_split_relation(rank, local_data,
                                                 row_size, total_columns, total_rank,
                                                 grid_size, block_size, cuda_aware_mpi,
                                                 &input_relation_size, comm_method,
-                                                &buffer_preparation_time_temp, &communication_time_temp, iterations);
+                                                &buffer_preparation_time_temp, &communication_time_temp,
+                                                &buffer_memory_clear_time_temp, iterations);
     // Calculate LIR and CV
 //    auto [lir, cv, max_min] = calculate_load_metrics(input_relation_size, total_rank);
 
 //    if (total_rank > 1) {
-        buffer_preparation_time += buffer_preparation_time_temp;
-        communication_time += communication_time_temp;
+    buffer_preparation_time += buffer_preparation_time_temp;
+    communication_time += communication_time_temp;
+    memory_clear_time += buffer_memory_clear_time_temp;
 //    }
-    printf("Communication input_relation (initial): %.4lf\n", communication_time_temp);
+//    printf("Communication input_relation (initial): %.4lf\n", communication_time_temp);
 
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
+    buffer_memory_clear_time_temp = 0.0;
     int t_delta_size = 0;
     Entity *t_delta = get_split_relation(rank, local_data_reverse,
                                          row_size, total_columns, total_rank,
                                          grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
-                                         &buffer_preparation_time_temp, &communication_time_temp, iterations);
+                                         &buffer_preparation_time_temp, &communication_time_temp,
+                                         &buffer_memory_clear_time_temp, iterations);
 //    if (total_rank > 1) {
-        buffer_preparation_time += buffer_preparation_time_temp;
-        communication_time += communication_time_temp;
+    buffer_preparation_time += buffer_preparation_time_temp;
+    communication_time += communication_time_temp;
+    memory_clear_time += buffer_memory_clear_time_temp;
 //    }
-    printf("Communication t_delta (initial): %.4lf\n", communication_time_temp);
-    start_time = MPI_Wtime();
+//    printf("Communication t_delta (initial): %.4lf\n", communication_time_temp);
+    timer.start_timer();
     thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
                                    t_delta, t_delta + t_delta_size,
                                    is_equal())) - t_delta;
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-    deduplication_time += elapsed_time;
+    timer.stop_timer();
+    kernel_time = timer.get_spent_time();
+    deduplication_time += kernel_time;
     start_time = MPI_Wtime();
     // T_FULL is t delta with first column as key
     Entity *t_full;
@@ -174,9 +189,9 @@ void benchmark(int argc, char **argv) {
     elapsed_time = end_time - start_time;
 //    if (total_rank > 1) {
 #ifdef DEBUG
-        cout << "MPI_Allreduce initialization: " << elapsed_time << endl;
+    cout << "MPI_Allreduce initialization: " << elapsed_time << endl;
 #endif
-        merge_time += elapsed_time;
+    communication_time += elapsed_time;
 //    }
     // Hash table is Edge
     double temp_hashtable_build_time = 0.0;
@@ -200,64 +215,71 @@ void benchmark(int argc, char **argv) {
         // Scatter the new facts among relevant processes
         buffer_preparation_time_temp = 0.0;
         communication_time_temp = 0.0;
+        buffer_memory_clear_time_temp = 0.0;
         cudaFree(t_delta);
         t_delta = get_split_relation(rank, join_result,
                                      join_result_size, total_columns, total_rank,
                                      grid_size, block_size, cuda_aware_mpi, &t_delta_size,
                                      comm_method,
-                                     &buffer_preparation_time_temp, &communication_time_temp, iterations);
+                                     &buffer_preparation_time_temp, &communication_time_temp,
+                                     &buffer_memory_clear_time_temp, iterations);
 //        if (total_rank > 1) {
-            buffer_preparation_time += buffer_preparation_time_temp;
-            communication_time += communication_time_temp;
-//        }
-        printf("Iteration %d: Communication t_delta: %.4lf\n", iterations, communication_time_temp);
+        buffer_preparation_time += buffer_preparation_time_temp;
+        communication_time += communication_time_temp;
+        memory_clear_time += buffer_memory_clear_time_temp;
 
-        start_time = MPI_Wtime();
+//        }
+//        printf("Iteration %d: Communication t_delta: %.4lf\n", iterations, communication_time_temp);
+
+        timer.start_timer();
         // Deduplicate scattered facts
         thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
         t_delta_size = (thrust::unique(thrust::device,
                                        t_delta, t_delta + t_delta_size,
                                        is_equal())) - t_delta;
-        end_time = MPI_Wtime();
-        elapsed_time = end_time - start_time;
-        deduplication_time += elapsed_time;
+        timer.stop_timer();
+        kernel_time = timer.get_spent_time();
+        deduplication_time += kernel_time;
 
-        start_time = MPI_Wtime();
+        timer.start_timer();
         // Update t delta which is the only new facts which are not in t full and will be used in next iteration
         t_delta_size = thrust::set_difference(thrust::device,
                                               t_delta, t_delta + t_delta_size,
                                               t_full, t_full + t_full_size,
                                               t_delta, set_cmp()) - t_delta;
-        end_time = MPI_Wtime();
-        elapsed_time = end_time - start_time;
-        merge_time += elapsed_time;
-        set_diff_time += elapsed_time;
+        timer.stop_timer();
+        kernel_time = timer.get_spent_time();
+        merge_time += kernel_time;
+        set_diff_time += kernel_time;
         // set union of two sets (sorted t full and t delta)
         start_time = MPI_Wtime();
         long long new_t_full_size = t_delta_size + t_full_size;
         checkCuda(cudaMalloc((void **) &new_t_full, new_t_full_size * sizeof(Entity)));
-        start_time = MPI_Wtime();
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        merge_time += elapsed_time;
+        timer.start_timer();
         thrust::merge(thrust::device,
                       t_full, t_full + t_full_size,
                       t_delta, t_delta + t_delta_size,
                       new_t_full, set_cmp());
-        end_time = MPI_Wtime();
-        elapsed_time = end_time - start_time;
-        merge_time += elapsed_time;
-        cuda_merge_time += elapsed_time;
+        timer.stop_timer();
+        kernel_time = timer.get_spent_time();
+        merge_time += kernel_time;
+        cuda_merge_time += kernel_time;
         start_time = MPI_Wtime();
         cudaFree(t_full);
         t_full = new_t_full;
         t_full_size = new_t_full_size;
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
-        merge_time += elapsed_time;
+        memory_clear_time += elapsed_time;
         t_full_copy_time += elapsed_time;
         start_time = MPI_Wtime();
         cudaFree(join_result);
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
-        merge_time += elapsed_time;
+        memory_clear_time += elapsed_time;
         inner_clear_time += elapsed_time;
         // Check if the global t full size has changed in this iteration
         start_time = MPI_Wtime();
@@ -266,7 +288,7 @@ void benchmark(int argc, char **argv) {
         iterations++;
         end_time = MPI_Wtime();
         elapsed_time = end_time - start_time;
-        merge_time += elapsed_time;
+        communication_time += elapsed_time;
         t_full_size_all_to_all_time += elapsed_time;
         if (old_global_t_full_size == global_t_full_size) {
             break;
@@ -281,10 +303,15 @@ void benchmark(int argc, char **argv) {
     // Reverse the t_full as we stored it in reverse order initially
     int *t_full_ar;
     checkCuda(cudaMalloc((void **) &t_full_ar, t_full_size * total_columns * sizeof(int)));
-    reverse_t_full<<<grid_size, block_size>>>(t_full_ar, t_full_size, t_full);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
     finalization_time += elapsed_time;
+    timer.start_timer();
+    reverse_t_full<<<grid_size, block_size>>>(t_full_ar, t_full_size, t_full);
+    timer.stop_timer();
+    kernel_time = timer.get_spent_time();
+    finalization_time += kernel_time;
+
 
     start_time = MPI_Wtime();
     // Copy t full to host for file write
@@ -297,9 +324,16 @@ void benchmark(int argc, char **argv) {
     start_time = MPI_Wtime();
     // List the t full counts for each process and calculate the displacements in the final result
     int *t_full_counts = (int *) calloc(total_rank, sizeof(int));
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    finalization_time += elapsed_time;
+    start_time = MPI_Wtime();
     MPI_Allgather(&t_full_size, 1, MPI_INT,
                   t_full_counts, 1, MPI_INT, MPI_COMM_WORLD);
-
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    communication_time += elapsed_time;
+    start_time = MPI_Wtime();
     int *t_full_displacements = (int *) calloc(total_rank, sizeof(int));
     for (i = 1; i < total_rank; i++) {
         t_full_displacements[i] = t_full_displacements[i - 1] + (t_full_counts[i - 1] * total_columns);
@@ -313,6 +347,7 @@ void benchmark(int argc, char **argv) {
         double temp_file_write_time = 0.0;
         parallel_write(rank, total_rank, output_file_name, t_full_ar_host, t_full_displacements,
                        total_columns, t_full_size, &temp_file_write_time);
+        cout << "Generated: " << output_file_name << endl;
         file_io_time += temp_file_write_time;
     }
 
@@ -333,11 +368,11 @@ void benchmark(int argc, char **argv) {
     free(local_data_host);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-    finalization_time += elapsed_time;
+    memory_clear_time += elapsed_time;
 
     total_time = initialization_time + hashtable_build_time + join_time +
                  buffer_preparation_time + communication_time + deduplication_time + merge_time +
-                 finalization_time;
+                 finalization_time + memory_clear_time;
     MPI_Allreduce(&total_time, &max_total_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     // Breakdown time is the breakdown times of the slowest process
@@ -360,13 +395,15 @@ void benchmark(int argc, char **argv) {
         output.deduplication_time = deduplication_time;
         output.merge_time = merge_time;
         output.finalization_time = finalization_time;
-        printf("# Input,# Process,# Iterations,# TC,Total Time,Initialization,File I/O,Hashtable,Join,Buffer preparation,Communication,Deduplication,Merge,Finalization\n");
-        printf("%d,%d,%d,%lld,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf\n",
+        output.memory_clear_time = memory_clear_time;
+        printf("# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O\n");
+        printf("%d,%d,%d,%lld,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf\n",
                output.input_rows, output.total_rank, output.iterations,
                output.output_size, output.total_time,
-               output.initialization_time, output.fileio_time, output.hashtable_build_time, output.join_time,
-               output.buffer_preparation_time, output.communication_time, output.deduplication_time, output.merge_time,
-               output.finalization_time);
+               output.join_time, output.buffer_preparation_time, output.communication_time, output.deduplication_time,
+               output.merge_time,
+               output.initialization_time, output.hashtable_build_time,
+               output.finalization_time, output.memory_clear_time, output.fileio_time);
     }
     MPI_Finalize();
 }
