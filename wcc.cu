@@ -246,6 +246,9 @@ void benchmark(int argc, char **argv) {
     int hash_table_rows = 0;
     Entity *hash_table = get_hash_table(grid_size, block_size, distributed_edge, distributed_edge_size,
                                         &hash_table_rows, &temp_hashtable_build_time);
+#ifdef DEBUG
+    show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
+#endif
     hashtable_build_time += temp_hashtable_build_time;
 
     Entity *new_cc;
