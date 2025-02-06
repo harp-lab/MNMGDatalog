@@ -9,7 +9,8 @@
 #PBS -e small-merged-job.error
 #PBS -M shovon.sylhet@gmail.com
 
-cd ${PBS_O_WORKDIR}
+cd /eagle/dist_relational_alg/arsho/mnmgJOIN
+#cd ${PBS_O_WORKDIR}
 
 # MPI example w/ 4 MPI ranks per node spread evenly across cores
 NRANKS_PER_NODE=4              # Number of MPI ranks to spawn per node

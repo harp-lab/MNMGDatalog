@@ -9,7 +9,9 @@
 #PBS -e single-join-small-job.error
 #PBS -M shovon.sylhet@gmail.com
 
-cd ${PBS_O_WORKDIR}
+cd /eagle/dist_relational_alg/arsho/mnmgJOIN
+
+#cd ${PBS_O_WORKDIR}
 
 # MPI example w/ 4 MPI ranks per node spread evenly across cores
 NNODES=`wc -l < $PBS_NODEFILE` # Number of total nodes
