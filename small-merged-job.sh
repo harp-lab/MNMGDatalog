@@ -81,43 +81,65 @@ run_benchmark() {
   local method=$2
   local mpi_gpu_support_enabled=$3
   echo "--------------------------------- TC ---------------------------------"
-  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/com-dblpungraph.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  # usroad
-  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  # fe_ocean
-  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  # Gnutella31
-  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/data_147892.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  # SF.cedge
-#  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/data_223001.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/com-dblpungraph.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  # usroad
+#  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  # fe_ocean
+#  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  # Gnutella31
+#  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/data_147892.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+
+
+  # SF.cedge
+  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/data_223001.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/WikiTalk.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset_tc ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 
   echo "--------------------------------- SG ---------------------------------"
-  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  # usroad
-  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  # SF.cedge
-  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_223001.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  # Gnutella31
-  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_147892.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  # loc-Brightkite
-#  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_214078.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-#  # fe_body
-#  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/vsp_finan512_scagr7-2c_rlfddd.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  # usroad
+#  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_165435.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  # SF.cedge
+#  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_223001.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  # Gnutella31
+#  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_147892.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+
+
+  # loc-Brightkite
+  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_214078.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # fe_body
+  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_163734.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # fe_sphere
+  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_49152.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # CA-HepTh
+  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_51971.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  # ego-Facebook
+  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_88234.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-CA.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/WikiTalk.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 #  # fe_ocean
 #  run_single_dataset_sg ${CUDA_AWARE_MPI} ${METHOD} "data/data_409593.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 
   echo "--------------------------------- WCC ---------------------------------"
-  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/WikiTalk.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/com-Orkut.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/as-skitter.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/ML_Geer.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/wiki-topcats.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/wb-edu.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/uk-2002.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/stokes.bin" ${MPICH_GPU_SUPPORT_ENABLED}
-  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/arabic-2005.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/WikiTalk.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/com-Orkut.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/as-skitter.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/ML_Geer.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/wiki-topcats.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/wb-edu.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/uk-2002.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/stokes.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+#  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/large_datasets/arabic-2005.bin" ${MPICH_GPU_SUPPORT_ENABLED}
 #
+
+  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/roadNet-TX.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/web-Google.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/web-Stanford.bin" ${MPICH_GPU_SUPPORT_ENABLED}
+
 #
 #
 #  run_single_dataset_wcc ${CUDA_AWARE_MPI} ${METHOD} "data/web-BerkStan.bin" ${MPICH_GPU_SUPPORT_ENABLED}
