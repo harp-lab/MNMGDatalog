@@ -200,9 +200,12 @@ void benchmark(int argc, char **argv) {
                                         &hash_table_rows, &temp_hashtable_build_time);
     hashtable_build_time += temp_hashtable_build_time;
 
+    show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
+    show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
+
     Entity *new_t_full;
     while (true) {
-
+        cout << "Iterations: " << iterations << endl;
         double temp_join_time = 0.0;
         int join_result_size = 0;
 
@@ -211,6 +214,7 @@ void benchmark(int argc, char **argv) {
                                        &join_result_size, &temp_join_time);
 
         join_time += temp_join_time;
+        show_device_entity_variable(join_result, join_result_size, rank, "join_result", 0);
 
         // Scatter the new facts among relevant processes
         buffer_preparation_time_temp = 0.0;
@@ -267,6 +271,10 @@ void benchmark(int argc, char **argv) {
         kernel_time = timer.get_spent_time();
         merge_time += kernel_time;
         cuda_merge_time += kernel_time;
+
+        show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
+        show_device_entity_variable(new_t_full, new_t_full_size, rank, "new_t_full", 0);
+
         start_time = MPI_Wtime();
         cudaFree(t_full);
         t_full = new_t_full;
@@ -428,3 +436,4 @@ int main(int argc, char **argv) {
 // make runtc DATA_FILE=data/data_88234.bin NPROCS=8 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/data_22.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/com-dblpungraph.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=1
+// make runtc DATA_FILE=data/tc_paper.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0

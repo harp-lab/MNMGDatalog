@@ -44,3 +44,4 @@ data/*_sg.txt
 data/large_datasets/
 venv/*
 build/*
+.venv/*

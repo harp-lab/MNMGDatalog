@@ -165,7 +165,6 @@ start_seconds=$(date +%s)
 echo "Polaris job started at: $start_time"
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> JOB STARTED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 #echo "NUM_OF_NODES= ${NNODES} TOTAL_NUM_RANKS= ${NTOTRANKS} RANKS_PER_NODE= ${NRANKS_PER_NODE} THREADS_PER_RANK= ${NTHREADS}"
-cd /home/arsho/mnmgJOIN
 JOB_RUN=1
 CUDA_AWARE_MPI=0
 # METHOD 0 = TWO PASS, 1 = SORTING
