@@ -366,7 +366,8 @@ def plot_technique_breakdown(filepath, output_file='technique_breakdown.png'):
 
         # Titles and labels
         ax.set_title(f'{technique}', fontsize=14)
-        ax.legend(handles=legend_handles + [line], labels=legend_labels + ['Total Time'], fontsize=10, frameon=True)
+        if idx == 3:
+            ax.legend(handles=legend_handles + [line], labels=legend_labels + ['Total Time'], fontsize=10, frameon=True)
 
     # Add a common y-axis label
     fig.text(0.0, 0.5, 'Time (s)', va='center', rotation='vertical', fontsize=12)
@@ -384,15 +385,15 @@ def plot_technique_breakdown(filepath, output_file='technique_breakdown.png'):
 if __name__ == "__main__":
     warnings.simplefilter(action='ignore', category=FutureWarning)
 
-    slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.png")
+    # slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.png")
     # plot_breakdown_chart_single_figure("drawing/charts/tc_breakdown.csv", "drawing/charts/", "tc")
 
 
     # plot_technique_total_time("drawing/charts/single_join_strong.csv", "drawing/charts/single_join_strong.png", "Strong scaling, 10M tuples (range 90K)")
     # plot_technique_total_time("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak.png", "Weak scaling, 10M tuples/rank (range 50K/rank)")
 
-    # plot_technique_breakdown("drawing/charts/single_join_strong.csv", "drawing/charts/single_join_strong_breakdown.png")
-    # plot_technique_breakdown("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak_breakdown.png")
+    plot_technique_breakdown("drawing/charts/single_join_strong.csv", "drawing/charts/single_join_strong_breakdown.png")
+    plot_technique_breakdown("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak_breakdown.png")
 
-    plot_total_chart("drawing/charts/sg.csv", "drawing/charts/sg.png", "SG")
-    plot_total_chart("drawing/charts/wcc.csv", "drawing/charts/wcc.png", "WCC")
+    # plot_total_chart("drawing/charts/sg.csv", "drawing/charts/sg.png", "SG")
+    # plot_total_chart("drawing/charts/wcc.csv", "drawing/charts/wcc.png", "WCC")

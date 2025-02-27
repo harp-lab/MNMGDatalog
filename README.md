@@ -563,8 +563,114 @@ CC sg.cu -o sg_interactive.out -O3
 CC wcc.cu -o wcc_interactive.out
 CC single_join.cu -o single_join_interactive.out 
 
+# TC
+
 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
-            printf("| Initialization | File I/O | Hashtable | Join | Buffer preparation | Communication | Deduplication | Merge | Finalization | Output |\n");
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+1049866,1,0,1911754892,13.5791,0.5237,0.0000,0.0000,2.8665,9.5969,0.0056,0.0002,0.4026,0.1836,23.5706
+
+# fe_ocean
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_409593.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+409593,1,0,1669750513,66.3362,0.3252,0.0000,0.0000,1.7587,63.1211,0.0051,0.0001,0.0007,1.1252,0.0741
+
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+552020,1,0,910070918,81.1381,0.4436,0.0000,0.0000,1.0574,77.9614,0.0058,0.0001,0.1897,1.4800,1.0853
+
+#usroad
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_165435.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+165435,1,0,871365688,75.0745,0.2156,0.0000,0.0000,0.5381,72.6970,0.0050,0.0001,0.1736,1.4450,1.0215
+
+#SF
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_223001.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+223001,1,0,80498014,2.4097,0.0850,0.0000,0.0000,0.1100,2.0278,0.0050,0.0001,0.0330,0.1487,0.1558
+
+# GNUTELLA31
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_147892.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+147892,1,0,884179859,4.7520,0.1722,0.0000,0.0000,0.8397,3.4447,0.0050,0.0001,0.1806,0.1095,38.1793
+
+# SG
+
+# fe_body
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_163734.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+163734,1,125,408443204,9.0841,0.3276,0.0000,0.1607,1.6684,6.6504,0.0049,0.0001,0.0786,0.1934,0.5030
+
+# loc
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_214078.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+214078,1,18,92398050,1.6583,0.2928,0.0000,0.0104,1.2737,0.0523,0.0049,0.0001,0.0013,0.0228,0.1682
+
+# fe sphere
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_49152.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+49152,1,127,205814096,3.5514,0.1622,0.0000,0.0816,0.7107,2.4470,0.0057,0.0001,0.0433,0.1009,0.3050
+
+# ca hep
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_51971.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+51971,1,9,74618689,0.5951,0.0954,0.0000,0.0051,0.4570,0.0205,0.0056,0.0001,0.0011,0.0102,0.1419
+
+# sf
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_223001.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+223001,1,269,382418182,14.7353,0.2077,0.0000,0.2896,0.5335,13.3046,0.0052,0.0001,0.0749,0.3198,0.4732
+
+# ego
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/data_88234.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+88234,1,13,15018986,0.4932,0.1105,0.0000,0.0034,0.3588,0.0083,0.0048,0.0001,0.0003,0.0070,0.0826
+
+mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./sg_interactive.out data/vsp_finan512_scagr7-2c_rlfddd.bin 0 1 1
+# Input,# Process,# Iterations,# TC,Total Time,Join,Buffer preparation,Communication,Deduplication,Merge,Initialization,Hashtable,Finalization,Clear,File I/O
+552020,1,513,864761518,90.7307,0.9394,0.0000,1.6541,3.0864,83.1478,0.0052,0.0001,0.1734,1.7243,0.9926
+
+
+# single join
+
+# strong
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000001 0 1 90000
+# Input,# Process,# Iterations,# Output,Total Time,Join,Buffer preparation (data distribution),Communication (data distribution),Buffer preparation (join result),Communication (join result),Deduplication,Clear,Copy,Finalization,Initialization,File I/O,Hashtable
+10000001,1,1,1037050773,0.6538,0.1480,0.0000,0.0000,0.0000,0.0000,0.4592,0.0223,1.1291,0.0139,0.0102,0.1505,0.0002
+
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000001 0 0 90000
+# Input,# Process,# Iterations,# Output,Total Time,Join,Buffer preparation (data distribution),Communication (data distribution),Buffer preparation (join result),Communication (join result),Deduplication,Clear,Copy,Finalization,Initialization,File I/O,Hashtable
+10000001,1,1,1037050773,0.6558,0.1496,0.0000,0.0000,0.0000,0.0000,0.4593,0.0225,1.1010,0.0139,0.0103,0.1505,0.0002
+
+module load craype-accel-nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000001 1 1 90000
+# Input,# Process,# Iterations,# Output,Total Time,Join,Buffer preparation (data distribution),Communication (data distribution),Buffer preparation (join result),Communication (join result),Deduplication,Clear,Copy,Finalization,Initialization,File I/O,Hashtable
+10000001,1,1,1037050773,0.6621,0.1591,0.0000,0.0000,0.0000,0.0000,0.4557,0.0227,1.1309,0.0139,0.0105,0.1505,0.0002
+
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000001 1 0 90000
+# Input,# Process,# Iterations,# Output,Total Time,Join,Buffer preparation (data distribution),Communication (data distribution),Buffer preparation (join result),Communication (join result),Deduplication,Clear,Copy,Finalization,Initialization,File I/O,Hashtable
+10000001,1,1,1037050773,0.6628,0.1596,0.0000,0.0000,0.0000,0.0000,0.4557,0.0230,1.0819,0.0139,0.0104,0.1505,0.0002
+
+
+# weak
+
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 0 1 500000
+# Input,# Process,# Iterations,# Output,Total Time,Join,Buffer preparation (data distribution),Communication (data distribution),Buffer preparation (join result),Communication (join result),Deduplication,Clear,Copy,Finalization,Initialization,File I/O,Hashtable
+10000000,1,1,199915594,0.1264,0.0268,0.0000,0.0000,0.0000,0.0000,0.0813,0.0049,0.2152,0.0028,0.0103,0.1505,0.0002
+
+MPICH_GPU_SUPPORT_ENABLED=0 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 0 0 500000
+# Input,# Process,# Iterations,# Output,Total Time,Join,Buffer preparation (data distribution),Communication (data distribution),Buffer preparation (join result),Communication (join result),Deduplication,Clear,Copy,Finalization,Initialization,File I/O,Hashtable
+10000000,1,1,199915594,0.1358,0.0293,0.0000,0.0000,0.0000,0.0000,0.0883,0.0049,0.2135,0.0028,0.0103,0.1506,0.0002
+
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 1 500000
+# Input,# Process,# Iterations,# Output,Total Time,Join,Buffer preparation (data distribution),Communication (data distribution),Buffer preparation (join result),Communication (join result),Deduplication,Clear,Copy,Finalization,Initialization,File I/O,Hashtable
+10000000,1,1,199915594,0.1249,0.0265,0.0000,0.0000,0.0000,0.0000,0.0803,0.0049,0.2168,0.0028,0.0103,0.1505,0.0002
+
+MPICH_GPU_SUPPORT_ENABLED=1 mpiexec --np 1 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./single_join_interactive.out 10000000 1 0 500000
+# Input,# Process,# Iterations,# Output,Total Time,Join,Buffer preparation (data distribution),Communication (data distribution),Buffer preparation (join result),Communication (join result),Deduplication,Clear,Copy,Finalization,Initialization,File I/O,Hashtable
+10000000,1,1,199915594,0.1373,0.0302,0.0000,0.0000,0.0000,0.0000,0.0889,0.0048,0.2132,0.0028,0.0103,0.1506,0.0002
+
 
 | 1,049,866 | 1 | 31 | 1,911,754,892 |  24.8847 |   0.2070 |   0.0411 |   0.0001 |   1.1072 |   1.7247 |  16.4639 |   2.3376 |   1.5306 |   1.5136 | data/com-dblpungraph.bin_tc.bin |
 arsho::x3207c0s1b0n0 { /eagle/dist_relational_alg/arsho/mnmgJOIN }-> mpiexec --np 2 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/com-dblpungraph.bin 0 1 1
