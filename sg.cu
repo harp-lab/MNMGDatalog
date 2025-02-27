@@ -122,17 +122,21 @@ void benchmark(int argc, char **argv) {
     buffer_preparation_time_temp = 0.0;
     communication_time_temp = 0.0;
     buffer_memory_clear_time_temp = 0.0;
-    Entity *input_relation = get_split_relation(rank, local_data,
-                                                row_size, total_columns, total_rank,
-                                                grid_size, block_size, cuda_aware_mpi,
-                                                &input_relation_size, comm_method,
-                                                &buffer_preparation_time_temp, &communication_time_temp,
-                                                &buffer_memory_clear_time_temp, iterations);
-//    if(total_rank > 1) {
+    Entity *input_relation;
+    if (total_rank == 1) {
+        input_relation = local_data;
+        input_relation_size = row_size;
+    } else {
+        input_relation = get_split_relation(rank, local_data,
+                                            row_size, total_columns, total_rank,
+                                            grid_size, block_size, cuda_aware_mpi,
+                                            &input_relation_size, comm_method,
+                                            &buffer_preparation_time_temp, &communication_time_temp,
+                                            &buffer_memory_clear_time_temp, iterations);
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
         memory_clear_time += buffer_memory_clear_time_temp;
-//    }
+    }
 
     start_time = MPI_Wtime();
     Entity *t_delta;
@@ -181,17 +185,21 @@ void benchmark(int argc, char **argv) {
     communication_time_temp = 0.0;
     buffer_memory_clear_time_temp = 0.0;
     int t_delta_size_temp = 0;
-    Entity *t_delta_temp_base = get_split_relation(rank, base_join_result,
-                                                   base_join_size, total_columns, total_rank,
-                                                   grid_size, block_size, cuda_aware_mpi,
-                                                   &t_delta_size_temp, comm_method,
-                                                   &buffer_preparation_time_temp, &communication_time_temp,
-                                                   &buffer_memory_clear_time_temp, iterations);
-//    if(total_rank > 1) {
+    Entity *t_delta_temp_base;
+    if (total_rank == 1) {
+        t_delta_temp_base = base_join_result;
+        t_delta_size_temp = base_join_size;
+    } else {
+        t_delta_temp_base = get_split_relation(rank, base_join_result,
+                                               base_join_size, total_columns, total_rank,
+                                               grid_size, block_size, cuda_aware_mpi,
+                                               &t_delta_size_temp, comm_method,
+                                               &buffer_preparation_time_temp, &communication_time_temp,
+                                               &buffer_memory_clear_time_temp, iterations);
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
         memory_clear_time += buffer_memory_clear_time_temp;
-//    }
+    }
 
     start_time = MPI_Wtime();
     t_delta_size = t_delta_size_temp;
@@ -229,10 +237,10 @@ void benchmark(int argc, char **argv) {
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
 //    if(total_rank > 1) {
-        communication_time += elapsed_time;
+    communication_time += elapsed_time;
 //    }
 
-    Entity *distributed_second_join_result,  *new_t_full;
+    Entity *distributed_second_join_result, *new_t_full;
     while (true) {
         // tmp(b, x): - edge(a, x), sg(a, b).
         double first_join_time = 0.0;
@@ -248,27 +256,31 @@ void benchmark(int argc, char **argv) {
         join_time += kernel_time;
 
         // Scatter the new facts among relevant processes
-        buffer_preparation_time_temp = 0.0;
-        communication_time_temp = 0.0;
-        buffer_memory_clear_time_temp = 0.0;
         int distributed_first_join_size = 0;
-        Entity *distributed_first_join_result = get_split_relation(rank, first_join_result,
-                                                                   first_join_size, total_columns, total_rank,
-                                                                   grid_size, block_size, cuda_aware_mpi,
-                                                                   &distributed_first_join_size,
-                                                                   comm_method,
-                                                                   &buffer_preparation_time_temp,
-                                                                   &communication_time_temp,
-                                                                   &buffer_memory_clear_time_temp, iterations);
-//        if (rank > 1) {
+        Entity *distributed_first_join_result;
+        if (total_rank == 1) {
+            distributed_first_join_result = first_join_result;
+            distributed_first_join_size = first_join_size;
+        } else {
+            buffer_preparation_time_temp = 0.0;
+            communication_time_temp = 0.0;
+            buffer_memory_clear_time_temp = 0.0;
+            distributed_first_join_result = get_split_relation(rank, first_join_result,
+                                                                       first_join_size, total_columns, total_rank,
+                                                                       grid_size, block_size, cuda_aware_mpi,
+                                                                       &distributed_first_join_size,
+                                                                       comm_method,
+                                                                       &buffer_preparation_time_temp,
+                                                                       &communication_time_temp,
+                                                                       &buffer_memory_clear_time_temp, iterations);
             buffer_preparation_time += buffer_preparation_time_temp;
             communication_time += communication_time_temp;
             memory_clear_time += buffer_memory_clear_time_temp;
-//        }
+        }
         timer.start_timer();
         // Deduplicate scattered facts
         thrust::sort(thrust::device, distributed_first_join_result,
-                            distributed_first_join_result + distributed_first_join_size, set_cmp());
+                     distributed_first_join_result + distributed_first_join_size, set_cmp());
         distributed_first_join_size = (thrust::unique(thrust::device,
                                                       distributed_first_join_result,
                                                       distributed_first_join_result + distributed_first_join_size,
@@ -291,29 +303,32 @@ void benchmark(int argc, char **argv) {
         kernel_time = timer.get_spent_time();
         join_time += kernel_time;
 
-        // Scatter the new facts among relevant processes
-        buffer_preparation_time_temp = 0.0;
-        communication_time_temp = 0.0;
-        buffer_memory_clear_time_temp = 0.0;
         int distributed_second_join_size = 0;
-        distributed_second_join_result = get_split_relation(rank, second_join_result,
-                                                                    second_join_size, total_columns, total_rank,
-                                                                    grid_size, block_size, cuda_aware_mpi,
-                                                                    &distributed_second_join_size,
-                                                                    comm_method,
-                                                                    &buffer_preparation_time_temp,
-                                                                    &communication_time_temp,
-                                                                    &buffer_memory_clear_time_temp, iterations);
-//        if (rank > 1) {
+        if (total_rank == 1) {
+            distributed_second_join_result = second_join_result;
+            distributed_second_join_size = second_join_size;
+        } else {
+            // Scatter the new facts among relevant processes
+            buffer_preparation_time_temp = 0.0;
+            communication_time_temp = 0.0;
+            buffer_memory_clear_time_temp = 0.0;
+            distributed_second_join_result = get_split_relation(rank, second_join_result,
+                                                                second_join_size, total_columns, total_rank,
+                                                                grid_size, block_size, cuda_aware_mpi,
+                                                                &distributed_second_join_size,
+                                                                comm_method,
+                                                                &buffer_preparation_time_temp,
+                                                                &communication_time_temp,
+                                                                &buffer_memory_clear_time_temp, iterations);
             buffer_preparation_time += buffer_preparation_time_temp;
             communication_time += communication_time_temp;
             memory_clear_time += buffer_memory_clear_time_temp;
-//        }
+        }
 
         timer.start_timer();
         // Deduplicate scattered facts
         thrust::sort(thrust::device, distributed_second_join_result,
-                            distributed_second_join_result + distributed_second_join_size, set_cmp());
+                     distributed_second_join_result + distributed_second_join_size, set_cmp());
         distributed_second_join_size = (thrust::unique(thrust::device,
                                                        distributed_second_join_result,
                                                        distributed_second_join_result + distributed_second_join_size,

@@ -62,7 +62,7 @@ void benchmark(int argc, char **argv) {
     double buffer_preparation_time = 0.0, communication_time = 0.0;
     double buffer_preparation_time_temp = 0.0, communication_time_temp = 0.0, buffer_memory_clear_time_temp = 0.0;
     double join_time = 0.0, merge_time = 0.0, deduplication_time = 0.0, hashtable_build_time = 0.0;
-    double set_diff_time = 0.0, cuda_merge_time = 0.0, t_full_copy_time = 0.0, inner_clear_time = 0.0, t_full_size_all_to_all_time = 0.0;
+    double set_diff_time = 0.0, cuda_merge_time = 0.0, t_full_copy_time = 0.0, t_full_size_all_to_all_time = 0.0;
 
     double total_time = 0.0, max_total_time = 0.0;
     int iterations = 0;
@@ -126,40 +126,56 @@ void benchmark(int argc, char **argv) {
     initialization_time += kernel_time;
 
     int input_relation_size = 0;
-    buffer_preparation_time_temp = 0.0;
-    communication_time_temp = 0.0;
-    buffer_memory_clear_time_temp = 0.0;
-    Entity *input_relation = get_split_relation(rank, local_data,
-                                                row_size, total_columns, total_rank,
-                                                grid_size, block_size, cuda_aware_mpi,
-                                                &input_relation_size, comm_method,
-                                                &buffer_preparation_time_temp, &communication_time_temp,
-                                                &buffer_memory_clear_time_temp, iterations);
+    Entity *input_relation;
+    if (total_rank == 1) {
+        input_relation = local_data;
+        input_relation_size = row_size;
+    } else {
+        buffer_preparation_time_temp = 0.0;
+        communication_time_temp = 0.0;
+        buffer_memory_clear_time_temp = 0.0;
+        input_relation = get_split_relation(rank, local_data,
+                                            row_size, total_columns, total_rank,
+                                            grid_size, block_size, cuda_aware_mpi,
+                                            &input_relation_size, comm_method,
+                                            &buffer_preparation_time_temp, &communication_time_temp,
+                                            &buffer_memory_clear_time_temp, iterations);
+        buffer_preparation_time += buffer_preparation_time_temp;
+        communication_time += communication_time_temp;
+        memory_clear_time += buffer_memory_clear_time_temp;
+    }
+//    show_device_entity_variable(input_relation, row_size, rank, "input_relation", 0);
+
     // Calculate LIR and CV
 //    auto [lir, cv, max_min] = calculate_load_metrics(input_relation_size, total_rank);
 
 //    if (total_rank > 1) {
-    buffer_preparation_time += buffer_preparation_time_temp;
-    communication_time += communication_time_temp;
-    memory_clear_time += buffer_memory_clear_time_temp;
 //    }
 //    printf("Communication input_relation (initial): %.4lf\n", communication_time_temp);
 
-    buffer_preparation_time_temp = 0.0;
-    communication_time_temp = 0.0;
-    buffer_memory_clear_time_temp = 0.0;
+
     int t_delta_size = 0;
-    Entity *t_delta = get_split_relation(rank, local_data_reverse,
-                                         row_size, total_columns, total_rank,
-                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
-                                         &buffer_preparation_time_temp, &communication_time_temp,
-                                         &buffer_memory_clear_time_temp, iterations);
+    Entity *t_delta;
+    if (total_rank == 1) {
+        t_delta = local_data_reverse;
+        t_delta_size = row_size;
+    } else {
+        buffer_preparation_time_temp = 0.0;
+        communication_time_temp = 0.0;
+        buffer_memory_clear_time_temp = 0.0;
+        t_delta = get_split_relation(rank, local_data_reverse,
+                                     row_size, total_columns, total_rank,
+                                     grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
+                                     &buffer_preparation_time_temp, &communication_time_temp,
+                                     &buffer_memory_clear_time_temp, iterations);
 //    if (total_rank > 1) {
-    buffer_preparation_time += buffer_preparation_time_temp;
-    communication_time += communication_time_temp;
-    memory_clear_time += buffer_memory_clear_time_temp;
+        buffer_preparation_time += buffer_preparation_time_temp;
+        communication_time += communication_time_temp;
+        memory_clear_time += buffer_memory_clear_time_temp;
+    }
 //    }
 //    printf("Communication t_delta (initial): %.4lf\n", communication_time_temp);
+
     timer.start_timer();
     thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
     t_delta_size = (thrust::unique(thrust::device,
@@ -181,17 +197,17 @@ void benchmark(int argc, char **argv) {
 #endif
     merge_time += elapsed_time;
 //    }
-    start_time = MPI_Wtime();
     long long global_t_full_size;
     long long t_full_size = t_delta_size;
-    MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
-    end_time = MPI_Wtime();
-    elapsed_time = end_time - start_time;
-//    if (total_rank > 1) {
-#ifdef DEBUG
-    cout << "MPI_Allreduce initialization: " << elapsed_time << endl;
-#endif
-    communication_time += elapsed_time;
+    if (total_rank == 1) {
+        global_t_full_size = t_full_size;
+    } else {
+        start_time = MPI_Wtime();
+        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        communication_time += elapsed_time;
+    }
 //    }
     // Hash table is Edge
     double temp_hashtable_build_time = 0.0;
@@ -200,37 +216,45 @@ void benchmark(int argc, char **argv) {
                                         &hash_table_rows, &temp_hashtable_build_time);
     hashtable_build_time += temp_hashtable_build_time;
 
-    show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
-    show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
-
+    // show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
+    // show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
+    Entity *join_result;
     Entity *new_t_full;
     while (true) {
-        cout << "Iterations: " << iterations << endl;
+//        cout << "Iterations: " << iterations << endl;
         double temp_join_time = 0.0;
         int join_result_size = 0;
 
-        Entity *join_result = get_join(grid_size, block_size, hash_table, hash_table_rows,
+        join_result = get_join(grid_size, block_size, hash_table, hash_table_rows,
                                        t_delta, t_delta_size,
                                        &join_result_size, &temp_join_time);
 
         join_time += temp_join_time;
-        show_device_entity_variable(join_result, join_result_size, rank, "join_result", 0);
-
-        // Scatter the new facts among relevant processes
-        buffer_preparation_time_temp = 0.0;
-        communication_time_temp = 0.0;
-        buffer_memory_clear_time_temp = 0.0;
+        // show_device_entity_variable(join_result, join_result_size, rank, "join_result", 0);
+        start_time = MPI_Wtime();
         cudaFree(t_delta);
-        t_delta = get_split_relation(rank, join_result,
-                                     join_result_size, total_columns, total_rank,
-                                     grid_size, block_size, cuda_aware_mpi, &t_delta_size,
-                                     comm_method,
-                                     &buffer_preparation_time_temp, &communication_time_temp,
-                                     &buffer_memory_clear_time_temp, iterations);
-//        if (total_rank > 1) {
-        buffer_preparation_time += buffer_preparation_time_temp;
-        communication_time += communication_time_temp;
-        memory_clear_time += buffer_memory_clear_time_temp;
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        memory_clear_time += elapsed_time;
+        if (total_rank == 1) {
+            t_delta = join_result;
+            t_delta_size = join_result_size;
+        } else {
+            // Scatter the new facts among relevant processes
+            buffer_preparation_time_temp = 0.0;
+            communication_time_temp = 0.0;
+            buffer_memory_clear_time_temp = 0.0;
+            t_delta = get_split_relation(rank, join_result,
+                                         join_result_size, total_columns, total_rank,
+                                         grid_size, block_size, cuda_aware_mpi, &t_delta_size,
+                                         comm_method,
+                                         &buffer_preparation_time_temp, &communication_time_temp,
+                                         &buffer_memory_clear_time_temp, iterations);
+            buffer_preparation_time += buffer_preparation_time_temp;
+            communication_time += communication_time_temp;
+            memory_clear_time += buffer_memory_clear_time_temp;
+        }
+//        show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
 
 //        }
 //        printf("Iteration %d: Communication t_delta: %.4lf\n", iterations, communication_time_temp);
@@ -272,8 +296,8 @@ void benchmark(int argc, char **argv) {
         merge_time += kernel_time;
         cuda_merge_time += kernel_time;
 
-        show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
-        show_device_entity_variable(new_t_full, new_t_full_size, rank, "new_t_full", 0);
+        // show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
+        // show_device_entity_variable(new_t_full, new_t_full_size, rank, "new_t_full", 0);
 
         start_time = MPI_Wtime();
         cudaFree(t_full);
@@ -283,23 +307,31 @@ void benchmark(int argc, char **argv) {
         elapsed_time = end_time - start_time;
         memory_clear_time += elapsed_time;
         t_full_copy_time += elapsed_time;
-        start_time = MPI_Wtime();
-        cudaFree(join_result);
-        end_time = MPI_Wtime();
-        elapsed_time = end_time - start_time;
-        memory_clear_time += elapsed_time;
-        inner_clear_time += elapsed_time;
+//        start_time = MPI_Wtime();
+//        cudaFree(join_result);
+//        end_time = MPI_Wtime();
+//        elapsed_time = end_time - start_time;
+//        memory_clear_time += elapsed_time;
+//        inner_clear_time += elapsed_time;
         // Check if the global t full size has changed in this iteration
-        start_time = MPI_Wtime();
-        long long old_global_t_full_size = global_t_full_size;
-        MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
-        iterations++;
-        end_time = MPI_Wtime();
-        elapsed_time = end_time - start_time;
-        communication_time += elapsed_time;
-        t_full_size_all_to_all_time += elapsed_time;
-        if (old_global_t_full_size == global_t_full_size) {
-            break;
+        if(total_rank == 1) {
+            long long old_global_t_full_size = global_t_full_size;
+            if (old_global_t_full_size == t_full_size) {
+                break;
+            }
+            global_t_full_size = t_full_size;
+        } else {
+            start_time = MPI_Wtime();
+            long long old_global_t_full_size = global_t_full_size;
+            MPI_Allreduce(&t_full_size, &global_t_full_size, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
+            iterations++;
+            end_time = MPI_Wtime();
+            elapsed_time = end_time - start_time;
+            communication_time += elapsed_time;
+            t_full_size_all_to_all_time += elapsed_time;
+            if (old_global_t_full_size == global_t_full_size) {
+                break;
+            }
         }
     }
 //    cout << "Rank: " << rank << ", set diff: " << set_diff_time << ", concat: " << inner_concat_time << ", sort: "
