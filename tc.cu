@@ -216,12 +216,12 @@ void benchmark(int argc, char **argv) {
                                         &hash_table_rows, &temp_hashtable_build_time);
     hashtable_build_time += temp_hashtable_build_time;
 
-     show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
-     show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
+     //show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
+     //show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
     Entity *join_result;
     Entity *new_t_full;
     while (true) {
-        cout << "Iterations: " << iterations << endl;
+        //cout << "Iterations: " << iterations << endl;
         double temp_join_time = 0.0;
         int join_result_size = 0;
 
@@ -230,7 +230,7 @@ void benchmark(int argc, char **argv) {
                                        &join_result_size, &temp_join_time);
 
         join_time += temp_join_time;
-        show_device_entity_variable(join_result, join_result_size, rank, "join_result", 0);
+        //show_device_entity_variable(join_result, join_result_size, rank, "join_result", 0);
         start_time = MPI_Wtime();
         cudaFree(t_delta);
         end_time = MPI_Wtime();
@@ -254,7 +254,7 @@ void benchmark(int argc, char **argv) {
             communication_time += communication_time_temp;
             memory_clear_time += buffer_memory_clear_time_temp;
         }
-        show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
+        //show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
 
 //        }
 //        printf("Iteration %d: Communication t_delta: %.4lf\n", iterations, communication_time_temp);
@@ -296,8 +296,8 @@ void benchmark(int argc, char **argv) {
         merge_time += kernel_time;
         cuda_merge_time += kernel_time;
 
-         show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
-         show_device_entity_variable(new_t_full, new_t_full_size, rank, "new_t_full", 0);
+         //show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
+         //show_device_entity_variable(new_t_full, new_t_full_size, rank, "new_t_full", 0);
 
         start_time = MPI_Wtime();
         cudaFree(t_full);
@@ -334,7 +334,7 @@ void benchmark(int argc, char **argv) {
                 break;
             }
         }
-        break;
+//        break;
     }
 //    cout << "Rank: " << rank << ", set diff: " << set_diff_time << ", concat: " << inner_concat_time << ", sort: "
 //         << inner_sorting_time << ", merge: " << cuda_merge_time << ", t full cpy: "
@@ -389,7 +389,7 @@ void benchmark(int argc, char **argv) {
         double temp_file_write_time = 0.0;
         parallel_write(rank, total_rank, output_file_name, t_full_ar_host, t_full_displacements,
                        total_columns, t_full_size, &temp_file_write_time);
-        cout << "Generated: " << output_file_name << endl;
+        cout << "Rank "<<rank<<" wrote local tuples on file: " << output_file_name << endl;
         file_io_time += temp_file_write_time;
     }
 
@@ -472,3 +472,4 @@ int main(int argc, char **argv) {
 // make runtc DATA_FILE=data/com-dblpungraph.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=1
 // make runtc DATA_FILE=data/tc_paper.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/tc_paper.bin NPROCS=2 CUDA_AWARE_MPI=0 METHOD=0
+//     nvidia-smi --query-gpu=power.draw --format=csv --loop-ms=10 & ./myapp
