@@ -518,7 +518,7 @@ void benchmark(int argc, char **argv) {
         double temp_file_write_time = 0.0;
         parallel_write(rank, total_rank, output_file_name, component_ar_host, component_displacements,
                        total_columns, cc_distributed_size, &temp_file_write_time);
-        cout << "Generated: " << output_file_name << endl;
+        cout << "Rank "<< rank <<" wrote local tuples on file: " << output_file_name << endl;
         file_io_time += temp_file_write_time;
     }
 

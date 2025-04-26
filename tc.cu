@@ -389,7 +389,7 @@ void benchmark(int argc, char **argv) {
         double temp_file_write_time = 0.0;
         parallel_write(rank, total_rank, output_file_name, t_full_ar_host, t_full_displacements,
                        total_columns, t_full_size, &temp_file_write_time);
-        cout << "Rank "<<rank<<" wrote local tuples on file: " << output_file_name << endl;
+        cout << "Rank "<< rank <<" wrote local tuples on file: " << output_file_name << endl;
         file_io_time += temp_file_write_time;
     }
 
@@ -472,4 +472,15 @@ int main(int argc, char **argv) {
 // make runtc DATA_FILE=data/com-dblpungraph.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=1
 // make runtc DATA_FILE=data/tc_paper.bin NPROCS=1 CUDA_AWARE_MPI=0 METHOD=0
 // make runtc DATA_FILE=data/tc_paper.bin NPROCS=2 CUDA_AWARE_MPI=0 METHOD=0
-//     nvidia-smi --query-gpu=power.draw --format=csv --loop-ms=10 & ./myapp
+// nvidia-smi --query-gpu=power.draw --format=csv --loop-ms=10 & ./myapp
+// nvidia-smi --query-gpu=power.draw --format=csv --loop-ms=10 & mpirun -np 1 ./tc.out data/data_7035.bin 0 0
+// python power.py mpirun -np 1 ./tc.out data/data_163734.bin 0 0
+/*
+nvidia-smi --query-gpu=power.draw --format=csv --loop-ms=10 > power_log.csv &
+NSMI_PID=$!
+mpirun -np 1 ./tc.out data/data_7035.bin 0 0
+kill $NSMI_PID
+
+avg: awk -F',' 'NR>1 {sum+=$1; count++} END {print "Avg Power:", sum/count, "W"}' power_log.csv
+total: awk -F' ' 'NR>1 {gsub("W", "", $1); sum += $1} END {printf("Estimated Energy: %.2f Joules\n", sum * 0.01)}' power_log.csv
+*/
