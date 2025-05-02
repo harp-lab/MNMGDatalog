@@ -27,7 +27,7 @@ def slog_vs_mnmgjoin(filepath, output_file='slog_vs_mnmgjoin.png'):
     # Colors for mnmgJOIN and SLOG
     default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     mnmgjoin_color = default_colors[0]  # First default color
-    slog_color = default_colors[1]      # Second default color
+    slog_color = default_colors[1]  # Second default color
 
     # Merge GPU and Node configurations
     config_labels = []
@@ -243,7 +243,6 @@ def plot_breakdown_chart_single_figure(filepath, output_folder, app_name):
     # Create a single figure with subplots for each dataset in a single row
     fig, axes = plt.subplots(1, len(datasets), figsize=(6 * len(datasets), 6))
 
-
     # Ensure axes is iterable
     if len(datasets) == 1:
         axes = [axes]
@@ -365,7 +364,7 @@ def plot_technique_breakdown(filepath, output_file='technique_breakdown.png'):
 
     # Extract GPU configurations dynamically
     df['GPU Configuration'] = df.iloc[:, 1].astype(
-        str) # Column 1 contains the process count
+        str)  # Column 1 contains the process count
     gpu_configs = df['GPU Configuration'].unique()
 
     # Adjust total time by subtracting the copy time
@@ -442,11 +441,260 @@ def plot_technique_breakdown(filepath, output_file='technique_breakdown.png'):
 
     print(f"Generated {output_file}")
 
+# def plot_avg_power_boxplot(df, output_file='avg_power_boxplot_final.png', application="TC"):
+#     datasets = sorted(df['Dataset'].unique())
+#     engines = ['MNMGDatalog', 'GPULog']
+#     width = 0.3
+#
+#     fig, ax = plt.subplots(figsize=(10, 6))
+#
+#     # Use matplotlib default color cycle
+#     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#     engine_colors = {
+#         'MNMGDatalog': colors[0],  # blue
+#         'GPULog': colors[1]  # orange
+#     }
+#
+#     positions = []
+#     all_box_data = []
+#     scatter_positions = []
+#     scatter_values = []
+#     box_colors = []
+#
+#     for idx, dataset in enumerate(datasets):
+#         for jdx, engine in enumerate(engines):
+#             subset = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
+#             if subset.empty:
+#                 continue
+#
+#             draws = list(map(float, subset['AllDrawSamples(W)'].iloc[0].split(',')))
+#
+#             # if dataset == 'usroads' and engine == 'MNMGDatalog':
+#             #     print(draws)
+#
+#             pos = idx + jdx * width
+#             positions.append(pos)
+#             all_box_data.append(draws)
+#             box_colors.append(engine_colors[engine])
+#
+#             scatter_positions.append(pos)
+#             scatter_values.append(subset['AvgPowerDrawTimed(W)'].values[0])
+#
+#     # Plot boxplots
+#     bplot = ax.boxplot(
+#         all_box_data,
+#         positions=positions,
+#         widths=width * 0.8,
+#         patch_artist=True,
+#         manage_ticks=False
+#     )
+#
+#     # Color boxes based on engine
+#     for patch, color in zip(bplot['boxes'], box_colors):
+#         patch.set_facecolor(color)
+#
+#     # Scatter plot for AvgPowerDrawTimed(W)
+#     for idx, (x, y) in enumerate(zip(scatter_positions, scatter_values)):
+#         color = box_colors[idx]
+#         ax.scatter(x, y, marker='o', color=color, edgecolors='black', zorder=3, s=50)
+#
+#     ax.set_xlabel('Dataset', fontsize=16)
+#     ax.set_ylabel('Power Draw (W)', fontsize=16)
+#
+#     ax.set_xticks([i + width / 2 for i in range(len(datasets))])
+#     ax.set_xticklabels(datasets, fontsize=14)
+#     ax.tick_params(axis='y', labelsize=14)
+#
+#     # Legend
+#     handles = [
+#         plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors['MNMGDatalog'], label='MNMGDatalog',
+#                    markersize=12),
+#         plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors['GPULog'], label='GPULog',
+#                    markersize=12),
+#     ]
+#     ax.legend(handles=handles, loc='upper left', fontsize=14)
+#
+#     ax.set_ylim(bottom=0)
+#
+#     plt.tight_layout()
+#     plt.savefig(output_file, bbox_inches='tight')
+#     print(f"Generated {output_file}")
+#     plt.close()
+
+def read_csv(filename):
+    df = pd.read_csv(filename)
+    return df
+
+
+def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.png', application="TC"):
+    datasets = sorted(df['Dataset'].unique())
+    engines = ['MNMGDatalog', 'GPULog']
+    width = 0.3  # Width of bars
+
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    bar_positions = {}
+    for idx, engine in enumerate(engines):
+        subset = df[df['Engine'] == engine]
+        positions = [x + idx * width for x in range(len(datasets))]
+        bars = ax1.bar(
+            positions,
+            subset['TotalEnergy(J)'],
+            width=width,
+            label=f'{engine} (Energy)',
+            zorder=1  # Bars stay behind
+        )
+        bar_positions[engine] = positions
+
+    ax1.set_xlabel('Dataset', fontsize=16)
+    ax1.set_ylabel('Energy (Joules)', fontsize=16)
+    ax1.set_xticks([x + width / 2 for x in range(len(datasets))])
+    ax1.set_xticklabels(datasets, fontsize=14)
+    ax1.tick_params(axis='y', labelsize=14)
+
+    # Line for Total Time
+    ax2 = ax1.twinx()
+
+    for idx, engine in enumerate(engines):
+        subset = df[df['Engine'] == engine]
+        ax2.scatter(
+            bar_positions[engine],
+            subset['TotalTime(S)'],
+            marker='o',
+            label=f'{engine} (Time)',
+            zorder=2,
+            edgecolor='black',
+            s=50  # Size of markers
+        )
+
+        y_min, y_max = ax2.get_ylim()
+        offset = 0.02 * (y_max - y_min)  # 2% of y-range
+        # Add time labels near each point
+        for x, y in zip(bar_positions[engine], subset['TotalTime(S)']):
+            ax2.text(
+                x, y + offset,  # a little above the point
+                f'{y:.1f}s',
+                ha='center',
+                va='bottom',
+                fontsize=14
+            )
+
+    ax2.set_ylabel('Time (Seconds)', fontsize=14)
+    ax2.tick_params(axis='y', labelsize=14)
+
+    handles, labels = ax1.get_legend_handles_labels()
+    ax1.legend(handles, engines, loc='best', fontsize=14)
+    ax1.set_ylim(bottom=0)
+    ax2.set_ylim(bottom=0)
+    plt.tight_layout()
+    plt.savefig(output_file, bbox_inches='tight')
+    print(f"Generated {output_file}")
+    plt.close()
+
+
+
+
+def plot_avg_power_violin(df, output_file='avg_power_violin_final.png', application="TC"):
+    datasets = sorted(df['Dataset'].unique())
+    engines = ['MNMGDatalog', 'GPULog']
+    width = 0.3
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    positions = []
+    all_violin_data = []
+    scatter_positions = []
+    scatter_values = []
+    engine_mapping = []  # track engine for each violin
+
+    for idx, dataset in enumerate(datasets):
+        for jdx, engine in enumerate(engines):
+            subset = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
+            if subset.empty:
+                continue
+
+            draws = list(map(float, subset['AllDrawSamples(W)'].iloc[0].split(',')))
+
+            pos = idx + jdx * width
+            positions.append(pos)
+            all_violin_data.append(draws)
+            scatter_positions.append(pos)
+            scatter_values.append(subset['AvgPowerDrawTimed(W)'].values[0])
+            engine_mapping.append(engine)
+
+    # Color map
+    default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    engine_colors = {
+        engines[0]: default_colors[0],  # typically blue
+        engines[1]: default_colors[1]  # typically orange
+    }
+    scatter_color = default_colors[2]  # third color, typically green
+
+    # Plot violin plots
+    vp = ax.violinplot(all_violin_data, positions=positions, widths=width * 0.9, showmeans=False, showextrema=False,
+                       showmedians=False)
+
+    for idx, body in enumerate(vp['bodies']):
+        engine = engine_mapping[idx]
+        body.set_facecolor(engine_colors[engine])
+        body.set_alpha(1)
+        # body.set_edgecolor('black')
+        body.set_linewidth(1)
+
+    y_min, y_max = ax.get_ylim()
+    offset = 0.02 * (y_max - y_min)  # 2% of y-range
+    # Scatter plot for AvgPowerDrawTimed(W)
+    for x, y in zip(scatter_positions, scatter_values):
+        ax.scatter(x, y, color=scatter_color, zorder=3, s=50)
+        ax.text(
+            x, y + offset,  # slightly above
+            f'{y:.1f}W',
+            ha='center',
+            va='bottom',
+            fontsize=14,
+            color="black"
+        )
+
+    ax.set_xlabel('Dataset', fontsize=16)
+    ax.set_ylabel('Power Draw (W)', fontsize=16)
+
+    ax.set_xticks([i + width / 2 for i in range(len(datasets))])
+    ax.set_xticklabels(datasets, fontsize=14)
+    ax.tick_params(axis='y', labelsize=14)
+
+    # Custom legend
+    handles = [
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[0]], label=engines[0],
+                   markersize=10),
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[1]], label=engines[1],
+                   markersize=10),
+        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=scatter_color, label='Avg Power Draw (Timed)',
+                   markersize=10)
+    ]
+    ax.legend(handles=handles, loc='best', fontsize=14)
+
+    plt.tight_layout()
+    plt.savefig(output_file, bbox_inches='tight')
+    print(f"Generated {output_file}")
+    plt.close()
+
 
 if __name__ == "__main__":
     warnings.simplefilter(action='ignore', category=FutureWarning)
 
-    slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.png")
+    # power charts
+    tc_data = read_csv('logs/power_tc.csv')
+    sg_data = read_csv('logs/power_sg.csv')
+    plot_total_energy_vs_time(tc_data, "drawing/charts/tc_energy.png", "TC")
+    plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.png", "SG")
+    plot_avg_power_violin(tc_data, "drawing/charts/tc_power.png", "TC")
+    plot_avg_power_violin(sg_data, "drawing/charts/sg_power.png", "SG")
+    #
+    # sg_data = read_csv('logs/power_sg.csv')
+    # plot_total_energy_vs_time(sg_data, "drawing/charts/sg_total_energy.png", "SG")
+    # plot_avg_power_boxplot(sg_data, "drawing/charts/sg_avg_power.png", "SG")
+
+    # slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.png")
     # plot_breakdown_chart_single_figure("drawing/charts/tc_breakdown.csv", "drawing/charts/", "tc")
     #
     #
@@ -457,4 +705,3 @@ if __name__ == "__main__":
     # plot_technique_breakdown("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak_breakdown.png")
     # plot_total_chart("drawing/charts/sg.csv", "drawing/charts/sg.png", "SG")
     # plot_total_chart("drawing/charts/wcc.csv", "drawing/charts/wcc.png", "WCC")
-

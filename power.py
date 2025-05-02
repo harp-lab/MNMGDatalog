@@ -73,39 +73,43 @@ def measure_power(args, resolution=0.1):
     min_draw, q1_draw, median_draw, q3_draw, max_draw = get_summary(power_draw_values)
     all_draws_str = ",".join(f"{v:.2f}" for v in power_draw_values)
 
+    headers = [
+        "TotalTime(S)",
+        "TotalEnergy(J)",
+        "AvgPowerDrawTimed(W)",
+        "MinDrawSampled(W)",
+        "Q1DrawSampled(W)",
+        "MedianDrawSampled(W)",
+        "Q3DrawSampled(W)",
+        "MaxDrawSampled(W)",
+        "AllDrawSamples(W)"
+    ]
+    values = [
+        f"{total_time_s:.4f}",
+        f"{energy_j:.4f}",
+        f"{avg_power:.4f}",
+        f"{min_draw:.2f}",
+        f"{q1_draw:.2f}",
+        f"{median_draw:.2f}",
+        f"{q3_draw:.2f}",
+        f"{max_draw:.2f}",
+        all_draws_str
+    ]
+
     # Write to CSV
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow([
-            "TotalTime(S)",
-            "TotalEnergy(J)",
-            "AvgPowerDrawTimed(W)",
-            "MinDrawSampled(W)",
-            "Q1DrawSampled(W)",
-            "MedianDrawSampled(W)",
-            "Q3DrawSampled(W)",
-            "MaxDrawSampled(W)",
-            "AllDrawSamples(W)"
-        ])
-        writer.writerow([
-            f"{total_time_s:.4f}",
-            f"{energy_j:.4f}",
-            f"{avg_power:.4f}",
-            f"{min_draw:.2f}",
-            f"{q1_draw:.2f}",
-            f"{median_draw:.2f}",
-            f"{q3_draw:.2f}",
-            f"{max_draw:.2f}",
-            all_draws_str
-        ])
+        writer.writerow(headers)
+        writer.writerow(values)
 
     # Log to stdout
     log("\n" + "-" * 50)
     log("GPU USAGE REPORT")
     log("-" * 50)
     log(f"Generated Report File: {filename}")
-    log("TotalTime(S),TotalEnergy(J),AvgPowerDrawTimed(W),MinDrawSampled(W),Q1DrawSampled(W),MedianDrawSampled(W),Q3DrawSampled(W),MaxDrawSampled(W)")
-    log(f"{total_time_s:.4f},{energy_j:.4f},{avg_power:.4f},{min_draw:.2f},{q1_draw:.2f},{median_draw:.2f},{q3_draw:.2f},{max_draw:.2f}")
+    log(",".join(headers))
+    formatted_values = values[:-1] + [f"\"{values[-1]}\""]
+    log(",".join(formatted_values))
     log("-" * 50 + "\n")
 
 def main(argv):

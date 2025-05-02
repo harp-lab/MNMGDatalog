@@ -293,6 +293,16 @@ python generate_graphs.py
 ```shell
 python3 power.py tc_ol.csv mpirun -np 1 ./tc.out data/data_163734.bin 0 0 1
 ```
+- On Polaris interactive node:
+```shell
+
+module use /soft/modulefiles
+module load conda; conda activate base
+export CUDA_VISIBLE_DEVICES=0
+export MPICH_GPU_SUPPORT_ENABLED=0
+python power.py sf.csv ./tc_interactive.out data/data_223001.bin 0 1 1
+python power.py fe_body_sg.csv ./sg_interactive.out data/data_163734.bin 0 1 1
+```
 
 
 ### References
