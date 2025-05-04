@@ -106,7 +106,7 @@ def measure_power(args, resolution=0.1):
     log("\n" + "-" * 50)
     log("GPU USAGE REPORT")
     log("-" * 50)
-    log(f"Generated Report File: {filename}")
+    log(f"Generated Report File: {filename} for {" ".join(args[1:])}")
     log(",".join(headers))
     formatted_values = values[:-1] + [f"\"{values[-1]}\""]
     log(",".join(formatted_values))

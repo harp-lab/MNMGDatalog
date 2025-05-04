@@ -53,12 +53,12 @@ def slog_vs_mnmgjoin(filepath, output_file='slog_vs_mnmgjoin.png'):
         # Add text labels slightly above the data points
         for j, (gpu_time, node_time) in enumerate(zip(gpu_data[i], node_data[i])):
             ax.text(j, gpu_time * 1.2, f'{gpu_time:.1f}',
-                    ha='center', va='bottom', fontsize=16)
+                    ha='center', va='bottom', fontsize=18)
             ax.text(j, node_time * 1.2,
-                    f'{node_time:.1f}', ha='center', va='bottom', fontsize=16)
+                    f'{node_time:.1f}', ha='center', va='bottom', fontsize=18)
 
         ax.set_yscale('log')
-        ax.set_title(f'{dataset}', fontsize=16)
+        ax.set_title(f'{dataset}', fontsize=18)
 
         # Remove all y-axis ticks and labels
         ax.set_yticks([], minor=False)
@@ -82,11 +82,17 @@ def slog_vs_mnmgjoin(filepath, output_file='slog_vs_mnmgjoin.png'):
             ax.set_ylabel('Time (log scale)', fontsize=16)
 
         ax.legend(fontsize=14, loc='upper right')
+        ax.yaxis.set_tick_params(labelsize=18)
+        ax.yaxis.set_major_formatter(plt.ScalarFormatter())
+        ax.yaxis.set_minor_formatter(plt.ScalarFormatter())
+        ax.yaxis.set_minor_locator(plt.NullLocator())
 
     # Adjust layout with more bottom padding
-    plt.subplots_adjust(wspace=0, hspace=0, bottom=0.3)
+    # plt.subplots_adjust(wspace=0, hspace=0, bottom=0.3)
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300)
+    plt.rcParams["pdf.fonttype"] = 42
+    # plt.savefig(output_file, bbox_inches='tight')
+    plt.savefig(output_file, bbox_inches='tight', dpi=600)
     print(f"Generated {output_file}")
     plt.close()
 
@@ -135,7 +141,7 @@ def plot_total_chart(filepath, output_file='mnmgjoin_chart.png', application="TC
 
         # Set x-tick labels
         ax.set_xticks(range(len(config_labels)))
-        ax.set_xticklabels(config_labels, fontsize=18)
+        ax.set_xticklabels(config_labels, fontsize=16)
         ax.set_yscale('log')
         # after scaling, don't use scientific notation,
         # ax.get_yaxis().set_minor_formatter(plt.ScalarFormatter())
@@ -148,14 +154,15 @@ def plot_total_chart(filepath, output_file='mnmgjoin_chart.png', application="TC
         ax.yaxis.set_minor_locator(plt.NullLocator())
 
         if i == 0:
-            ax.set_ylabel('Time (log scale)', fontsize=18)
+            ax.set_ylabel('Time (log scale)', fontsize=16)
 
         # ax.legend(fontsize=18, loc='upper right')
 
     # Adjust layout with more bottom padding
-    plt.subplots_adjust(wspace=0.3, bottom=0.2)
+    # plt.subplots_adjust(wspace=0.3, bottom=0.2)
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300)
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(output_file, bbox_inches='tight', dpi=600)
     print(f"Generated {output_file}")
     plt.close()
 
@@ -283,24 +290,24 @@ def plot_breakdown_chart_single_figure(filepath, output_folder, app_name):
         # Annotate the total time values on top of the points
         for i, total_time in enumerate(df_dataset['Total Time']):
             ax.text(i, total_time * 1.02,
-                    f'{total_time:.2f}', ha='center', va='bottom', fontsize=12)
+                    f'{total_time:.2f}', ha='center', va='bottom', fontsize=16)
 
         # Titles and labels
-        ax.set_title(f'{dataset}', fontsize=14)
-        ax.legend(loc='upper right', fontsize=12)
+        ax.set_title(f'{dataset}', fontsize=18)
+    ax.legend(loc='upper right', fontsize=16)
 
     # Add a common y-axis label
     fig.text(0.0, 0.5, 'Time (s)', va='center',
-             rotation='vertical', fontsize=12)
-
-    # # Add common x-axis label
-    # fig.text(0.5, 0.02, 'GPU Configuration', ha='center', fontsize=12)
-
+             rotation='vertical', fontsize=18)
+    # Add a common x-axis label
+    fig.text(0.5, 0.0, 'Number of GPUs', ha='center',
+         fontsize=18)
+    plt.rcParams["pdf.fonttype"] = 42
     plt.tight_layout()  # Adjust layout to fit labels and legend
 
     # Save the figure
-    output_filename = os.path.join(output_folder, f'{app_name}_breakdown.png')
-    plt.savefig(output_filename, dpi=300)
+    output_filename = os.path.join(output_folder, f'{app_name}_breakdown.pdf')
+    plt.savefig(output_filename, bbox_inches='tight')
     plt.close()
 
     print(f"Generated {output_filename}")
@@ -335,21 +342,22 @@ def plot_technique_total_time(filepath, output_file='technique_total_time.png', 
         # Annotate total time values
         for i, total_time in enumerate(df_technique['Adjusted Total Time']):
             ax.text(i, total_time * 1.02,
-                    f'{total_time:.2f}', ha='center', va='bottom', fontsize=12)
+                    f'{total_time:.2f}', ha='center', va='bottom', fontsize=16)
 
     # Titles and labels
-    ax.set_title(title, fontsize=14)
+    ax.set_title(title, fontsize=18)
     # ax.set_xlabel('GPU Configuration', fontsize=12)
-    ax.set_ylabel('Time (s)', fontsize=14)
-
+    ax.set_ylabel('Time (s)', fontsize=18)
+    ax.set_xlabel('Number of GPUs', fontsize=18)
     # Add legend
-    ax.legend(fontsize=14)
+    ax.legend(fontsize=16)
 
     plt.xticks(rotation=0)
     plt.tight_layout()
 
     # Save the figure
-    plt.savefig(output_file, dpi=300)
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(output_file, dpi=600, bbox_inches='tight')
     plt.close()
 
     print(f"Generated {output_file}")
@@ -420,23 +428,26 @@ def plot_technique_breakdown(filepath, output_file='technique_breakdown.png'):
             if f'{total_time:.2f}' == '1.18':
                 total_time = 1.16
             ax.text(i, total_time * 1.02,
-                    f'{total_time:.2f}', ha='center', va='bottom', fontsize=13)
+                    f'{total_time:.2f}', ha='center', va='bottom', fontsize=14)
 
         # Titles and labels
-        ax.set_title(f'{technique}', fontsize=16)
+        ax.set_title(f'{technique}', fontsize=18)
         # only show legend for the last subplot
         if idx == len(techniques) - 1:
             ax.legend(handles=legend_handles +
-                              [line], labels=legend_labels + ['Total Time'], fontsize=13, frameon=True)
+                              [line], labels=legend_labels + ['Total Time'], fontsize=14, frameon=True)
 
     # Add a common y-axis label
     fig.text(0.0, 0.5, 'Time (s)', va='center',
-             rotation='vertical', fontsize=16)
-
+             rotation='vertical', fontsize=18)
+    # Add a common x-axis label
+    fig.text(0.5, 0.0, 'Number of GPUs', ha='center',
+             fontsize=18)
     plt.tight_layout()  # Adjust layout to fit labels and legend
 
     # Save the figure
-    plt.savefig(output_file, dpi=300)
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(output_file, dpi=600, bbox_inches='tight')
     plt.close()
 
     print(f"Generated {output_file}")
@@ -683,25 +694,20 @@ if __name__ == "__main__":
     warnings.simplefilter(action='ignore', category=FutureWarning)
 
     # power charts
-    tc_data = read_csv('logs/power_tc.csv')
-    sg_data = read_csv('logs/power_sg.csv')
-    plot_total_energy_vs_time(tc_data, "drawing/charts/tc_energy.png", "TC")
-    plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.png", "SG")
-    plot_avg_power_violin(tc_data, "drawing/charts/tc_power.png", "TC")
-    plot_avg_power_violin(sg_data, "drawing/charts/sg_power.png", "SG")
-    #
+    # tc_data = read_csv('logs/power_tc.csv')
     # sg_data = read_csv('logs/power_sg.csv')
-    # plot_total_energy_vs_time(sg_data, "drawing/charts/sg_total_energy.png", "SG")
-    # plot_avg_power_boxplot(sg_data, "drawing/charts/sg_avg_power.png", "SG")
+    # plot_total_energy_vs_time(tc_data, "drawing/charts/tc_energy.png", "TC")
+    # plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.png", "SG")
+    # plot_avg_power_violin(tc_data, "drawing/charts/tc_power.png", "TC")
+    # plot_avg_power_violin(sg_data, "drawing/charts/sg_power.png", "SG")
 
-    # slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.png")
-    # plot_breakdown_chart_single_figure("drawing/charts/tc_breakdown.csv", "drawing/charts/", "tc")
-    #
-    #
-    # plot_technique_total_time("drawing/charts/single_join_strong.csv", "drawing/charts/single_join_strong.png", "Strong scaling, 10M tuples (range 90K)")
-    # plot_technique_total_time("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak.png", "Weak scaling, 10M tuples/rank (range 50K/rank)")
-    #
-    # plot_technique_breakdown("drawing/charts/single_join_strong.csv", "drawing/charts/single_join_strong_breakdown.png")
-    # plot_technique_breakdown("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak_breakdown.png")
-    # plot_total_chart("drawing/charts/sg.csv", "drawing/charts/sg.png", "SG")
-    # plot_total_chart("drawing/charts/wcc.csv", "drawing/charts/wcc.png", "WCC")
+    # slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.pdf")
+    # plot_total_chart("drawing/charts/sg.csv", "drawing/charts/sg.pdf", "SG")
+    # plot_total_chart("drawing/charts/wcc.csv", "drawing/charts/wcc.pdf", "WCC")
+
+    plot_breakdown_chart_single_figure("drawing/charts/tc_breakdown.csv", "drawing/charts/", "tc")
+
+    # plot_technique_total_time("drawing/charts/single_join_strong.csv", "drawing/charts/single_join_strong.pdf", "Strong scaling, 10M tuples (range 90K)")
+    # plot_technique_total_time("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak.pdf", "Weak scaling, 10M tuples/rank (range 50K/rank)")
+    # plot_technique_breakdown("drawing/charts/single_join_strong.csv", "drawing/charts/single_join_strong_breakdown.pdf")
+    # plot_technique_breakdown("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak_breakdown.pdf")

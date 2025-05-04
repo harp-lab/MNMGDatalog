@@ -199,7 +199,7 @@ CC single_join.cu -o single_join_interactive.out -O3
 
 # Example Traditional MPI, Sorting-based buffer preparation, with JOB run:
 # Last three parameters are: CUDA-Aware-MPI (0/1), Buffer preparation (0: two pass, 1: sorting), Job run (0, 1)
-mpiexec --np 4 --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_7035.bin 0 1 1
+mpiexec --np 4 --ppn 1 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc_interactive.out data/data_7035.bin 0 1 1
 
 # CUDA-Aware-MPI
 module load craype-accel-nvidia80

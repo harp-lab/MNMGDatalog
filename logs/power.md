@@ -1,12 +1,17 @@
 - Setup in Polaris interactive mode
 ```shell
 #MNMGDatalog
+cd /eagle/dist_relational_alg/arsho/mnmgJOIN
+chmod +x set_affinity_gpu_polaris.sh
+## Traditional MPI
+
 module use /soft/modulefiles
 module load conda; conda activate base
 export CUDA_VISIBLE_DEVICES=0
 module load nvhpc-mixed/23.9
 module load craype-accel-nvidia80
 export MPICH_GPU_SUPPORT_ENABLED=0
+CC tc.cu -o tc_interactive.out -O3
 
 #GPULog
 module use /soft/modulefiles
