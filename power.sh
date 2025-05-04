@@ -9,9 +9,8 @@
 #PBS -e power-job.error
 
 # Change the directory to work directory, which is the directory you submit the job.
-cd ${PBS_O_WORKDIR}
-#cd /eagle/dist_relational_alg/arsho/mnmgJOIN
 #cd ${PBS_O_WORKDIR}
+cd /eagle/dist_relational_alg/arsho/mnmgJOIN
 
 # MPI example w/ 4 MPI ranks per node spread evenly across cores
 NRANKS_PER_NODE=4              # Number of MPI ranks to spawn per node
@@ -25,11 +24,8 @@ run_single_dataset_tc() {
   local mpi_gpu_support_enabled=$4
 
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-  for i in 1; do
-    CSV_OUT="power_$(hostname)_$($data_file)_$(i).csv"
-    python $CSV_OUT mpiexec --np $i --ppn 4 --depth=1 --cpu-bind depth ./set_affinity_gpu_polaris.sh ./tc.out $DATA_FILE 0 1 1
-  done
-
+  CSV_OUT="power_$(hostname)_$($data_file)_1_gpu.csv"
+  python $CSV_OUT ./tc.out $DATA_FILE 0 1 1
 }
 
 run_benchmark() {
