@@ -81,19 +81,6 @@ def get_sg(dataset):
         i += 1
         del temp_projection
         del temp_projection_2
-        #
-        #
-        #
-        # relation_2 = temp_projection_2
-        # previous_result_size = len(temp_result)
-        # temp_result = get_union(temp_result, relation_2)
-        # current_result_size = len(temp_result)
-        # if previous_result_size == current_result_size:
-        #     i += 1
-        #     break
-        # i += 1
-        # del temp_projection
-        # del temp_projection_2
     end_time_outer = time.perf_counter()
     time_took = end_time_outer - start_time_outer
     time_took = f"{time_took:.6f}"
