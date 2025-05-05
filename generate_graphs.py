@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from io import StringIO
 import numpy as np
+import matplotlib.gridspec as gridspec
 
 # set font size
 plt.rcParams.update({'font.size': 18})
@@ -39,7 +40,7 @@ def slog_vs_mnmgjoin(filepath, output_file='slog_vs_mnmgjoin.png'):
     node_data = df[node_columns].values
 
     # Create subplots
-    fig, axes = plt.subplots(1, len(datasets), figsize=(20, 4))
+    fig, axes = plt.subplots(1, len(datasets), figsize=(20, 6))
 
     for i, dataset in enumerate(datasets):
         ax = axes[i]
@@ -248,7 +249,7 @@ def plot_breakdown_chart_single_figure(filepath, output_folder, app_name):
 
     # if 6 datasets, create 2x3 subplots, otherwise create 1xN subplots
     # Create a single figure with subplots for each dataset in a single row
-    fig, axes = plt.subplots(1, len(datasets), figsize=(6 * len(datasets), 6))
+    fig, axes = plt.subplots(1, len(datasets), figsize=(20, 6))
 
     # Ensure axes is iterable
     if len(datasets) == 1:
@@ -598,7 +599,8 @@ def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.png', 
     ax1.set_ylim(bottom=0)
     ax2.set_ylim(bottom=0)
     plt.tight_layout()
-    plt.savefig(output_file, bbox_inches='tight')
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(output_file, dpi=600, bbox_inches='tight')
     print(f"Generated {output_file}")
     plt.close()
 
@@ -685,8 +687,104 @@ def plot_avg_power_violin(df, output_file='avg_power_violin_final.png', applicat
     ax.legend(handles=handles, loc='best', fontsize=14)
 
     plt.tight_layout()
-    plt.savefig(output_file, bbox_inches='tight')
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(output_file, dpi=600, bbox_inches='tight')
     print(f"Generated {output_file}")
+    plt.close()
+
+def combined_slog_and_breakdown(line_df, bar_df, output_file='combined_chart.png'):
+    datasets = line_df.iloc[:, 0].tolist()
+    n = len(datasets)
+
+    # Create figure with 2 rows and N columns, shared y-axis across rows
+    fig, axes = plt.subplots(
+        2, n, figsize=(6 * n, 7.8),
+        gridspec_kw={'height_ratios': [1, 1]},
+        constrained_layout=True,
+        sharey='row'
+    )
+
+    default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    mnmg_color = default_colors[0]
+    slog_color = default_colors[1]
+    components = ['Join', 'Buffer preparation', 'Communication', 'Deduplication', 'Merge', 'Clear']
+
+    gpu_cols = [col for col in line_df.columns if 'GPU' in col]
+    node_cols = [col for col in line_df.columns if 'Node' in col]
+    config_labels = [(gpu_cols[i], node_cols[i].split("(")[0]) for i in range(len(gpu_cols))]
+
+    for i, dataset in enumerate(datasets):
+        ax1 = axes[0, i]
+        ax2 = axes[1, i]
+
+        # ───── TOP: SLOG vs MNMG line chart ─────
+        gpu_data = line_df[gpu_cols].values[i]
+        node_data = line_df[node_cols].values[i]
+
+        ax1.plot(range(len(config_labels)), gpu_data, marker='o', label='MNMGDatalog', color=mnmg_color)
+        ax1.plot(range(len(config_labels)), node_data, marker='s', linestyle='--', label='SLOG', color=slog_color)
+        ax1.set_yscale('log')
+        ax1.set_title(dataset, fontsize=18)
+        ax1.set_xticks(range(len(config_labels)))
+        ax1.set_xticklabels(['' for _ in config_labels])
+
+        for j, (gpu, node) in enumerate(zip(gpu_data, node_data)):
+            ax1.text(j, gpu * 1.2, f'{gpu:.2f}', ha='center', fontsize=14)
+            ax1.text(j, node * 1.2, f'{node:.2f}', ha='center', fontsize=14)
+            ax1.text(j, -0.07, config_labels[j][0], color=mnmg_color, fontsize=14,
+                     transform=ax1.get_xaxis_transform(), ha='center')
+            ax1.text(j, -0.14, config_labels[j][1], color=slog_color, fontsize=14,
+                     transform=ax1.get_xaxis_transform(), ha='center')
+
+        if i == 0:
+            ax1.set_ylabel('Time (log scale)', fontsize=16)
+        # else:
+        #     ax1.set_yticklabels([])
+
+        if i == len(datasets) - 1:
+            ax1.legend(fontsize=14, loc='upper right')
+
+        # ───── BOTTOM: Breakdown bar chart ─────
+        bar_data = bar_df[bar_df['# Input'] == dataset].sort_values('# Process')
+        gpu_labels = bar_data['# Process'].astype(str)
+        bar_data = bar_data.copy()
+        bar_data['Other'] = bar_data['Total Time'] - bar_data[components].sum(axis=1)
+
+        bottom = np.zeros(len(bar_data))
+        for comp in components + ['Other']:
+            bars = ax2.bar(gpu_labels, bar_data[comp], bottom=bottom, label=comp)
+            bottom += bar_data[comp]
+
+        ax2.plot(gpu_labels, bar_data['Total Time'], color=mnmg_color, marker='o', label='Total Time')
+
+        for j, val in enumerate(bar_data['Total Time']):
+            ax2.text(j, val * 1.02, f'{val:.2f}', ha='center', fontsize=14)
+
+        if i == 0:
+            ax2.set_ylabel("Time (s)", fontsize=16)
+        # else:
+        #     ax2.set_yticklabels([])
+
+        if i == len(datasets) - 1:
+            ax2.legend(fontsize=14, loc='upper right')
+
+        # Axis labels and ticks visibility
+        if i == 0:
+            ax1.set_ylabel('Time (log scale)', fontsize=16)
+            ax2.set_ylabel('Time (s)', fontsize=16)
+        else:
+            ax1.tick_params(left=False, labelleft=False)  # Remove ticks and labels
+            ax1.yaxis.set_ticks_position('none')
+            ax2.tick_params(left=False, labelleft=False)
+            ax2.yaxis.set_ticks_position('none')
+
+    # Add common x-axis label
+    fig.align_ylabels(axes[:, 0])
+    fig.text(0.5, -0.02, 'Number of GPUs', ha='center', fontsize=16)
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(output_file, dpi=600, bbox_inches='tight')
+
+    print(f"Saved combined figure to {output_file}")
     plt.close()
 
 
@@ -694,20 +792,25 @@ if __name__ == "__main__":
     warnings.simplefilter(action='ignore', category=FutureWarning)
 
     # power charts
-    # tc_data = read_csv('logs/power_tc.csv')
-    # sg_data = read_csv('logs/power_sg.csv')
-    # plot_total_energy_vs_time(tc_data, "drawing/charts/tc_energy.png", "TC")
-    # plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.png", "SG")
-    # plot_avg_power_violin(tc_data, "drawing/charts/tc_power.png", "TC")
-    # plot_avg_power_violin(sg_data, "drawing/charts/sg_power.png", "SG")
+    tc_data = read_csv('logs/power_tc.csv')
+    sg_data = read_csv('logs/power_sg.csv')
+    plot_total_energy_vs_time(tc_data, "drawing/charts/tc_energy.png", "TC")
+    plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.png", "SG")
+    plot_avg_power_violin(tc_data, "drawing/charts/tc_power.png", "TC")
+    plot_avg_power_violin(sg_data, "drawing/charts/sg_power.png", "SG")
 
     # slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.pdf")
     # plot_total_chart("drawing/charts/sg.csv", "drawing/charts/sg.pdf", "SG")
     # plot_total_chart("drawing/charts/wcc.csv", "drawing/charts/wcc.pdf", "WCC")
 
-    plot_breakdown_chart_single_figure("drawing/charts/tc_breakdown.csv", "drawing/charts/", "tc")
+    # plot_breakdown_chart_single_figure("drawing/charts/tc_breakdown.csv", "drawing/charts/", "tc")
 
     # plot_technique_total_time("drawing/charts/single_join_strong.csv", "drawing/charts/single_join_strong.pdf", "Strong scaling, 10M tuples (range 90K)")
     # plot_technique_total_time("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak.pdf", "Weak scaling, 10M tuples/rank (range 50K/rank)")
     # plot_technique_breakdown("drawing/charts/single_join_strong.csv", "drawing/charts/single_join_strong_breakdown.pdf")
     # plot_technique_breakdown("drawing/charts/single_join_weak.csv", "drawing/charts/single_join_weak_breakdown.pdf")
+
+    # combined multi node tc and tc breakdown
+    # line_df = pd.read_csv("drawing/charts/tc_mnmgjoin_slog.csv")
+    # bar_df = pd.read_csv("drawing/charts/tc_breakdown.csv")
+    # combined_slog_and_breakdown(line_df, bar_df, output_file="drawing/charts/slog_combined.pdf")

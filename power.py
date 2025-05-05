@@ -106,7 +106,7 @@ def measure_power(args, resolution=0.1):
     log("\n" + "-" * 50)
     log("GPU USAGE REPORT")
     log("-" * 50)
-    log(f"Generated Report File: {filename} for {" ".join(args[1:])}")
+    log(f"Generated Report File: {filename}")
     log(",".join(headers))
     formatted_values = values[:-1] + [f"\"{values[-1]}\""]
     log(",".join(formatted_values))
@@ -117,6 +117,8 @@ def main(argv):
 
 
 if __name__ == "__main__":
+    argstr = " ".join(sys.argv)
+    log(f"Running: {argstr}")
     main(sys.argv)
 
 # python3 power.py tc_ol.csv mpirun -np 1 ./tc.out data/data_163734.bin 0 0 1

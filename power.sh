@@ -24,8 +24,8 @@ run_single_dataset_tc() {
   local mpi_gpu_support_enabled=$4
 
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TC on $data_file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-  CSV_OUT="power_$(hostname)_$DATA_FILE_1_gpu.csv"
-  python $CSV_OUT ./tc.out $DATA_FILE 0 1 1
+  CSV_OUT="power_$(hostname)_$(basename $data_file)_1_gpu.csv"
+  python power.py $CSV_OUT ./tc.out $data_file 0 1 1
 }
 
 run_benchmark() {
