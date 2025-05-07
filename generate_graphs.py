@@ -541,6 +541,7 @@ def read_csv(filename):
 def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.png', application="TC"):
     datasets = sorted(df['Dataset'].unique())
     engines = ['MNMGDatalog', 'GPULog']
+
     width = 0.3  # Width of bars
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -794,10 +795,10 @@ if __name__ == "__main__":
     # power charts
     tc_data = read_csv('logs/power_tc.csv')
     sg_data = read_csv('logs/power_sg.csv')
-    plot_total_energy_vs_time(tc_data, "drawing/charts/tc_energy.png", "TC")
-    plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.png", "SG")
-    plot_avg_power_violin(tc_data, "drawing/charts/tc_power.png", "TC")
-    plot_avg_power_violin(sg_data, "drawing/charts/sg_power.png", "SG")
+    # plot_total_energy_vs_time(tc_data, "drawing/charts/tc_energy.png", "TC")
+    # plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.png", "SG")
+    # plot_avg_power_violin(tc_data, "drawing/charts/tc_power.png", "TC")
+    # plot_avg_power_violin(sg_data, "drawing/charts/sg_power.png", "SG")
 
     # slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.pdf")
     # plot_total_chart("drawing/charts/sg.csv", "drawing/charts/sg.pdf", "SG")
