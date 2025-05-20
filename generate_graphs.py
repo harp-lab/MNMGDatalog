@@ -538,9 +538,9 @@ def read_csv(filename):
     return df
 
 
-def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.png', application="TC"):
+def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.pdf', application="TC"):
     datasets = sorted(df['Dataset'].unique())
-    engines = ['MNMGDatalog', 'GPULog']
+    engines = ['MNMGDatalog', 'GPULog', 'cuDF']
 
     width = 0.3  # Width of bars
 
@@ -570,27 +570,35 @@ def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.png', 
 
     for idx, engine in enumerate(engines):
         subset = df[df['Engine'] == engine]
+        valid_x = []
+        valid_y = []
+        for x, y in zip(bar_positions[engine], subset['TotalTime(S)']):
+            if y > 0:
+                valid_x.append(x)
+                valid_y.append(y)
+
         ax2.scatter(
-            bar_positions[engine],
-            subset['TotalTime(S)'],
+            valid_x,
+            valid_y,
             marker='o',
             label=f'{engine} (Time)',
             zorder=2,
             edgecolor='black',
-            s=50  # Size of markers
+            s=50
         )
 
         y_min, y_max = ax2.get_ylim()
         offset = 0.02 * (y_max - y_min)  # 2% of y-range
         # Add time labels near each point
         for x, y in zip(bar_positions[engine], subset['TotalTime(S)']):
-            ax2.text(
-                x, y + offset,  # a little above the point
-                f'{y:.1f}s',
-                ha='center',
-                va='bottom',
-                fontsize=14
-            )
+            if y > 0:
+                ax2.text(
+                    x, y + offset,  # a little above the point
+                    f'{y:.1f}s',
+                    ha='center',
+                    va='bottom',
+                    fontsize=14
+                )
 
     ax2.set_ylabel('Time (Seconds)', fontsize=14)
     ax2.tick_params(axis='y', labelsize=14)
@@ -606,30 +614,54 @@ def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.png', 
     plt.close()
 
 
-
-
-def plot_avg_power_violin(df, output_file='avg_power_violin_final.png', application="TC"):
+def plot_avg_power_violin(df, output_file='avg_power_violin_final.pdf', application="TC"):
     datasets = sorted(df['Dataset'].unique())
-    engines = ['MNMGDatalog', 'GPULog']
-    width = 0.3
+    engines = ['MNMGDatalog', 'GPULog', 'cuDF']
+    width = 0.30
+    bar_alpha_no_violin = 0.8
+    bar_color = "silver"
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+    ax2 = ax1.twinx()
 
     positions = []
     all_violin_data = []
     scatter_positions = []
     scatter_values = []
-    engine_mapping = []  # track engine for each violin
+    energy_values = []
+    time_values = []
+    engine_mapping = []
+    bar_info = []
 
     for idx, dataset in enumerate(datasets):
         for jdx, engine in enumerate(engines):
             subset = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
             if subset.empty:
                 continue
+            raw_draws = subset['AllDrawSamples(W)'].iloc[0]
+            if not isinstance(raw_draws, str) or not raw_draws.strip():
+                raw_draws = ""
 
-            draws = list(map(float, subset['AllDrawSamples(W)'].iloc[0].split(',')))
+            try:
+                draws = list(map(float, raw_draws.split(','))) if raw_draws else []
+            except ValueError:
+                draws = []
 
             pos = idx + jdx * width
+            total_time = subset['TotalTime(S)'].values[0]
+            total_energy = subset['TotalEnergy(J)'].values[0]
+            has_violin = len(draws) > 0
+
+            bar_info.append({
+                "position": pos,
+                "total_time": total_time,
+                "total_energy": total_energy,
+                "alpha": bar_alpha_no_violin
+            })
+
+            if not has_violin:
+                continue
+
             positions.append(pos)
             all_violin_data.append(draws)
             scatter_positions.append(pos)
@@ -638,54 +670,167 @@ def plot_avg_power_violin(df, output_file='avg_power_violin_final.png', applicat
 
     # Color map
     default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    engine_colors = {
-        engines[0]: default_colors[0],  # typically blue
-        engines[1]: default_colors[1]  # typically orange
-    }
-    scatter_color = default_colors[2]  # third color, typically green
+    engine_colors = {engine: default_colors[i] for i, engine in enumerate(engines)}
+    scatter_color = default_colors[len(engines)]
 
-    # Plot violin plots
-    vp = ax.violinplot(all_violin_data, positions=positions, widths=width * 0.9, showmeans=False, showextrema=False,
-                       showmedians=False)
-
+    # Violin plots (Power Draw Distribution)
+    vp = ax2.violinplot(all_violin_data, positions=positions, widths=width * 0.5,
+                        showmeans=False, showextrema=False, showmedians=False)
     for idx, body in enumerate(vp['bodies']):
         engine = engine_mapping[idx]
         body.set_facecolor(engine_colors[engine])
         body.set_alpha(1)
-        # body.set_edgecolor('black')
         body.set_linewidth(1)
 
-    y_min, y_max = ax.get_ylim()
-    offset = 0.02 * (y_max - y_min)  # 2% of y-range
-    # Scatter plot for AvgPowerDrawTimed(W)
+    # Avg Power (Timed) scatter
+    y_primary_min, y_primary_max = ax1.get_ylim()
+    offset_primary = 0.2 * (y_primary_max - y_primary_min)
+    y_secondary_min, y_secondary_max = ax2.get_ylim()
+    offset_secondary = 0.02 * (y_secondary_max - y_secondary_min)
     for x, y in zip(scatter_positions, scatter_values):
-        ax.scatter(x, y, color=scatter_color, zorder=3, s=50)
-        ax.text(
-            x, y + offset,  # slightly above
-            f'{y:.1f}W',
-            ha='center',
-            va='bottom',
-            fontsize=14,
-            color="black"
-        )
+        ax2.scatter(x, y, color=scatter_color, zorder=3, s=50)
+        ax2.text(x, y + offset_secondary, f'{y:.1f}W', ha='center', va='bottom', fontsize=12, color="black")
 
-    ax.set_xlabel('Dataset', fontsize=16)
-    ax.set_ylabel('Power Draw (W)', fontsize=16)
+    # Background bar (TotalTime)
+    for bar in bar_info:
+        rect = ax1.bar(
+            bar["position"], bar["total_time"],
+            width=width * 0.8,
+            color=bar_color,
+            alpha=bar["alpha"],
+            zorder=0
+        )[0]
 
-    ax.set_xticks([i + width / 2 for i in range(len(datasets))])
-    ax.set_xticklabels(datasets, fontsize=14)
-    ax.tick_params(axis='y', labelsize=14)
+    # Axis setup
+    ax2.set_xticks([i + width for i in range(len(datasets))])
+    ax2.set_xticklabels(datasets, fontsize=14)
+    ax2.set_xlabel('Dataset', fontsize=16)
+    ax2.set_ylabel('Power Draw (W)', fontsize=16)
+    ax1.set_ylabel('Total Time (s)', fontsize=16)
+    ax1.tick_params(axis='y', labelsize=14)
+    ax2.tick_params(axis='y', labelsize=14)
 
-    # Custom legend
+    # Legend
     handles = [
-        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[0]], label=engines[0],
-                   markersize=10),
-        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[1]], label=engines[1],
-                   markersize=10),
-        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=scatter_color, label='Avg Power Draw (Timed)',
-                   markersize=10)
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[0]], label=engines[0], markersize=10),
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[1]], label=engines[1], markersize=10),
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[2]], label=engines[2], markersize=10),
+        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=scatter_color, label='Avg Power Draw (Timed)', markersize=10),
+        plt.Line2D([0], [0], lw=12, color=bar_color, label='Total Time (s)', alpha=bar_alpha_no_violin)
     ]
-    ax.legend(handles=handles, loc='best', fontsize=14)
+    ax2.legend(handles=handles, loc='best', fontsize=12)
+
+    plt.tight_layout()
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(output_file, dpi=600, bbox_inches='tight')
+    print(f"Generated {output_file}")
+    plt.close()
+
+def plot_avg_power_energy_violin(df, output_file='avg_power_violin_final.pdf', application="TC"):
+    datasets = sorted(df['Dataset'].unique())
+    engines = ['MNMGDatalog', 'GPULog', 'cuDF']
+    width = 0.30
+    bar_alpha_no_violin = 0.8
+    bar_color = "silver"
+
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+    ax2 = ax1.twinx()
+
+    positions = []
+    all_violin_data = []
+    scatter_positions = []
+    scatter_values = []
+    energy_values = []
+    time_values = []
+    engine_mapping = []
+    bar_info = []
+
+    for idx, dataset in enumerate(datasets):
+        for jdx, engine in enumerate(engines):
+            subset = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
+            if subset.empty:
+                continue
+            raw_draws = subset['AllDrawSamples(W)'].iloc[0]
+            if not isinstance(raw_draws, str) or not raw_draws.strip():
+                raw_draws = ""
+
+            try:
+                draws = list(map(float, raw_draws.split(','))) if raw_draws else []
+            except ValueError:
+                draws = []
+
+            pos = idx + jdx * width
+            total_time = subset['TotalTime(S)'].values[0]
+            total_energy = subset['TotalEnergy(J)'].values[0]
+            has_violin = len(draws) > 0
+
+            bar_info.append({
+                "position": pos,
+                "total_time": total_time,
+                "total_energy": total_energy,
+                "alpha": bar_alpha_no_violin
+            })
+
+            if not has_violin:
+                continue
+
+            positions.append(pos)
+            all_violin_data.append(draws)
+            scatter_positions.append(pos)
+            scatter_values.append(subset['AvgPowerDrawTimed(W)'].values[0])
+            engine_mapping.append(engine)
+
+    # Color map
+    default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    engine_colors = {engine: default_colors[i] for i, engine in enumerate(engines)}
+    scatter_color = default_colors[len(engines)]
+
+    # Violin plots (Power Draw Distribution)
+    vp = ax2.violinplot(all_violin_data, positions=positions, widths=width * 0.5,
+                        showmeans=False, showextrema=False, showmedians=False)
+    for idx, body in enumerate(vp['bodies']):
+        engine = engine_mapping[idx]
+        body.set_facecolor(engine_colors[engine])
+        body.set_alpha(1)
+        body.set_linewidth(1)
+
+    # Avg Power (Timed) scatter
+    y_primary_min, y_primary_max = ax1.get_ylim()
+    offset_primary = 0.2 * (y_primary_max - y_primary_min)
+    y_secondary_min, y_secondary_max = ax2.get_ylim()
+    offset_secondary = 0.02 * (y_secondary_max - y_secondary_min)
+    for x, y in zip(scatter_positions, scatter_values):
+        ax2.scatter(x, y, color=scatter_color, zorder=3, s=50)
+        ax2.text(x, y + offset_secondary, f'{y:.1f}W', ha='center', va='bottom', fontsize=12, color="black")
+
+    # Background bar (TotalTime)
+    for bar in bar_info:
+        rect = ax1.bar(
+            bar["position"], bar["total_energy"],
+            width=width * 0.8,
+            color=bar_color,
+            alpha=bar["alpha"],
+            zorder=0
+        )[0]
+
+    # Axis setup
+    ax2.set_xticks([i + width for i in range(len(datasets))])
+    ax2.set_xticklabels(datasets, fontsize=14)
+    ax2.set_xlabel('Dataset', fontsize=16)
+    ax2.set_ylabel('Power Draw (W)', fontsize=16)
+    ax1.set_ylabel('Energy (J)', fontsize=16)
+    ax1.tick_params(axis='y', labelsize=14)
+    ax2.tick_params(axis='y', labelsize=14)
+
+    # Legend
+    handles = [
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[0]], label=engines[0], markersize=10),
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[1]], label=engines[1], markersize=10),
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[2]], label=engines[2], markersize=10),
+        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=scatter_color, label='Avg Power Draw (Timed)', markersize=10),
+        plt.Line2D([0], [0], lw=12, color=bar_color, label='Total Energy', alpha=bar_alpha_no_violin)
+    ]
+    ax2.legend(handles=handles, loc='best', fontsize=12)
 
     plt.tight_layout()
     plt.rcParams["pdf.fonttype"] = 42
@@ -795,10 +940,12 @@ if __name__ == "__main__":
     # power charts
     tc_data = read_csv('logs/power_tc.csv')
     sg_data = read_csv('logs/power_sg.csv')
-    # plot_total_energy_vs_time(tc_data, "drawing/charts/tc_energy.png", "TC")
-    # plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.png", "SG")
-    # plot_avg_power_violin(tc_data, "drawing/charts/tc_power.png", "TC")
-    # plot_avg_power_violin(sg_data, "drawing/charts/sg_power.png", "SG")
+    # plot_total_energy_vs_time(tc_data, "drawing/charts/tc_energy.pdf", "TC")
+    # plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.pdf", "SG")
+    # plot_avg_power_violin(tc_data, "drawing/charts/tc_power.pdf", "TC")
+    # plot_avg_power_violin(sg_data, "drawing/charts/sg_power.pdf", "SG")
+    plot_avg_power_energy_violin(tc_data, "drawing/charts/tc_power.pdf", "TC")
+    plot_avg_power_energy_violin(sg_data, "drawing/charts/sg_power.pdf", "SG")
 
     # slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.pdf")
     # plot_total_chart("drawing/charts/sg.csv", "drawing/charts/sg.pdf", "SG")

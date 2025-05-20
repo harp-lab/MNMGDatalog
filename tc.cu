@@ -32,6 +32,9 @@
 #include "common/comm.cu"
 #include "common/hash_table.cu"
 #include "common/join.cu"
+#ifdef ENABLE_TIMESTAMPS
+#include "common/timestamp_util.h"
+#endif
 
 using namespace std;
 
@@ -101,10 +104,17 @@ void benchmark(int argc, char **argv) {
     int row_size = 0;
     int total_rows = 0;
 
+#ifdef ENABLE_TIMESTAMPS
+    LOG_TIMESTAMP("FILE-IO start");
+#endif
+
     int *local_data_host = parallel_read(rank, total_rank, input_file, total_columns,
                                          &row_size, &total_rows, &temp_file_io_time);
     int local_count = row_size * total_columns;
     file_io_time += temp_file_io_time;
+#ifdef ENABLE_TIMESTAMPS
+    LOG_TIMESTAMP("FILE-IO end");
+#endif
 
     start_time = MPI_Wtime();
     int *local_data_device;
@@ -144,15 +154,6 @@ void benchmark(int argc, char **argv) {
         communication_time += communication_time_temp;
         memory_clear_time += buffer_memory_clear_time_temp;
     }
-//    show_device_entity_variable(input_relation, row_size, rank, "input_relation", 0);
-
-    // Calculate LIR and CV
-//    auto [lir, cv, max_min] = calculate_load_metrics(input_relation_size, total_rank);
-
-//    if (total_rank > 1) {
-//    }
-//    printf("Communication input_relation (initial): %.4lf\n", communication_time_temp);
-
 
     int t_delta_size = 0;
     Entity *t_delta;
@@ -168,13 +169,10 @@ void benchmark(int argc, char **argv) {
                                      grid_size, block_size, cuda_aware_mpi, &t_delta_size, comm_method,
                                      &buffer_preparation_time_temp, &communication_time_temp,
                                      &buffer_memory_clear_time_temp, iterations);
-//    if (total_rank > 1) {
         buffer_preparation_time += buffer_preparation_time_temp;
         communication_time += communication_time_temp;
         memory_clear_time += buffer_memory_clear_time_temp;
     }
-//    }
-//    printf("Communication t_delta (initial): %.4lf\n", communication_time_temp);
 
     timer.start_timer();
     thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
@@ -191,12 +189,10 @@ void benchmark(int argc, char **argv) {
     cudaMemcpy(t_full, t_delta, t_delta_size * sizeof(Entity), cudaMemcpyDeviceToDevice);
     end_time = MPI_Wtime();
     elapsed_time = end_time - start_time;
-//    if (total_rank > 1) {
 #ifdef DEBUG
     cout << "t_full initialization: " << elapsed_time << endl;
 #endif
     merge_time += elapsed_time;
-//    }
     long long global_t_full_size;
     long long t_full_size = t_delta_size;
     if (total_rank == 1) {
@@ -208,7 +204,6 @@ void benchmark(int argc, char **argv) {
         elapsed_time = end_time - start_time;
         communication_time += elapsed_time;
     }
-//    }
     // Hash table is Edge
     double temp_hashtable_build_time = 0.0;
     int hash_table_rows = 0;
@@ -216,12 +211,9 @@ void benchmark(int argc, char **argv) {
                                         &hash_table_rows, &temp_hashtable_build_time);
     hashtable_build_time += temp_hashtable_build_time;
 
-     //show_device_entity_variable(hash_table, hash_table_rows, rank, "hash_table", 0);
-     //show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
     Entity *join_result;
     Entity *new_t_full;
     while (true) {
-        //cout << "Iterations: " << iterations << endl;
         double temp_join_time = 0.0;
         int join_result_size = 0;
 
@@ -230,7 +222,6 @@ void benchmark(int argc, char **argv) {
                                        &join_result_size, &temp_join_time);
 
         join_time += temp_join_time;
-        //show_device_entity_variable(join_result, join_result_size, rank, "join_result", 0);
         start_time = MPI_Wtime();
         cudaFree(t_delta);
         end_time = MPI_Wtime();
@@ -254,11 +245,6 @@ void benchmark(int argc, char **argv) {
             communication_time += communication_time_temp;
             memory_clear_time += buffer_memory_clear_time_temp;
         }
-        //show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
-
-//        }
-//        printf("Iteration %d: Communication t_delta: %.4lf\n", iterations, communication_time_temp);
-
         timer.start_timer();
         // Deduplicate scattered facts
         thrust::sort(thrust::device, t_delta, t_delta + t_delta_size, set_cmp());
@@ -296,9 +282,6 @@ void benchmark(int argc, char **argv) {
         merge_time += kernel_time;
         cuda_merge_time += kernel_time;
 
-         //show_device_entity_variable(t_delta, t_delta_size, rank, "t_delta", 0);
-         //show_device_entity_variable(new_t_full, new_t_full_size, rank, "new_t_full", 0);
-
         start_time = MPI_Wtime();
         cudaFree(t_full);
         t_full = new_t_full;
@@ -307,12 +290,6 @@ void benchmark(int argc, char **argv) {
         elapsed_time = end_time - start_time;
         memory_clear_time += elapsed_time;
         t_full_copy_time += elapsed_time;
-//        start_time = MPI_Wtime();
-//        cudaFree(join_result);
-//        end_time = MPI_Wtime();
-//        elapsed_time = end_time - start_time;
-//        memory_clear_time += elapsed_time;
-//        inner_clear_time += elapsed_time;
         // Check if the global t full size has changed in this iteration
         if(total_rank == 1) {
             long long old_global_t_full_size = global_t_full_size;
@@ -334,12 +311,7 @@ void benchmark(int argc, char **argv) {
                 break;
             }
         }
-//        break;
     }
-//    cout << "Rank: " << rank << ", set diff: " << set_diff_time << ", concat: " << inner_concat_time << ", sort: "
-//         << inner_sorting_time << ", merge: " << cuda_merge_time << ", t full cpy: "
-//         << t_full_copy_time << ", t full all to all: " << t_full_size_all_to_all_time << ", inner clear: "
-//         << inner_clear_time << endl;
 
     start_time = MPI_Wtime();
     // Reverse the t_full as we stored it in reverse order initially

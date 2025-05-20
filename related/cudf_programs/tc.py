@@ -108,6 +108,10 @@ if __name__ == "__main__":
 # python power.py tc_usroads_cudf.csv python related/cudf_programs/tc.py data/data_165435.txt
 # vsp
 # python power.py tc_vsp_cudf.csv python related/cudf_programs/tc.py data/data_552020.txt
+# fe_ocean
+# python power.py tc_fe_ocean_cudf.csv python related/cudf_programs/tc.py data/data_409593.txt
+# com-dblp
+# python power.py tc_com_dblp_cudf.csv python related/cudf_programs/tc.py data/data_1049866.txt
 
 
 
