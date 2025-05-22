@@ -125,3 +125,4 @@ if __name__ == "__main__":
 
 
 # python power_time.py  --output power_report.csv --gpu 4 ./tc.out data/data_7035.bin 0 0 1
+# python power_time.py  --output power_report.csv --gpu 4 ./tc.out data/data_7035.bin 0 0 1

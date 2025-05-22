@@ -69,50 +69,108 @@ Entity *get_join(int grid_size, int block_size, Entity *hash_table, int hash_tab
                                                            relation, relation_size, join_offset);
     checkCuda(cudaDeviceSynchronize());
 
-//    int *join_offset_host;
-//    join_offset_host = (int *) malloc(relation_size * sizeof(int));
-//    checkCuda(cudaMemcpy(join_offset_host, join_offset, relation_size * sizeof(int), cudaMemcpyDeviceToHost));
-//    int totol_reduce_host = join_offset_host[0];
-//    for (int i = 1; i < relation_size; i++) {
-//        totol_reduce_host += join_offset_host[i];
-//        join_offset_host[i] += join_offset_host[i - 1];
-//    }
-////    std::cout << " Scanned result : " << join_offset_host[relation_size - 1] << std::endl;
-
     result_size = thrust::reduce(thrust::device, join_offset, join_offset + relation_size, 0, thrust::plus<int>());
-
-//    int step = 90'000'000;
-//    for (int i = 0; i < relation_size; i += step) {
-//        int end = i + step;
-//        if (end > relation_size) {
-//            end = relation_size;
-//        }
-//        thrust::exclusive_scan(thrust::device, join_offset + i, join_offset + end, join_offset + i);
-//        checkCuda(cudaDeviceSynchronize());
-//    }
-//    int *join_offset_host_2;
-//    join_offset_host_2 = (int *) malloc(relation_size * sizeof(int));
-//    checkCuda(cudaMemcpy(join_offset_host_2, join_offset, relation_size * sizeof(int), cudaMemcpyDeviceToHost));
-//
-//    if(join_offset_host_2[relation_size - 1] != join_offset_host[relation_size - 1])
-//        std::cout << "(join_offset_host[relation_size - 1] == join_offset_host_2[relation_size - 1]): " << (join_offset_host_2[relation_size - 1] == join_offset_host[relation_size - 1]) << std::endl;
-//
-//    if(totol_reduce_host != result_size)
-//        std::cout << "(totol_reduce_host == result_size): " << (totol_reduce_host == result_size) << std::endl;
-
-
-//    std::cout << " Scanned result exclusive scan : " << join_offset_host_2[relation_size - 1] << std::endl;
-
 
     thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
 #ifdef DEBUG
     cout << "result_size * sizeof(Entity): " << result_size * sizeof(Entity) << endl;
 #endif
-//    checkCuda(cudaDeviceSynchronize());
     checkCuda(cudaMalloc((void **) &join_result, result_size * sizeof(Entity)));
     get_join_result_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
                                                       relation, relation_size, join_offset, join_result);
-//    checkCuda(cudaDeviceSynchronize());
+    cudaFree(join_offset);
+    *join_result_size = result_size;
+    end_time = MPI_Wtime();
+    elapsed_time = end_time - start_time;
+    *compute_time = elapsed_time;
+    return join_result;
+}
+
+__global__
+void get_nl_join_result_size_entity(Entity *input_relation, int input_relation_size,
+                                Entity *t_delta, int t_delta_size,
+                                int *join_result_size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < t_delta_size; i += stride) {
+        int key = t_delta[i].key;
+        int count = 0;
+        // Binary search lower bound in input_relation for key
+        int left = 0, right = input_relation_size;
+        while (left < right) {
+            int mid = (left + right) / 2;
+            if (input_relation[mid].key < key) left = mid + 1;
+            else right = mid;
+        }
+        int j = left;
+        // Count matching keys
+        while (j < input_relation_size && input_relation[j].key == key) {
+            count++;
+            j++;
+        }
+        join_result_size[i] = count;
+    }
+}
+
+__global__
+void get_nl_join_result_entity(Entity *input_relation, int input_relation_size,
+                           Entity *t_delta, int t_delta_size,
+                           int *offset, Entity *join_result) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < t_delta_size; i += stride) {
+        int key = t_delta[i].key;
+        int t_value = t_delta[i].value;
+        int pos = offset[i];
+
+        // Binary search lower bound in input_relation for key
+        int left = 0, right = input_relation_size;
+        while (left < right) {
+            int mid = (left + right) / 2;
+            if (input_relation[mid].key < key) left = mid + 1;
+            else right = mid;
+        }
+        int j = left;
+        // Output matching pairs
+        while (j < input_relation_size && input_relation[j].key == key) {
+            join_result[pos].key = input_relation[j].value;
+            join_result[pos].value = t_value;
+            pos++;
+            j++;
+        }
+    }
+}
+
+Entity *get_join_nl(int grid_size, int block_size, Entity *hash_table, int hash_table_size, Entity *relation,
+                 int relation_size, int *join_result_size, double *compute_time) {
+    double start_time, end_time, elapsed_time;
+    start_time = MPI_Wtime();
+    Entity *join_result = nullptr;
+    if (hash_table_size == 0) {
+        *join_result_size = 0;
+        end_time = MPI_Wtime();
+        elapsed_time = end_time - start_time;
+        *compute_time = elapsed_time;
+        return join_result;
+    }
+    int result_size;
+    int *join_offset;
+    checkCuda(cudaMalloc((void **) &join_offset, relation_size * sizeof(int)));
+    checkCuda(cudaMemset(join_offset, 0, relation_size * sizeof(int)));
+
+    get_nl_join_result_size_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
+                                                           relation, relation_size, join_offset);
+    checkCuda(cudaDeviceSynchronize());
+
+    result_size = thrust::reduce(thrust::device, join_offset, join_offset + relation_size, 0, thrust::plus<int>());
+
+    thrust::exclusive_scan(thrust::device, join_offset, join_offset + relation_size, join_offset);
+#ifdef DEBUG
+    cout << "result_size * sizeof(Entity): " << result_size * sizeof(Entity) << endl;
+#endif
+    checkCuda(cudaMalloc((void **) &join_result, result_size * sizeof(Entity)));
+    get_nl_join_result_entity<<<grid_size, block_size>>>(hash_table, hash_table_size,
+                                                      relation, relation_size, join_offset, join_result);
     cudaFree(join_offset);
     *join_result_size = result_size;
     end_time = MPI_Wtime();

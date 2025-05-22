@@ -1,7 +1,11 @@
 TARGET_TC = tc
 SRC_TC = $(TARGET_TC).cu
+TARGET_TC_NL = tc_nl
+SRC_TC_NL = $(TARGET_TC_NL).cu
 TARGET_SG = sg
 SRC_SG = $(TARGET_SG).cu
+TARGET_SG_NL = sg_nl
+SRC_SG_NL = $(TARGET_SG_NL).cu
 TARGET_CC = wcc
 SRC_CC = $(TARGET_CC).cu
 TARGET_SINGLE_JOIN = single_join
@@ -25,11 +29,23 @@ buildtc:
 testtc:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_TC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
 
+buildtcnl:
+	nvcc $(SRC_TC_NL) -o $(TARGET_TC_NL).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+
+testtcnl:
+	${MPIRUN} -np $(NPROCS) ./$(TARGET_TC_NL).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
+
 buildsg:
 	nvcc $(SRC_SG) -o $(TARGET_SG).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
 testsg:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_SG).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
+
+buildsgnl:
+	nvcc $(SRC_SG_NL) -o $(TARGET_SG_NL).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+
+testsgnl:
+	${MPIRUN} -np $(NPROCS) ./$(TARGET_SG_NL).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
 
 buildwcc:
 	nvcc $(SRC_CC) -o $(TARGET_CC).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
@@ -83,7 +99,11 @@ runpolariswcc: buildpolarissinglejoin testpolarissinglejoin
 
 runtc: buildtc testtc
 
+runtcnl: buildtcnl testtcnl
+
 runsg: buildsg testsg
+
+runsgnl: buildsgnl testsgnl
 
 runwcc: buildwcc testwcc
 

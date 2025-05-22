@@ -23,6 +23,40 @@ cd build
 module load conda; conda activate base
 python power.py ./TC ../data/hpc_talk.txt 0
 
+#BJoin
+# https://github.com/harp-lab/batch_joins/blob/manual_mem/polaris.md
+module use /soft/modulefiles
+module load spack-pe-base cmake gcc-native-mixed/12.3
+# first time setup: oneTBB and RMM
+cd ~
+git clone https://github.com/uxlfoundation/oneTBB/
+git checkout v2022.1.0
+mkdir $HOME/.local
+# Inside the oneTBB
+mkdir build && cd build
+CC=gcc-12 CXX=g++-12 cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local/oneTBB_v2022.1.0 -DTBB_TEST=OFF ..
+make -j
+make install
+
+cd ~
+git clone https://github.com/rapidsai/rmm/
+git checkout v24.12.00
+CC=gcc-12 CXX=g++-12 ./build.sh librmm rmm
+
+# BJoin main repo
+cd /eagle/dist_relational_alg/arsho/batch_joins/
+# update CMakeLists as correct path of oneTBB and rmm
+set(CMAKE_PREFIX_PATH "/home/arsho/rmm/build/install"
+                      ${CMAKE_PREFIX_PATH})
+
+set(TBB_DIR "/home/arsho/.local/oneTBB_v2022.1.0/lib64/cmake/TBB")
+ 
+rm -rf build
+mkdir build && cd build
+cmake ..
+make -j TC SG
+
+module load conda; conda activate base
 ```
 - GPULog TC
 ```shell
@@ -559,6 +593,90 @@ TotalTime(S),TotalEnergy(J),AvgPowerDrawTimed(W),MinDrawSampled(W),Q1DrawSampled
 ```
 
 
+### BJoin TC
+```shell
+#fe_body
+python power.py tc.csv ./TC /eagle/dist_relational_alg/arsho/mnmgJOIN/data/data_163734.txt 90
+#vsp
+python power.py tc.csv ./TC /eagle/dist_relational_alg/arsho/mnmgJOIN/data/vsp_finan512_scagr7-2c_rlfddd.txt 90
+After Iteration Number 519
+Total rows in the full_rel are 910070918
+
+#sf
+python power.py tc.csv ./TC /eagle/dist_relational_alg/arsho/mnmgJOIN/data/data_223001.txt 90
+
+#usroads
+python power.py tc.csv ./TC /eagle/dist_relational_alg/arsho/mnmgJOIN/data/data_165435.txt 90
+After Iteration Number 605
+Total rows in the full_rel are 871365688
+
+```
+
+### BJoin SG
+```shell
+
+python power.py sg.csv ./SG /eagle/dist_relational_alg/arsho/mnmgJOIN/data/data_163734.txt 90
+python power.py sg.csv ./SG /eagle/dist_relational_alg/arsho/mnmgJOIN/data/data_214078.txt 90
+python power.py sg.csv ./SG /eagle/dist_relational_alg/arsho/mnmgJOIN/data/data_49152.txt 90
+python power.py sg.csv ./SG /eagle/dist_relational_alg/arsho/mnmgJOIN/data/data_51971.txt 90
+
+
+
+Num row in old_delta_rel is 408443204
+Num row in full_rel is 408443204
+Num row in new_delta_rel is 8
+After Iteration Number 124
+
+
+
+The number of outer rows is 8
+The total join row count is :18
+The number of batches is: 1
+Starting batch number 0
+the curJoinRowCount is 18
+Number of tuples after self dedup is Orig 18 New 15
+The number of outer rows is 15
+The total join row count is :34
+The number of batches is: 1
+Starting batch number 0
+		JoinRowsCompleted : 34 thisBatch : 34
+Came out of the joinWithNext
+head->next_join->final_data 0x29de240
+		JoinRowsCompleted : 18 thisBatch : 18
+Freeing delta rel
+The row count in new as calc is 34
+Number of tuples after self dedup is Orig 34 New 28
+the dedup_buf_num_rows is 0
+Breaking out of the loop as delta is 0
+Total Time taken for fix point loop is 5.7848
+At depth 0
+is_batch: false
+is_final: true
+original_full_node: (nil)
+cur_rel_times: make_time=0.008900, sort_time=0.008200, map_time=0.000600
+incoming_rel_times: make_time=0.001000, sort_time=0.000700, map_time=0.000000
+count_memory_alloc_time: 0.000000
+join_count_rows: 18
+count_time: 0.000000
+count_arr_move_time: 0.000000
+num_batches: 1
+host_arr_alloc_time: 0.000000
+max_output_rows_per_batch: 311237075
+batch_data_arr_alloc_time: 0.000000
+joinTime:
+  Batch 0: time = 0.000000, JoinChain* = 0x29dd210
+move_to_host_time: 0.000000
+Returning out of final
+
+--------------------------------------------------
+GPU USAGE REPORT
+--------------------------------------------------
+Generated Report File: sg.csv
+TotalTime(S),TotalEnergy(J),AvgPowerDrawTimed(W),MinDrawSampled(W),Q1DrawSampled(W),MedianDrawSampled(W),Q3DrawSampled(W),MaxDrawSampled(W),AllDrawSamples(W)
+9.6858,1501.0141,154.9712,57.38,83.22,191.51,229.02,263.27,"57.71,57.38,57.38,57.38,64.11,62.05,62.05,62.05,62.05,62.37,62.05,107.55,236.77,227.12,250.15,260.61,244.62,260.06,210.22,241.10,243.43,188.90,206.10,220.46,232.11,243.43,263.27,218.40,205.24,238.77,183.92,230.92,214.01,195.57,194.71,187.24,179.93,188.31,187.44,184.51,174.91,192.70,191.51,195.57,84.83,81.62,84.83"
+--------------------------------------------------
+
+```
 
 ### References
 - [cuDF install on Conda and Pip](https://docs.rapids.ai/install/)

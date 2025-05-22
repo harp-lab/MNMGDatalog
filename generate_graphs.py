@@ -539,70 +539,78 @@ def read_csv(filename):
 
 
 def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.pdf', application="TC"):
+    # Build consistent dataset <-> x position mapping
     datasets = sorted(df['Dataset'].unique())
-    engines = ['MNMGDatalog', 'GPULog', 'cuDF']
+    dataset_pos = {dataset: idx for idx, dataset in enumerate(datasets)}
+    engines = ['MNMGDatalog', 'GPULog', 'BJoin', 'cuDF']
+    width = 0.2  # Width of bars
 
-    width = 0.3  # Width of bars
+    fig, ax1 = plt.subplots(figsize=(14, 6))
 
-    fig, ax1 = plt.subplots(figsize=(10, 6))
-
+    # Plot bars, aligning to correct dataset positions
     bar_positions = {}
     for idx, engine in enumerate(engines):
-        subset = df[df['Engine'] == engine]
-        positions = [x + idx * width for x in range(len(datasets))]
+        positions = []
+        energies = []
+        for dataset in datasets:
+            row = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
+            # Insert energy if available, else 0
+            if not row.empty:
+                energies.append(float(row['TotalEnergy(J)']))
+            else:
+                energies.append(0)
+            positions.append(dataset_pos[dataset] + idx * width)
         bars = ax1.bar(
-            positions,
-            subset['TotalEnergy(J)'],
-            width=width,
-            label=f'{engine} (Energy)',
-            zorder=1  # Bars stay behind
+            positions, energies, width=width,
+            label=f'{engine} (Energy)', zorder=1
         )
         bar_positions[engine] = positions
 
     ax1.set_xlabel('Dataset', fontsize=16)
     ax1.set_ylabel('Energy (Joules)', fontsize=16)
-    ax1.set_xticks([x + width / 2 for x in range(len(datasets))])
+    ax1.set_xticks([dataset_pos[ds] + width * (len(engines)-1)/2 for ds in datasets])
     ax1.set_xticklabels(datasets, fontsize=14)
     ax1.tick_params(axis='y', labelsize=14)
 
-    # Line for Total Time
+    # 3. Plot total time scatter and text (handle 0/missing cleanly)
     ax2 = ax1.twinx()
-
     for idx, engine in enumerate(engines):
-        subset = df[df['Engine'] == engine]
-        valid_x = []
-        valid_y = []
-        for x, y in zip(bar_positions[engine], subset['TotalTime(S)']):
-            if y > 0:
-                valid_x.append(x)
-                valid_y.append(y)
-
+        scatter_x = []
+        scatter_y = []
+        text_y = []
+        for dataset in datasets:
+            row = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
+            pos = dataset_pos[dataset] + idx * width
+            if not row.empty:
+                y = float(row['TotalTime(S)'])
+                if y > 0:
+                    scatter_x.append(pos)
+                    scatter_y.append(y)
+                    text_y.append(y)
+                else:
+                    text_y.append(None)
+            else:
+                text_y.append(None)
+        # Scatter for nonzero only
         ax2.scatter(
-            valid_x,
-            valid_y,
-            marker='o',
-            label=f'{engine} (Time)',
-            zorder=2,
-            edgecolor='black',
-            s=50
+            scatter_x, scatter_y,
+            marker='o', label=f'{engine} (Time)', zorder=2,
+            edgecolor='black', s=50
         )
-
         y_min, y_max = ax2.get_ylim()
-        offset = 0.02 * (y_max - y_min)  # 2% of y-range
-        # Add time labels near each point
-        for x, y in zip(bar_positions[engine], subset['TotalTime(S)']):
-            if y > 0:
+        offset = 0.02 * (y_max - y_min) if y_max > y_min else 1.0  # fallback for all zeros
+        # Annotate only nonzero values
+        for pos, y in zip(bar_positions[engine], text_y):
+            if y is not None and y > 0:
                 ax2.text(
-                    x, y + offset,  # a little above the point
-                    f'{y:.1f}s',
-                    ha='center',
-                    va='bottom',
-                    fontsize=14
+                    pos, y + offset, f'{y:.1f}s',
+                    ha='center', va='bottom', fontsize=14
                 )
 
     ax2.set_ylabel('Time (Seconds)', fontsize=14)
     ax2.tick_params(axis='y', labelsize=14)
 
+    # Legend
     handles, labels = ax1.get_legend_handles_labels()
     ax1.legend(handles, engines, loc='best', fontsize=14)
     ax1.set_ylim(bottom=0)
@@ -728,12 +736,12 @@ def plot_avg_power_violin(df, output_file='avg_power_violin_final.pdf', applicat
 
 def plot_avg_power_energy_violin(df, output_file='avg_power_violin_final.pdf', application="TC"):
     datasets = sorted(df['Dataset'].unique())
-    engines = ['MNMGDatalog', 'GPULog', 'cuDF']
-    width = 0.30
+    engines = ['MNMGDatalog', 'GPULog', 'BJoin', 'cuDF']
+    width = 0.20
     bar_alpha_no_violin = 0.8
     bar_color = "silver"
 
-    fig, ax1 = plt.subplots(figsize=(12, 6))
+    fig, ax1 = plt.subplots(figsize=(14, 6))
     ax2 = ax1.twinx()
 
     positions = []
@@ -799,9 +807,9 @@ def plot_avg_power_energy_violin(df, output_file='avg_power_violin_final.pdf', a
     offset_primary = 0.2 * (y_primary_max - y_primary_min)
     y_secondary_min, y_secondary_max = ax2.get_ylim()
     offset_secondary = 0.02 * (y_secondary_max - y_secondary_min)
-    for x, y in zip(scatter_positions, scatter_values):
-        ax2.scatter(x, y, color=scatter_color, zorder=3, s=50)
-        ax2.text(x, y + offset_secondary, f'{y:.1f}W', ha='center', va='bottom', fontsize=12, color="black")
+    # for x, y in zip(scatter_positions, scatter_values):
+    #     ax2.scatter(x, y, color=scatter_color, zorder=3, s=50)
+    #     ax2.text(x, y + offset_secondary, f'{y:.1f}W', ha='center', va='bottom', fontsize=12, color="black")
 
     # Background bar (TotalTime)
     for bar in bar_info:
@@ -827,7 +835,8 @@ def plot_avg_power_energy_violin(df, output_file='avg_power_violin_final.pdf', a
         plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[0]], label=engines[0], markersize=10),
         plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[1]], label=engines[1], markersize=10),
         plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[2]], label=engines[2], markersize=10),
-        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=scatter_color, label='Avg Power Draw (Timed)', markersize=10),
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[3]], label=engines[3], markersize=10),
+        # plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=scatter_color, label='Avg Power Draw (Timed)', markersize=10),
         plt.Line2D([0], [0], lw=12, color=bar_color, label='Total Energy', alpha=bar_alpha_no_violin)
     ]
     ax2.legend(handles=handles, loc='best', fontsize=12)
