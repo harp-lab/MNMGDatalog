@@ -425,3 +425,4 @@ int main(int argc, char **argv) {
 }
 // METHOD 0 = two pass method, 1 = sorting method
 // make runtcnl DATA_FILE=data/data_7035.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0
+// make runtcnl DATA_FILE=data/data_5.bin NPROCS=3 CUDA_AWARE_MPI=0 METHOD=0

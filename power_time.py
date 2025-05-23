@@ -87,7 +87,7 @@ def save_samples_csv(path, samples):
 
 def main():
     parser = argparse.ArgumentParser(description="Measure GPU power during execution.")
-    parser.add_argument("cmd", nargs='+', help="Command to run (mandatory)")
+    parser.add_argument("cmd", nargs=argparse.REMAINDER, help="Command to run (mandatory)")
     parser.add_argument("--output", type=str, help="Output CSV base name (optional)")
     parser.add_argument("--gpu", type=int, default=1, help="Number of GPUs per node (default 1)")
 

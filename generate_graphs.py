@@ -1,10 +1,13 @@
 import os
 import warnings
+import math
 import pandas as pd
 import matplotlib.pyplot as plt
 from io import StringIO
 import numpy as np
 import matplotlib.gridspec as gridspec
+import matplotlib.lines as mlines
+import ast
 
 # set font size
 plt.rcParams.update({'font.size': 18})
@@ -539,13 +542,19 @@ def read_csv(filename):
 
 
 def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.pdf', application="TC"):
-    # Build consistent dataset <-> x position mapping
     datasets = sorted(df['Dataset'].unique())
-    dataset_pos = {dataset: idx for idx, dataset in enumerate(datasets)}
-    engines = ['MNMGDatalog', 'GPULog', 'BJoin', 'cuDF']
+    engines = ['MNMGDatalog', 'INLJoin', 'GPULog', 'BJoin', 'cuDF']
     width = 0.2  # Width of bars
+    group_gap = 0.2  # Change this value for more/less gap between dataset groups
 
-    fig, ax1 = plt.subplots(figsize=(14, 6))
+    # Compute x positions for dataset groups, with gap
+    dataset_pos = {}
+    pos = 0
+    for ds in datasets:
+        dataset_pos[ds] = pos
+        pos += 1 + group_gap  # Adds gap after each dataset group
+
+    fig, ax1 = plt.subplots(figsize=(16, 5))
 
     # Plot bars, aligning to correct dataset positions
     bar_positions = {}
@@ -554,7 +563,6 @@ def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.pdf', 
         energies = []
         for dataset in datasets:
             row = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
-            # Insert energy if available, else 0
             if not row.empty:
                 energies.append(float(row['TotalEnergy(J)']))
             else:
@@ -598,8 +606,7 @@ def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.pdf', 
             edgecolor='black', s=50
         )
         y_min, y_max = ax2.get_ylim()
-        offset = 0.02 * (y_max - y_min) if y_max > y_min else 1.0  # fallback for all zeros
-        # Annotate only nonzero values
+        offset = 0.02 * (y_max - y_min) if y_max > y_min else 1.0
         for pos, y in zip(bar_positions[engine], text_y):
             if y is not None and y > 0:
                 ax2.text(
@@ -610,9 +617,8 @@ def plot_total_energy_vs_time(df, output_file='total_energy_vs_time_final.pdf', 
     ax2.set_ylabel('Time (Seconds)', fontsize=14)
     ax2.tick_params(axis='y', labelsize=14)
 
-    # Legend
     handles, labels = ax1.get_legend_handles_labels()
-    ax1.legend(handles, engines, loc='best', fontsize=14)
+    ax1.legend(handles, engines, loc='upper left', fontsize=14)
     ax1.set_ylim(bottom=0)
     ax2.set_ylim(bottom=0)
     plt.tight_layout()
@@ -736,12 +742,12 @@ def plot_avg_power_violin(df, output_file='avg_power_violin_final.pdf', applicat
 
 def plot_avg_power_energy_violin(df, output_file='avg_power_violin_final.pdf', application="TC"):
     datasets = sorted(df['Dataset'].unique())
-    engines = ['MNMGDatalog', 'GPULog', 'BJoin', 'cuDF']
+    engines = ['MNMGDatalog', 'INLJoin', 'GPULog', 'BJoin', 'cuDF']
     width = 0.20
     bar_alpha_no_violin = 0.8
     bar_color = "silver"
 
-    fig, ax1 = plt.subplots(figsize=(14, 6))
+    fig, ax1 = plt.subplots(figsize=(20, 6))
     ax2 = ax1.twinx()
 
     positions = []
@@ -830,15 +836,17 @@ def plot_avg_power_energy_violin(df, output_file='avg_power_violin_final.pdf', a
     ax1.tick_params(axis='y', labelsize=14)
     ax2.tick_params(axis='y', labelsize=14)
 
+    handles = []
+    for i in range(len(engines)):
+        handles.append(plt.Line2D([0], [0], marker='s', color='w',
+                                  markerfacecolor=engine_colors[engines[i]], label=engines[i], markersize=10))
+
+
     # Legend
-    handles = [
-        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[0]], label=engines[0], markersize=10),
-        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[1]], label=engines[1], markersize=10),
-        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[2]], label=engines[2], markersize=10),
-        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=engine_colors[engines[3]], label=engines[3], markersize=10),
+    handles.append(
         # plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=scatter_color, label='Avg Power Draw (Timed)', markersize=10),
         plt.Line2D([0], [0], lw=12, color=bar_color, label='Total Energy', alpha=bar_alpha_no_violin)
-    ]
+    )
     ax2.legend(handles=handles, loc='best', fontsize=12)
 
     plt.tight_layout()
@@ -943,6 +951,141 @@ def combined_slog_and_breakdown(line_df, bar_df, output_file='combined_chart.png
     plt.close()
 
 
+def plot_power_time_energy(df, output_file='power_time_energy_smooth.pdf', smooth_window=15):
+    # Maintain explicit order
+    engines = ['MNMGDatalog', 'INLJoin', 'GPULog', 'BJoin', 'cuDF']
+    datasets = df['Dataset'].unique()
+    cmap = plt.get_cmap('tab10')
+    engine_colors = {engine: cmap(i % 10) for i, engine in enumerate(engines)}
+
+    fig, axes = plt.subplots(len(datasets), 1, figsize=(12, 4 * len(datasets)))
+    if len(datasets) == 1:
+        axes = [axes]
+    # for idx, dataset in enumerate(datasets):
+
+    for idx, dataset in enumerate(datasets):
+        ax1 = axes[idx]
+        ax2 = ax1.twinx()
+        ax1.set_title(f'{dataset}', fontsize=16, pad=5, fontweight='bold')
+        ax2.set_yticks([])  # Hide right y-axis ticks
+        all_times = []
+        for engine in engines:
+            row = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
+            if not row.empty and float(row['TotalTime(S)']) > 0:
+                all_times.append(float(row['TotalTime(S)']))
+        for i, engine in enumerate(engines):
+            row = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
+            if row.empty or float(row['TotalTime(S)']) == 0:
+                continue
+
+            total_time = float(row['TotalTime(S)'])
+            power_str = row['AllDrawSamples(W)'].values[0]
+            if not power_str.strip():
+                continue
+            power_samples = list(map(float, power_str.replace('"', '').split(',')))
+
+            n = len(power_samples)
+            # Time starts from 0, ends at total_time (already correct)
+            time_points = np.linspace(0, total_time, n)
+            color = engine_colors[engine]
+            power_smoothed = pd.Series(power_samples).rolling(window=smooth_window, min_periods=1, center=True).mean()
+
+            ax1.plot(time_points, power_smoothed, label=engine, color=color, linewidth=2)
+            # Scatter at end with total energy as annotation
+            ax1.scatter([total_time], [power_smoothed.iloc[-1]], color=color, edgecolor='black', zorder=3, s=50)
+            energy = float(row['TotalEnergy(J)'])
+            ax1.text(
+                total_time, power_smoothed.iloc[-1], f' {energy:.0f}J',
+                fontsize=12, color=color, va='center', ha='left', fontweight='bold'
+            )
+        if all_times:
+            ax1.set_xlim(left=0, right=int(math.ceil(max(all_times)*1.05)))
+
+        if idx == 0:
+            # Make legend for ALL engines, even if not all plotted here
+            handles = [
+                mlines.Line2D([], [], color=engine_colors[engine], linewidth=4, label=engine)
+                for engine in engines
+            ]
+            ax1.legend(handles=handles, loc='best', fontsize=14, frameon=True)
+        else:
+            if ax1.get_legend():
+                ax1.get_legend().remove()
+        ax1.grid(True, which='both', axis='both', linestyle='--', alpha=0.4)
+
+    # Shared axis labels, closer to axes
+    fig.supxlabel("Total Time (Seconds)", fontsize=16, y=0.01)
+    fig.supylabel("Power Draw (W)", fontsize=16, x=0.01)
+    # Reduce space between subplots and labels
+    # fig.subplots_adjust(left=0.08, right=0.98, top=0.98, bottom=0.07, hspace=0.12)
+    fig.subplots_adjust(left=0.08, right=0.98, top=1, bottom=0.05, hspace=0.22)
+
+    plt.savefig(output_file, bbox_inches='tight', dpi=300)
+    plt.close()
+    print(f"Saved {output_file}")
+
+def plot_gpu_scaling(df, output_file='scaling_study.pdf'):
+    # Prepare categorical labels
+    labels = [f"{g} GPU" if g == 1 else f"{g} GPUs" for g in df['GPUs']]
+    x = range(len(labels))
+    # Padded y limits for both axes (do not start at 0)
+    time_min = df['Total Time (s)'].min()
+    time_max = df['Total Time (s)'].max()
+    energy_min = df['Total Energy (J)'].min()
+    energy_max = df['Total Energy (J)'].max()
+    time_range = time_max - time_min
+    energy_range = energy_max - energy_min
+
+    fig, ax1 = plt.subplots(figsize=(8, 4))
+    ax2 = ax1.twinx()
+
+
+    # Set categorical x-ticks
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(labels, fontsize=14)
+    ax1.set_xlabel("Number of GPUs", fontsize=14)
+
+
+
+    ax1.set_ylim(time_min - 0.15 * time_range, time_max + 0.18 * time_range)
+    ax2.set_ylim(energy_min - 0.15 * energy_range, energy_max + 0.18 * energy_range)
+
+    ax1.set_ylabel("Total Time (Seconds)", fontsize=14, color='tab:blue')
+    ax2.set_ylabel("Total Energy (Joules)", fontsize=14, color='tab:orange')
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+    ax2.tick_params(axis='y', labelcolor='tab:orange')
+    ax1.grid(True, axis='y', linestyle='--', alpha=0.3)
+
+    # Total time
+    l1 = ax1.plot(
+        x, df['Total Time (s)'],
+        color='tab:blue', marker='o', linewidth=2, label='Total Time (s)'
+    )
+    offset = 0.03 * (time_max - time_min)
+    for xi, y in zip(x, df['Total Time (s)']):
+        ax1.text(xi, y + offset, f'{y:.1f}s', fontsize=14, color='tab:blue', va='bottom', ha='center', zorder=10)
+
+    # Total energy
+    offset = 0.03 * (energy_max - energy_min)
+    l2 = ax2.plot(
+        x, df['Total Energy (J)'],
+        color='tab:orange', marker='o', linewidth=2, label='Total Energy (J)'
+    )
+    for xi, y in zip(x, df['Total Energy (J)']):
+        ax2.text(xi, y - offset, f'{y:.0f}J', fontsize=14, color='tab:orange', va='top', ha='center', zorder=10)
+
+
+    # Combine legends
+    lines = l1 + l2
+    labels_leg = [l.get_label() for l in lines]
+    ax1.legend(lines, labels_leg, loc='upper right', fontsize=14)
+
+    plt.tight_layout()
+    plt.savefig(output_file, bbox_inches='tight', dpi=300)
+    plt.close()
+    print(f"Saved {output_file}")
+
+
 if __name__ == "__main__":
     warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -953,8 +1096,18 @@ if __name__ == "__main__":
     # plot_total_energy_vs_time(sg_data, "drawing/charts/sg_energy.pdf", "SG")
     # plot_avg_power_violin(tc_data, "drawing/charts/tc_power.pdf", "TC")
     # plot_avg_power_violin(sg_data, "drawing/charts/sg_power.pdf", "SG")
-    plot_avg_power_energy_violin(tc_data, "drawing/charts/tc_power.pdf", "TC")
-    plot_avg_power_energy_violin(sg_data, "drawing/charts/sg_power.pdf", "SG")
+    # plot_avg_power_energy_violin(tc_data, "drawing/charts/tc_power.pdf", "TC")
+    # plot_avg_power_energy_violin(sg_data, "drawing/charts/sg_power.pdf", "SG")
+    # plot_power_time_energy(tc_data, "drawing/charts/tc_power_line.pdf")
+    # plot_power_time_energy(sg_data, "drawing/charts/sg_power_line.pdf")
+
+    scaling_data = [
+        {"GPUs": 1, "Total Time (s)": 76.8929, "Total Energy (J)": 3921.4198},
+        {"GPUs": 2, "Total Time (s)": 40.5936, "Total Energy (J)": 2069.9404},
+        {"GPUs": 4, "Total Time (s)": 23.2474, "Total Energy (J)": 2049.5490},
+    ]
+    df_scale = pd.DataFrame(scaling_data)
+    plot_gpu_scaling(df_scale, "drawing/charts/multi_gpu.pdf")
 
     # slog_vs_mnmgjoin("drawing/charts/tc_mnmgjoin_slog.csv", "drawing/charts/mnmgJOIN_slog.pdf")
     # plot_total_chart("drawing/charts/sg.csv", "drawing/charts/sg.pdf", "SG")
