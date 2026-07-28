@@ -45,3 +45,6 @@ data/large_datasets/
 venv/*
 build/*
 .venv/*
+
+# MacOS
+.DS_Store
