@@ -125,17 +125,22 @@ run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
     echo "--------------------------------------------" >&2
   fi
   # Pick the sentinel-tagged data row for this version, then strip the sentinel
-  # so the rest of the script sees the canonical 15-field line (version=$1...).
-  # Stray stdout (e.g. a bare "72") can never carry the sentinel, so it's ignored.
-  # We look for the row regardless of exit code, so a valid result printed just
-  # before a teardown crash is still used; only a truly missing row fails.
-  line="$(echo "$out" | awk -F',' -v OFS=',' -v w="$want" '
-    $1=="__TCROW__" && $2==w { $1=""; sub(/^,/,""); ln=$0 } END{ if(ln!="") print ln }')"
+  # prefix so the rest of the script sees the canonical 15-field line
+  # (version=$1...). We use substr (no field rebuild / no OFS) for portability
+  # across awk implementations (BSD awk / gawk / mawk). Stray stdout (e.g. a bare
+  # "72") can never carry the sentinel, so it is ignored. The row is accepted
+  # regardless of exit code, so a result printed just before a teardown crash is
+  # still used.
+  line="$(printf '%s\n' "$out" | awk -F',' -v w="$want" '
+    $1=="__TCROW__" && $2==w { print substr($0, index($0, ",") + 1) }' | tail -n 1)"
+  if [[ "${BENCH_DEBUG:-0}" == "1" ]]; then
+    echo "---- DEBUG run_bin extracted for $want: >>${line}<< ----" >&2
+  fi
   [[ -n "$line" ]] || { echo "RAW>>${out}<<RAW"; return 2; }
   echo "$line"
 }
 
-BENCH_SCRIPT_VERSION="v5-selftest"
+BENCH_SCRIPT_VERSION="v6-portable"
 
 # Runtime self-test: exercise the ACTUAL run_bin with a fake binary that prints a
 # stray "72" plus a valid sentinel row. If the active parser doesn't return the
