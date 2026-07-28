@@ -29,9 +29,11 @@ CASES=(
   "data_23874.bin:58:481121" # TG.cedge
 )
 
-# Extract the TC (field 4) from the program's CSV output line.
-get_field() { # $1=output  $2=field index
-  echo "$1" | awk -F',' '/^[^#]/ {print $'"$2"'; exit}'
+# Extract a field from the sentinel-tagged data row. The row is:
+#   __TCROW__,version,input,iterations,tc,...  -> iterations=$4, tc=$5
+# Matching the sentinel makes this immune to any stray stdout from the program.
+get_field() { # $1=output  $2=field index (in the sentinel row)
+  echo "$1" | awk -F',' '$1=="__TCROW__" {print $'"$2"'; exit}'
 }
 
 pass=0
@@ -54,8 +56,8 @@ for label in "reference:$V0" "baseline:$V1" "cudagraph:$V2" "conditional:$V3"; d
       continue
     fi
     out="$("$bin" "$df" 64 2>/dev/null)"
-    got_tc="$(get_field "$out" 4)"
-    got_iter="$(get_field "$out" 3)"
+    got_iter="$(get_field "$out" 4)"   # sentinel row: iterations = field 4
+    got_tc="$(get_field "$out" 5)"     # sentinel row: tc = field 5
     if [[ "$got_tc" == "$exp_tc" && "$got_iter" == "$exp_iter" ]]; then
       printf "  PASS  %-16s TC=%s iters=%s\n" "$ds" "$got_tc" "$got_iter"
       pass=$((pass+1))

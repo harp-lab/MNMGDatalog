@@ -450,9 +450,14 @@ inline double tc_median(double *v, int n) {
 // end-to-end cost of one representative solve (Compute is the median over the
 // timed repeats; the per-phase one-time costs are added once).
 // ---------------------------------------------------------------------------
+// The data row starts with a unique sentinel token so downstream parsers can
+// pick it out unambiguously, even if the program (or any library it links)
+// prints stray text to stdout. Parsers match the sentinel and then read the
+// canonical 15 columns that follow it.
+#define TC_ROW_SENTINEL "__TCROW__"
 inline void tc_print_header() {
-    printf("# Version,# Input,# Iterations,# TC,TotalTime,FileIO,H2D,Setup,"
-           "Build,Compute,ComputeMin,D2H,PeakMemMB,Repeats,# Data\n");
+    printf("# %s,Version,Input,Iterations,TC,TotalTime,FileIO,H2D,Setup,"
+           "Build,Compute,ComputeMin,D2H,PeakMemMB,Repeats,Data\n", TC_ROW_SENTINEL);
 }
 inline void tc_print_row(const char *version, int input, int iterations,
                          unsigned long long tc, double fileio, double h2d,
@@ -460,9 +465,10 @@ inline void tc_print_row(const char *version, int input, int iterations,
                          double compute_min, double d2h, double peak_mem_mb,
                          int repeats, const char *data) {
     double total = fileio + h2d + setup + build + compute + d2h;
-    printf("%s,%d,%d,%llu,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.2lf,%d,%s\n",
-           version, input, iterations, tc, total, fileio, h2d, setup,
+    printf("%s,%s,%d,%d,%llu,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.2lf,%d,%s\n",
+           TC_ROW_SENTINEL, version, input, iterations, tc, total, fileio, h2d, setup,
            build, compute, compute_min, d2h, peak_mem_mb, repeats, data);
+    fflush(stdout);
 }
 
 // ---------------------------------------------------------------------------

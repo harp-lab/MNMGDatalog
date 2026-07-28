@@ -172,12 +172,19 @@ make run3 DATA=../data/data_7035.bin   # conditional
 ```
 
 Every version (v0–v3) prints the **same** CSV line with a full timing breakdown,
-peak memory, and an end-to-end total:
+peak memory, and an end-to-end total. The data row begins with a fixed
+**sentinel token `__TCROW__`** so the scripts can pick it out unambiguously even
+if the program (or a linked library / driver) prints stray text to stdout:
 
 ```
-# Version,# Input,# Iterations,# TC,TotalTime,FileIO,H2D,Setup,Build,Compute,ComputeMin,D2H,PeakMemMB,Repeats,# Data
-baseline,7035,64,146120,0.006000,0.001000,0.000500,0.002000,0.000000,0.003600,0.003500,0.000010,300.00,10,../data/data_7035.bin
+# __TCROW__,Version,Input,Iterations,TC,TotalTime,FileIO,H2D,Setup,Build,Compute,ComputeMin,D2H,PeakMemMB,Repeats,Data
+__TCROW__,baseline,7035,64,146120,0.006000,0.001000,0.000500,0.002000,0.000000,0.003600,0.003500,0.000010,300.00,10,../data/data_7035.bin
 ```
+
+`tests/benchmark.sh` matches the `__TCROW__` line, strips the sentinel, and works
+with the remaining 15 columns; the combined CSV under `results/` is written
+without the sentinel (plus `dataset` file and README `name`). Anything that isn't
+a sentinel row (a stray `72`, a CUDA warning, etc.) is ignored.
 
 ### Reported metrics
 

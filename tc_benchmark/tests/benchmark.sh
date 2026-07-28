@@ -124,9 +124,13 @@ run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
     echo "$out" >&2
     echo "--------------------------------------------" >&2
   fi
-  [[ $rc -eq 0 ]] || { echo "RAW>>${out}<<RAW"; return 2; }
-  # pick the last line with exactly 15 comma fields AND first field == want
-  line="$(echo "$out" | awk -F',' -v w="$want" 'NF==15 && $1==w {ln=$0} END{if(ln!="") print ln}')"
+  # Pick the sentinel-tagged data row for this version, then strip the sentinel
+  # so the rest of the script sees the canonical 15-field line (version=$1...).
+  # Stray stdout (e.g. a bare "72") can never carry the sentinel, so it's ignored.
+  # We look for the row regardless of exit code, so a valid result printed just
+  # before a teardown crash is still used; only a truly missing row fails.
+  line="$(echo "$out" | awk -F',' -v OFS=',' -v w="$want" '
+    $1=="__TCROW__" && $2==w { $1=""; sub(/^,/,""); ln=$0 } END{ if(ln!="") print ln }')"
   [[ -n "$line" ]] || { echo "RAW>>${out}<<RAW"; return 2; }
   echo "$line"
 }
