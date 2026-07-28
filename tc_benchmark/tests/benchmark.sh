@@ -135,15 +135,34 @@ run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
   echo "$line"
 }
 
-BENCH_SCRIPT_VERSION="v4-sentinel"
-# Self-check: confirm THIS file actually contains the sentinel-aware parser.
-# Catches the case where a stale/partial copy has the new banner but an old
-# run_bin (which is exactly what produces spurious "BADLINE: 72" reference rows).
-if ! grep -q '\$1=="__TCROW__" && \$2==w' "${BASH_SOURCE[0]}"; then
-  echo "!!! STALE benchmark.sh: this file lacks the __TCROW__ parser."
-  echo "!!! Re-copy tests/benchmark.sh in full, then rerun. Aborting."
-  exit 3
-fi
+BENCH_SCRIPT_VERSION="v5-selftest"
+
+# Runtime self-test: exercise the ACTUAL run_bin with a fake binary that prints a
+# stray "72" plus a valid sentinel row. If the active parser doesn't return the
+# clean 15-field row, the on-disk script is stale/corrupted (e.g. a merge left an
+# old run_bin active) -> abort loudly instead of printing "BADLINE: 72".
+_bench_selftest() {
+  local tmp got rc nf
+  tmp="$(mktemp -d 2>/dev/null || echo /tmp/tcbench_$$)"; mkdir -p "$tmp"
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'echo 72\n'
+    printf 'echo "# hdr"\n'
+    printf 'echo "__TCROW__,baseline,7035,64,146120,0.02,0.001,0.0005,0.002,0.0,0.017,0.017,0.0,256.0,1,x"\n'
+  } > "$tmp/fake"; chmod +x "$tmp/fake"
+  got="$(REPEATS=1 TIMEOUT="" MULT=64 run_bin "$tmp/fake" "$tmp/none" baseline 64 0)"; rc=$?
+  nf="$(printf '%s' "$got" | awk -F',' 'END{print NF}')"
+  rm -rf "$tmp"
+  if [[ "$rc" -ne 0 || "$got" != baseline,* || "$nf" != 15 ]]; then
+    echo "!!! benchmark.sh runtime self-test FAILED."
+    echo "!!! run_bin returned >>$got<< (rc=$rc, fields=$nf), expected a 15-field"
+    echo "!!! line starting 'baseline,'. This tests/benchmark.sh is stale/corrupted;"
+    echo "!!! re-copy it in FULL (do not merge). Aborting."
+    exit 4
+  fi
+}
+_bench_selftest
+
 printf "[benchmark.sh %s]  Repeats=%s  Mult=%s  DataDir=%s\n\n" \
   "$BENCH_SCRIPT_VERSION" "$REPEATS" "$MULT" "$DATA_DIR"
 hdr() {
