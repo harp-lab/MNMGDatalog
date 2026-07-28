@@ -124,15 +124,14 @@ run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
     echo "$out" >&2
     echo "--------------------------------------------" >&2
   fi
-  # Pick the sentinel-tagged data row for this version, then strip the sentinel
-  # prefix so the rest of the script sees the canonical 15-field line
-  # (version=$1...). We use substr (no field rebuild / no OFS) for portability
-  # across awk implementations (BSD awk / gawk / mawk). Stray stdout (e.g. a bare
-  # "72") can never carry the sentinel, so it is ignored. The row is accepted
-  # regardless of exit code, so a result printed just before a teardown crash is
-  # still used.
-  line="$(printf '%s\n' "$out" | awk -F',' -v w="$want" '
-    $1=="__TCROW__" && $2==w { print substr($0, index($0, ",") + 1) }' | tail -n 1)"
+  # Pick the sentinel-tagged data row for this version using grep (no awk in the
+  # critical path -> immune to awk-dialect differences), then strip the sentinel
+  # prefix with bash so the rest of the script sees the canonical 15-field line
+  # (version=$1...). Stray stdout (e.g. a bare "72") can never carry the sentinel,
+  # so it is ignored. The row is accepted regardless of exit code, so a result
+  # printed just before a teardown crash is still used.
+  line="$(printf '%s\n' "$out" | grep "^__TCROW__,${want}," | tail -n 1)"
+  line="${line#__TCROW__,}"   # strip the sentinel prefix
   if [[ "${BENCH_DEBUG:-0}" == "1" ]]; then
     echo "---- DEBUG run_bin extracted for $want: >>${line}<< ----" >&2
   fi
@@ -140,7 +139,7 @@ run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
   echo "$line"
 }
 
-BENCH_SCRIPT_VERSION="v6-portable"
+BENCH_SCRIPT_VERSION="v7-awkfree"
 
 # Runtime self-test: exercise the ACTUAL run_bin with a fake binary that prints a
 # stray "72" plus a valid sentinel row. If the active parser doesn't return the
@@ -191,16 +190,16 @@ for ds in "${DATASETS[@]}"; do
   for v in "${ORDER[@]}"; do
     l=""; raw=""
     if l="$(run_bin "${BINS[$idx]}" "$df" "$v" "$dm" "$fs")"; then
-      # Replace the binary's last field (data path) with "file,name" for the CSV.
-      echo "$l" | awk -F',' -v OFS=',' -v ds="$ds" -v nm="$nm" '{$NF=ds; print $0","nm}' >> "$OUT"
-      # Extract iters (f3) and ref timings via awk (safe on any input).
-      it="$(printf '%s\n' "$l" | awk -F',' 'NF==15{print $3}')"
+      # Split the canonical 15-field row with bash (no awk).
+      IFS=',' read -r c_ver c_in c_it c_tc c_tot c_fio c_h2d c_setup c_build c_comp c_cmin c_d2h c_mem c_rep c_data <<< "$l"
+      # CSV: replace the data path with the .bin filename and append the name.
+      printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+        "$c_ver" "$c_in" "$c_it" "$c_tc" "$c_tot" "$c_fio" "$c_h2d" "$c_setup" \
+        "$c_build" "$c_comp" "$c_cmin" "$c_d2h" "$c_mem" "$c_rep" "$ds" "$nm" >> "$OUT"
+      it="$c_it"
       [[ -z "$iters_seen" ]] && iters_seen="$it"
       [[ "$it" != "$iters_seen" ]] && iters_mismatch=1
-      if [[ "$v" == "reference" ]]; then
-        ref_total="$(printf '%s\n' "$l" | awk -F',' 'NF==15{print $5}')"
-        ref_comp="$(printf '%s\n' "$l" | awk -F',' 'NF==15{print $10}')"
-      fi
+      if [[ "$v" == "reference" ]]; then ref_total="$c_tot"; ref_comp="$c_comp"; fi
     else
       [[ "$l" == RAW\>\>* ]] && raw="${l#RAW>>}" && raw="${raw%<<RAW}"
       l=""
@@ -219,18 +218,25 @@ for ds in "${DATASETS[@]}"; do
       printf "%-12s %-6s %12s\n" "$v" "-" "SKIP (OOM/overflow/failed)"
       continue
     fi
-    # Parse + format the whole row in one awk pass. CSV fields:
-    # 1ver 2input 3iters 4tc 5total 6fileio 7h2d 8setup 9build 10comp 11compmin 12d2h 13mem 14rep 15data
-    printf '%s\n' "$l" | awk -F',' -v v="$v" -v rt="${ref_total:-0}" -v rc="${ref_comp:-0}" '
-      NF!=15 { printf "%-12s BADLINE: %s\n", v, $0; next }
-      {
-        iters=$3; tc=$4; total=$5; setup=$8; build=$9; comp=$10; mem=$13;
-        io=$6+$7+$12;
-        sptot=(rt>0 && total>0)?sprintf("%.2fx", rt/total):"-";
-        spcomp=(rc>0 && comp>0)?sprintf("%.2fx", rc/comp):"-";
-        printf "%-12s %-6s %12s %9.3f %9.3f %9.3f %7.3f %9.3f %7.1f %8s %8s\n",
-          v, iters, tc, total*1000, comp*1000, setup*1000, io*1000, build*1000, mem, sptot, spcomp;
-      }'
+    # Split the 15-field canonical row with bash `read` (no awk NF quirks). Fields:
+    #  1ver 2input 3iters 4tc 5total 6fileio 7h2d 8setup 9build 10comp 11compmin 12d2h 13mem 14rep 15data
+    IFS=',' read -r f_ver f_in f_it f_tc f_tot f_fio f_h2d f_setup f_build f_comp f_cmin f_d2h f_mem f_rep f_data <<< "$l"
+    if [[ -z "$f_mem" || -z "$f_tot" ]]; then
+      printf "%-12s BADLINE: %s\n" "$v" "$l"
+      continue
+    fi
+    # awk used only for float arithmetic/formatting (dialect-safe BEGIN block).
+    read totms compms setupms ioms buildms memmb sptot spcomp <<EOF2
+$(awk -v t="$f_tot" -v c="$f_comp" -v s="$f_setup" -v fio="$f_fio" -v h="$f_h2d" \
+      -v d="$f_d2h" -v b="$f_build" -v m="$f_mem" -v rt="${ref_total:-0}" -v rc="${ref_comp:-0}" 'BEGIN{
+  io=fio+h+d;
+  printf "%.3f %.3f %.3f %.3f %.3f %.1f %s %s",
+    t*1000, c*1000, s*1000, io*1000, b*1000, m,
+    (rt>0 && t>0)?sprintf("%.2fx", rt/t):"-",
+    (rc>0 && c>0)?sprintf("%.2fx", rc/c):"-" }')
+EOF2
+    printf "%-12s %-6s %12s %9s %9s %9s %7s %9s %7s %8s %8s\n" \
+      "$v" "$f_it" "$f_tc" "$totms" "$compms" "$setupms" "$ioms" "$buildms" "$memmb" "$sptot" "$spcomp"
   done
 
   [[ "$iters_mismatch" -eq 1 ]] && \
