@@ -223,11 +223,12 @@ much faster, while still avoiding overflow.
 ## Benchmark
 
 `tests/benchmark.sh` runs all four versions (warm-up + N timed runs) over a set
-of datasets and prints, **per version**, the end-to-end total time, the compute
-(fixpoint) time, the graph build time, and peak memory, with **speedups relative
-to the original reference (v0)**. It cross-checks that iteration counts agree
-across versions, **skips** any version that OOMs/overflows (instead of aborting),
-and writes the full breakdown CSV under `results/` for plotting.
+of datasets and prints, **per version**, the end-to-end total time plus the major
+time consumers (compute, setup, io, build) and peak memory, with **speedups
+relative to the original reference (v0)**. It labels each dataset with its
+README name, cross-checks that iteration counts agree across versions, **skips**
+any version that OOMs/overflows (instead of aborting), and writes the full
+breakdown CSV under `results/` for plotting.
 
 ```shell
 make benchmark                       # REPEATS=10, BENCH_MULT=4096, default datasets
@@ -235,20 +236,26 @@ make benchmark REPEATS=20            # more timed runs
 make benchmark DS="data_7035.bin data_49152.bin"   # pick datasets
 make benchmark BENCH_MULT=8192       # larger result-set capacity
 
-# or directly (TIMEOUT=<sec> optionally caps each run):
+# or directly (TIMEOUT=<sec> optionally caps each run; BENCH_DEBUG=1 dumps each
+# binary's raw stdout to stderr for troubleshooting):
 bash tests/benchmark.sh [REPEATS] [MULT] [dataset.bin ...]
+BENCH_DEBUG=1 bash tests/benchmark.sh 5 1024 data_223001.bin
 ```
 
-Example output (one block per dataset, one row per version):
+Example output (one block per dataset — labelled with its README name — one row
+per version). Columns: `total` (end-to-end), `comp` (fixpoint), `setup`
+(alloc+memset+seed), `io` (fileio+h2d+d2h), `build` (graph), `mem` (peak):
 
 ```
-### data_7035.bin
-version        iters          TC  total(ms)   comp(ms)  build(ms)   mem(MB)   sp_tot  sp_comp
-reference      64         146120     30.000     23.500      0.000     256.0    1.00x    1.00x
-baseline       64         146120      6.000      3.600      0.000     300.0    5.00x    6.53x
-cudagraph      64         146120      5.500      2.700      0.300     300.0    5.45x    8.70x
-conditional    64         146120      5.000      2.000      0.400     300.0    6.00x   11.75x
+### data_223001.bin  [SF.cedge]  (capacity_mult=1024)
+version      iters            TC total(ms)  comp(ms) setup(ms)  io(ms) build(ms) mem(MB)   sp_tot  sp_comp
+reference    287        80498014   116.930   110.026    50.000   1.510     0.000  6574.8    1.00x    1.00x
+baseline     287        80498014   116.930   110.026    50.000   1.510     0.000  6574.8    ...      ...
 ```
+
+If a version emits no valid CSV row (OOM/overflow/crash) it is shown as `SKIP`
+with a `NOTE:` echoing its raw stdout, so you can see exactly what happened
+instead of a garbled row.
 
 `sp_comp` isolates the compute win; `sp_tot` is the end-to-end win (which also
 carries the one-time FileIO/H2D/Setup/Build). `sp_tot` for v1 shows the gain from
@@ -295,7 +302,8 @@ run fails fast with an overflow error if it is too small).
 
 The combined CSV in `results/` has one row per (version, dataset) with every
 breakdown column (`total_time`, `fileio`, `h2d`, `setup`, `build`, `compute`,
-`compute_min`, `d2h`, `peak_mem_mb`) for plotting (e.g. with the repo's
+`compute_min`, `d2h`, `peak_mem_mb`) plus the `dataset` file and its README
+`name` (e.g. `data_223001.bin,SF.cedge`) for plotting (e.g. with the repo's
 `generate_graphs.py`).
 
 ## Verify

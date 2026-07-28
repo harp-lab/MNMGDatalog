@@ -68,6 +68,27 @@ ds_frontier() {
     *)                                    echo 0 ;;
   esac
 }
+# Human-readable dataset name (from the MNMGDatalog README) for a .bin filename.
+ds_name() {
+  case "$1" in
+    data_7035.bin)                        echo "OL.cedge" ;;
+    data_23874.bin)                       echo "TG.cedge" ;;
+    data_10.bin)                          echo "Small" ;;
+    hipc_2019.bin)                        echo "Extra-small" ;;
+    data_223001.bin)                      echo "SF.cedge" ;;
+    data_163734.bin)                      echo "fe_body" ;;
+    data_147892.bin)                      echo "p2p-Gnutella31" ;;
+    vsp_finan512_scagr7-2c_rlfddd.bin)    echo "vsp_finan" ;;
+    data_409593.bin)                      echo "fe_ocean" ;;
+    com-dblpungraph.bin)                  echo "com-dblp" ;;
+    data_165435.bin)                      echo "usroad" ;;
+    data_49152.bin)                       echo "fe_sphere" ;;
+    data_51971.bin)                       echo "CA-HepTh" ;;
+    data_88234.bin)                       echo "ego-Facebook" ;;
+    data_214078.bin)                      echo "loc-Brightkite" ;;
+    *)                                    echo "?" ;;
+  esac
+}
 
 # Portable parallel arrays (no associative arrays -> works on bash 3.2).
 ORDER=(reference baseline cudagraph conditional)
@@ -83,8 +104,8 @@ done
 
 OUT="${OUT:-$ROOT_DIR/results/benchmark_$(date +%Y%m%d_%H%M%S).csv}"
 mkdir -p "$(dirname "$OUT")"
-# CSV header mirrors the binary output plus a dataset column.
-echo "version,input,iterations,tc,total_time,fileio,h2d,setup,build,compute,compute_min,d2h,peak_mem_mb,repeats,dataset" > "$OUT"
+# CSV header mirrors the binary output plus dataset file + human-readable name.
+echo "version,input,iterations,tc,total_time,fileio,h2d,setup,build,compute,compute_min,d2h,peak_mem_mb,repeats,dataset,name" > "$OUT"
 
 TIMEOUT="${TIMEOUT:-}"
 # Run a version and return the LAST data line that looks like a valid 15-field
@@ -98,28 +119,30 @@ run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
   else
     out="$("$bin" "$df" "$dm" "$REPEATS" "$fs" 2>/dev/null)"; rc=$?
   fi
-  [[ $rc -eq 0 ]] || return 1
+  if [[ "${BENCH_DEBUG:-0}" == "1" ]]; then
+    echo "---- DEBUG raw stdout of $want (rc=$rc) ----" >&2
+    echo "$out" >&2
+    echo "--------------------------------------------" >&2
+  fi
+  [[ $rc -eq 0 ]] || { echo "RAW>>${out}<<RAW"; return 2; }
   # pick the last line with exactly 15 comma fields AND first field == want
   line="$(echo "$out" | awk -F',' -v w="$want" 'NF==15 && $1==w {ln=$0} END{if(ln!="") print ln}')"
-  [[ -n "$line" ]] || { 
-    # surface what the binary actually printed, for debugging
-    echo "RAW>>${out}<<RAW"
-    return 2
-  }
+  [[ -n "$line" ]] || { echo "RAW>>${out}<<RAW"; return 2; }
   echo "$line"
 }
-field() { echo "$1" | cut -d',' -f"$2"; }
 
 printf "Repeats=%s  Mult=%s  DataDir=%s\n\n" "$REPEATS" "$MULT" "$DATA_DIR"
 hdr() {
-  printf "%-14s %-6s %10s %10s %10s %10s %9s %8s %8s\n" \
-    "version" "iters" "TC" "total(ms)" "comp(ms)" "build(ms)" "mem(MB)" "sp_tot" "sp_comp"
+  printf "%-12s %-6s %12s %9s %9s %9s %7s %9s %7s %8s %8s\n" \
+    "version" "iters" "TC" "total(ms)" "comp(ms)" "setup(ms)" "io(ms)" "build(ms)" \
+    "mem(MB)" "sp_tot" "sp_comp"
 }
 
 for ds in "${DATASETS[@]}"; do
   df="$DATA_DIR/$ds"
   dm="$(ds_mult "$ds")"; fs="$(ds_frontier "$ds")"
-  echo "### $ds  (capacity_mult=$dm)"
+  nm="$(ds_name "$ds")"
+  echo "### $ds  [$nm]  (capacity_mult=$dm)"
   if [[ ! -f "$df" ]]; then echo "  (missing, skipped)"; echo; continue; fi
   hdr
 
@@ -130,13 +153,17 @@ for ds in "${DATASETS[@]}"; do
   for v in "${ORDER[@]}"; do
     l=""; raw=""
     if l="$(run_bin "${BINS[$idx]}" "$df" "$v" "$dm" "$fs")"; then
-      echo "$l" | sed "s#[^,]*\$#$ds#" >> "$OUT"
-      it="$(field "$l" 3)"
+      # Replace the binary's last field (data path) with "file,name" for the CSV.
+      echo "$l" | awk -F',' -v OFS=',' -v ds="$ds" -v nm="$nm" '{$NF=ds; print $0","nm}' >> "$OUT"
+      # Extract iters (f3) and ref timings via awk (safe on any input).
+      it="$(printf '%s\n' "$l" | awk -F',' 'NF==15{print $3}')"
       [[ -z "$iters_seen" ]] && iters_seen="$it"
       [[ "$it" != "$iters_seen" ]] && iters_mismatch=1
-      if [[ "$v" == "reference" ]]; then ref_total="$(field "$l" 5)"; ref_comp="$(field "$l" 10)"; fi
+      if [[ "$v" == "reference" ]]; then
+        ref_total="$(printf '%s\n' "$l" | awk -F',' 'NF==15{print $5}')"
+        ref_comp="$(printf '%s\n' "$l" | awk -F',' 'NF==15{print $10}')"
+      fi
     else
-      # l holds RAW>>...<<RAW on malformed output; keep for a diagnostic print.
       [[ "$l" == RAW\>\>* ]] && raw="${l#RAW>>}" && raw="${raw%<<RAW}"
       l=""
       [[ -n "$raw" ]] && echo "  NOTE: $v produced no valid CSV row; raw stdout was:" \
@@ -151,20 +178,21 @@ for ds in "${DATASETS[@]}"; do
     l="${LINES[$idx]}"
     idx=$((idx+1))
     if [[ -z "$l" ]]; then
-      printf "%-14s %-6s %10s\n" "$v" "-" "SKIP (OOM/overflow/failed)"
+      printf "%-12s %-6s %12s\n" "$v" "-" "SKIP (OOM/overflow/failed)"
       continue
     fi
-    it="$(field "$l" 3)"; tc="$(field "$l" 4)"
-    tot="$(field "$l" 5)"; comp="$(field "$l" 10)"; bld="$(field "$l" 9)"; mem="$(field "$l" 13)"
-    read totms compms bldms memmb sptot spcomp <<<"$(awk \
-        -v t="$tot" -v c="$comp" -v b="$bld" -v m="$mem" \
-        -v rt="${ref_total:-0}" -v rc="${ref_comp:-0}" 'BEGIN{
-      printf "%.3f %.3f %.3f %.1f %s %s",
-        t*1000, c*1000, b*1000, m,
-        (rt>0 && t>0)?sprintf("%.2fx", rt/t):"-",
-        (rc>0 && c>0)?sprintf("%.2fx", rc/c):"-" }')"
-    printf "%-14s %-6s %10s %10s %10s %10s %9s %8s %8s\n" \
-      "$v" "$it" "$tc" "$totms" "$compms" "$bldms" "$memmb" "$sptot" "$spcomp"
+    # Parse + format the whole row in one awk pass. CSV fields:
+    # 1ver 2input 3iters 4tc 5total 6fileio 7h2d 8setup 9build 10comp 11compmin 12d2h 13mem 14rep 15data
+    printf '%s\n' "$l" | awk -F',' -v v="$v" -v rt="${ref_total:-0}" -v rc="${ref_comp:-0}" '
+      NF!=15 { printf "%-12s BADLINE: %s\n", v, $0; next }
+      {
+        iters=$3; tc=$4; total=$5; setup=$8; build=$9; comp=$10; mem=$13;
+        io=$6+$7+$12;
+        sptot=(rt>0 && total>0)?sprintf("%.2fx", rt/total):"-";
+        spcomp=(rc>0 && comp>0)?sprintf("%.2fx", rc/comp):"-";
+        printf "%-12s %-6s %12s %9.3f %9.3f %9.3f %7.3f %9.3f %7.1f %8s %8s\n",
+          v, iters, tc, total*1000, comp*1000, setup*1000, io*1000, build*1000, mem, sptot, spcomp;
+      }'
   done
 
   [[ "$iters_mismatch" -eq 1 ]] && \
