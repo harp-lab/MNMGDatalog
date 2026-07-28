@@ -305,7 +305,16 @@ inline void tc_setup(TCContext &ctx, const char *input_file, long capacity_mult,
     cudaDeviceGetAttribute(&number_of_sm, cudaDevAttrMultiProcessorCount, device_id);
     ctx.block_size = 512;
     ctx.grid_size  = 32 * number_of_sm;
+
+    // ---- CUDA context warm-up (untimed) ----
+    // Force context/driver + allocator initialization now so its one-time cost
+    // is not charged to the timed H2D / setup phases (keeps end-to-end timing
+    // fair across all versions, including v0).
     tc_warm_up_kernel<<<1, 1>>>();
+    void *warm = nullptr;
+    checkCuda(cudaMalloc(&warm, sizeof(int)));
+    checkCuda(cudaMemset(warm, 0, sizeof(int)));
+    checkCuda(cudaFree(warm));
     checkCuda(cudaDeviceSynchronize());
 
     // ---- file IO (host read) ----

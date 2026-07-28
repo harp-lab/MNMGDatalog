@@ -149,6 +149,17 @@ static void v0_setup(V0State &s, const char *file) {
     cudaDeviceGetAttribute(&sm, cudaDevAttrMultiProcessorCount, dev);
     s.block = 512; s.grid = 32 * sm;
 
+    // ---- CUDA context warm-up (untimed) ----
+    // Force CUDA context / driver initialization now so its one-time cost is not
+    // charged to the H2D phase below. v1-v3 warm up the same way in tc_setup, so
+    // this keeps the end-to-end timing comparison fair.
+    tc_warm_up_kernel<<<1, 1>>>();
+    void *warm = nullptr;
+    checkCuda(cudaMalloc(&warm, sizeof(int)));
+    checkCuda(cudaMemset(warm, 0, sizeof(int)));
+    checkCuda(cudaFree(warm));
+    checkCuda(cudaDeviceSynchronize());
+
     // ---- file IO (host read) ----
     double t0 = tc_now();
     int *edges_host = tc_read_bin(file, &s.n_edges);
