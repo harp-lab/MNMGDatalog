@@ -29,8 +29,8 @@ int tc_run_once(TCContext &ctx, double *seconds) {
             ctx.d_edge_table, ctx.edge_cap,
             ctx.d_frontier, ctx.d_frontier_size,
             ctx.d_result_set, ctx.result_cap,
-            ctx.d_new_frontier, ctx.d_new_count,
-            ctx.d_result_count);
+            ctx.d_new_frontier, ctx.frontier_cap, ctx.d_new_count,
+            ctx.d_result_count, ctx.d_overflow);
         tc_promote<<<ctx.grid_size, ctx.block_size>>>(
             ctx.d_frontier, ctx.d_new_frontier, ctx.d_new_count);
         tc_set_sizes<<<1, 1>>>(ctx.d_frontier_size, ctx.d_new_count);

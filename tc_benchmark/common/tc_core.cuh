@@ -31,7 +31,22 @@
 #include <cstdint>
 #include <cmath>
 #include <string>
+#include <chrono>
 #include <sys/stat.h>
+
+// ---------------------------------------------------------------------------
+// Wall-clock timing and device-memory helpers (shared by all versions).
+// ---------------------------------------------------------------------------
+inline double tc_now() {
+    return std::chrono::duration<double>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+// Currently-used device memory in MB (total - free).
+inline double tc_mem_used_mb() {
+    size_t freeb = 0, totb = 0;
+    cudaMemGetInfo(&freeb, &totb);
+    return (double)(totb - freeb) / (1024.0 * 1024.0);
+}
 
 // ---------------------------------------------------------------------------
 // Error handling (mirrors MNMGDatalog/common/error_handler.cu)
@@ -79,15 +94,24 @@ __host__ __device__ inline unsigned long long tc_pack(int a, int b) {
 
 // Insert `key` into the open-addressing result set. Returns true if the key was
 // newly inserted (i.e. it is a genuinely new fact), false if it already existed.
+//
+// Overflow guard: the probe is bounded by `capacity`. If the set is full (no
+// empty slot found), *overflow is set and we return false instead of spinning
+// forever. The host checks *overflow after the run and aborts with a clear
+// "increase capacity_mult" message. This turns a would-be infinite hang into a
+// fast, actionable error.
 __device__ inline bool tc_set_insert(unsigned long long *set, long capacity,
-                                     unsigned long long key) {
+                                     unsigned long long key, int *overflow) {
+    unsigned long long mask = (unsigned long long)(capacity - 1);
     unsigned long long pos = tc_hash64(key, capacity);
-    while (true) {
+    for (long probes = 0; probes < capacity; probes++) {
         unsigned long long old = atomicCAS(&set[pos], TC_EMPTY64, key);
         if (old == TC_EMPTY64) return true;   // won the slot -> new fact
         if (old == key)        return false;  // already present -> duplicate
-        pos = (pos + 1) & (unsigned long long)(capacity - 1);
+        pos = (pos + 1) & mask;
     }
+    *overflow = 1;                             // set is full
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,17 +145,19 @@ __global__ void tc_build_edges(const int *edges, int n_edges,
 // Deduplicates the input edges via the result set.
 __global__ void tc_init_base(const int *edges, int n_edges,
                              unsigned long long *result_set, long result_cap,
-                             unsigned long long *frontier, int *frontier_size,
-                             unsigned long long *result_count) {
+                             unsigned long long *frontier, int frontier_cap,
+                             int *frontier_size, unsigned long long *result_count,
+                             int *overflow) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
     for (int i = index; i < n_edges; i += stride) {
         int a = edges[i * 2];
         int b = edges[i * 2 + 1];
         unsigned long long p = tc_pack(a, b);
-        if (tc_set_insert(result_set, result_cap, p)) {
+        if (tc_set_insert(result_set, result_cap, p, overflow)) {
             int w = atomicAdd(frontier_size, 1);
-            frontier[w] = p;
+            if (w < frontier_cap) frontier[w] = p;
+            else *overflow = 1;
             atomicAdd(result_count, 1ULL);
         }
     }
@@ -146,8 +172,9 @@ __global__ void tc_reset(int *new_count) { *new_count = 0; }
 __global__ void tc_expand(const Entity *edge_table, int edge_cap,
                           const unsigned long long *frontier, const int *frontier_size,
                           unsigned long long *result_set, long result_cap,
-                          unsigned long long *new_frontier, int *new_count,
-                          unsigned long long *result_count) {
+                          unsigned long long *new_frontier, int new_frontier_cap,
+                          int *new_count, unsigned long long *result_count,
+                          int *overflow) {
     int n = *frontier_size;
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
@@ -161,9 +188,10 @@ __global__ void tc_expand(const Entity *edge_table, int edge_cap,
             if (k == b) {
                 int c = edge_table[pos].value;
                 unsigned long long np = tc_pack(a, c);
-                if (tc_set_insert(result_set, result_cap, np)) {
+                if (tc_set_insert(result_set, result_cap, np, overflow)) {
                     int w = atomicAdd(new_count, 1);
-                    new_frontier[w] = np;
+                    if (w < new_frontier_cap) new_frontier[w] = np;
+                    else *overflow = 1;
                     atomicAdd(result_count, 1ULL);
                 }
             } else if (k == -1) {
@@ -211,11 +239,13 @@ struct TCContext {
 
     unsigned long long *d_frontier     = nullptr;
     unsigned long long *d_new_frontier = nullptr;
+    int frontier_cap = 0;                        // capacity of each frontier buffer
 
     int *d_frontier_size = nullptr;             // device-resident sizes
     int *d_new_count     = nullptr;
     unsigned long long *d_result_count = nullptr;
     unsigned long long *d_iter_count   = nullptr; // used by v3
+    int *d_overflow      = nullptr;              // set if result set / frontier fills
 
     // Optional CUDA-graph state (used by v2 / v3; ignored by v1).
     cudaStream_t    stream = nullptr;
@@ -224,6 +254,12 @@ struct TCContext {
 
     // host-side results
     int input_rows = 0;
+
+    // timing breakdown (seconds) + memory (MB)
+    double t_fileio  = 0.0;   // host read of the .bin file
+    double t_h2d     = 0.0;   // host -> device copy of edges
+    double t_setup   = 0.0;   // edge-table build + buffer alloc + first seed
+    double peak_mem_mb = 0.0; // device memory in use after setup+build
 };
 
 // ---------------------------------------------------------------------------
@@ -256,7 +292,7 @@ inline int tc_next_pow2(long v) {
 }
 
 // ---------------------------------------------------------------------------
-// Setup / teardown (identical for all three versions)
+// Setup / teardown (identical for all three versions). Fills timing breakdown.
 // ---------------------------------------------------------------------------
 inline void tc_setup(TCContext &ctx, const char *input_file, long capacity_mult) {
     int number_of_sm = 0, device_id = 0;
@@ -265,15 +301,25 @@ inline void tc_setup(TCContext &ctx, const char *input_file, long capacity_mult)
     ctx.block_size = 512;
     ctx.grid_size  = 32 * number_of_sm;
     tc_warm_up_kernel<<<1, 1>>>();
+    checkCuda(cudaDeviceSynchronize());
 
+    // ---- file IO (host read) ----
+    double t0 = tc_now();
     int *edges_host = tc_read_bin(input_file, &ctx.n_edges);
     ctx.input_rows = ctx.n_edges;
+    ctx.t_fileio = tc_now() - t0;
 
+    // ---- host -> device transfer ----
+    t0 = tc_now();
     checkCuda(cudaMalloc((void **)&ctx.d_edges, ctx.n_edges * 2 * sizeof(int)));
     checkCuda(cudaMemcpy(ctx.d_edges, edges_host, ctx.n_edges * 2 * sizeof(int),
                          cudaMemcpyHostToDevice));
+    checkCuda(cudaDeviceSynchronize());
+    ctx.t_h2d = tc_now() - t0;
     free(edges_host);
 
+    // ---- setup (edge table + buffers + first seed) ----
+    t0 = tc_now();
     // Edge table sized by 0.6 load factor (matches get_hash_table logic).
     ctx.edge_cap = tc_next_pow2((long)std::ceil(ctx.n_edges / 0.6));
     if (ctx.edge_cap < 2) ctx.edge_cap = 2;
@@ -282,23 +328,39 @@ inline void tc_setup(TCContext &ctx, const char *input_file, long capacity_mult)
     checkCuda(cudaMemset(ctx.d_edge_table, 0xFF, (long)ctx.edge_cap * sizeof(Entity)));
     tc_build_edges<<<ctx.grid_size, ctx.block_size>>>(ctx.d_edges, ctx.n_edges,
                                                       ctx.d_edge_table, ctx.edge_cap);
-    checkCuda(cudaDeviceSynchronize());
 
-    // Result set + frontier buffers. Capacity is a generous upper bound on the
-    // number of distinct facts (TC size). frontier <= total facts <= capacity.
+    // Result set + frontier buffers. Capacity is an upper bound on the number of
+    // distinct facts (TC size); the frontier can never exceed it.
     long est = (long)ctx.n_edges * capacity_mult;
     if (est < 4096) est = 4096;
-    ctx.result_cap = tc_next_pow2(est);
+    ctx.result_cap  = tc_next_pow2(est);
+    ctx.frontier_cap = (int)ctx.result_cap;   // safe upper bound
     checkCuda(cudaMalloc((void **)&ctx.d_result_set, ctx.result_cap * sizeof(unsigned long long)));
     checkCuda(cudaMemset(ctx.d_result_set, 0xFF, ctx.result_cap * sizeof(unsigned long long)));
-
-    checkCuda(cudaMalloc((void **)&ctx.d_frontier,     ctx.result_cap * sizeof(unsigned long long)));
-    checkCuda(cudaMalloc((void **)&ctx.d_new_frontier, ctx.result_cap * sizeof(unsigned long long)));
+    checkCuda(cudaMalloc((void **)&ctx.d_frontier,     (long)ctx.frontier_cap * sizeof(unsigned long long)));
+    checkCuda(cudaMalloc((void **)&ctx.d_new_frontier, (long)ctx.frontier_cap * sizeof(unsigned long long)));
 
     checkCuda(cudaMalloc((void **)&ctx.d_frontier_size, sizeof(int)));
     checkCuda(cudaMalloc((void **)&ctx.d_new_count,     sizeof(int)));
     checkCuda(cudaMalloc((void **)&ctx.d_result_count,  sizeof(unsigned long long)));
     checkCuda(cudaMalloc((void **)&ctx.d_iter_count,    sizeof(unsigned long long)));
+    checkCuda(cudaMalloc((void **)&ctx.d_overflow,      sizeof(int)));
+    checkCuda(cudaMemset(ctx.d_overflow, 0, sizeof(int)));
+    checkCuda(cudaDeviceSynchronize());
+    ctx.t_setup = tc_now() - t0;
+}
+
+// Abort with a clear message if the result set / frontier overflowed.
+inline void tc_check_overflow(TCContext &ctx) {
+    int of = 0;
+    checkCuda(cudaMemcpy(&of, ctx.d_overflow, sizeof(int), cudaMemcpyDeviceToHost));
+    if (of) {
+        fprintf(stderr,
+            "ERROR: result set / frontier overflow (capacity too small).\n"
+            "       Increase capacity_mult (arg 2). Current result_cap=%ld slots.\n",
+            ctx.result_cap);
+        exit(2);
+    }
 }
 
 // Reset all fixpoint state and re-seed the base facts. Called before every
@@ -311,10 +373,12 @@ inline void tc_reset_state(TCContext &ctx) {
     checkCuda(cudaMemset(ctx.d_new_count,     0, sizeof(int)));
     checkCuda(cudaMemset(ctx.d_result_count,  0, sizeof(unsigned long long)));
     checkCuda(cudaMemset(ctx.d_iter_count,    0, sizeof(unsigned long long)));
+    checkCuda(cudaMemset(ctx.d_overflow,      0, sizeof(int)));
     tc_init_base<<<ctx.grid_size, ctx.block_size>>>(ctx.d_edges, ctx.n_edges,
                                                     ctx.d_result_set, ctx.result_cap,
-                                                    ctx.d_frontier, ctx.d_frontier_size,
-                                                    ctx.d_result_count);
+                                                    ctx.d_frontier, ctx.frontier_cap,
+                                                    ctx.d_frontier_size,
+                                                    ctx.d_result_count, ctx.d_overflow);
     checkCuda(cudaDeviceSynchronize());
 }
 
@@ -328,6 +392,7 @@ inline void tc_teardown(TCContext &ctx) {
     cudaFree(ctx.d_new_count);
     cudaFree(ctx.d_result_count);
     cudaFree(ctx.d_iter_count);
+    cudaFree(ctx.d_overflow);
 }
 
 inline unsigned long long tc_result_count(const TCContext &ctx) {
@@ -360,12 +425,38 @@ inline double tc_median(double *v, int n) {
 }
 
 // ---------------------------------------------------------------------------
+// Shared CSV output. Used by tc_main (v1-v3) AND v0_reference so every version
+// emits identical columns. Positions are stable for tests/verify.sh:
+//   field 3 = Iterations, field 4 = TC.
+//
+//   Version,Input,Iterations,TC,             (identity / correctness)
+//   TotalTime,                               (end-to-end: all phases below)
+//   FileIO,H2D,Setup,Build,Compute,ComputeMin,D2H,   (breakdown, seconds)
+//   PeakMemMB,Repeats,Data
+//
+// TotalTime = FileIO + H2D + Setup + Build + Compute(median) + D2H, i.e. the
+// end-to-end cost of one representative solve (Compute is the median over the
+// timed repeats; the per-phase one-time costs are added once).
+// ---------------------------------------------------------------------------
+inline void tc_print_header() {
+    printf("# Version,# Input,# Iterations,# TC,TotalTime,FileIO,H2D,Setup,"
+           "Build,Compute,ComputeMin,D2H,PeakMemMB,Repeats,# Data\n");
+}
+inline void tc_print_row(const char *version, int input, int iterations,
+                         unsigned long long tc, double fileio, double h2d,
+                         double setup, double build, double compute,
+                         double compute_min, double d2h, double peak_mem_mb,
+                         int repeats, const char *data) {
+    double total = fileio + h2d + setup + build + compute + d2h;
+    printf("%s,%d,%d,%llu,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.2lf,%d,%s\n",
+           version, input, iterations, tc, total, fileio, h2d, setup,
+           build, compute, compute_min, d2h, peak_mem_mb, repeats, data);
+}
+
+// ---------------------------------------------------------------------------
 // Shared main. Usage: ./tc.out <data_file.bin> [capacity_mult] [repeats]
 //   capacity_mult : sizes the result set as next_pow2(n_edges * mult) (def 64)
 //   repeats       : timed fixpoint runs, preceded by 1 warm-up (def 1)
-//
-// Output CSV columns (stable positions for tests/verify.sh: 3=iters, 4=TC):
-//   Version,Input,Iterations,TC,MedianTime,MinTime,BuildTime,Repeats,Data
 // ---------------------------------------------------------------------------
 inline int tc_main(int argc, char **argv) {
     const char *input_file = (argc >= 2) ? argv[1] : "../data/data_10.bin";
@@ -380,10 +471,15 @@ inline int tc_main(int argc, char **argv) {
     double build_seconds = 0.0;
     tc_build(ctx, &build_seconds);
 
+    // Peak device memory: all big allocations are done by now (v1-v3 use fixed
+    // pre-allocated buffers and allocate nothing during the loop).
+    ctx.peak_mem_mb = tc_mem_used_mb();
+
     // Warm-up run (not timed): pays JIT / first-launch / cache costs.
     double warm = 0.0;
     tc_reset_state(ctx);
     int iterations = tc_run_once(ctx, &warm);
+    tc_check_overflow(ctx);
     unsigned long long tc = tc_result_count(ctx);
 
     // Timed repeats.
@@ -396,14 +492,20 @@ inline int tc_main(int argc, char **argv) {
         times[r] = s;
         if (s < min_t) min_t = s;
     }
+    tc_check_overflow(ctx);
+
+    // Device -> host copy of the final result count (measured).
+    double t0 = tc_now();
     tc = tc_result_count(ctx);
+    double d2h = tc_now() - t0;
+
     double med_t = tc_median(times, repeats);
     free(times);
 
-    printf("# Version,# Input,# Iterations,# TC,MedianTime,MinTime,BuildTime,Repeats,# Data\n");
-    printf("%s,%d,%d,%llu,%.6lf,%.6lf,%.6lf,%d,%s\n",
-           TC_VERSION, ctx.input_rows, iterations, tc,
-           med_t, min_t, build_seconds, repeats, input_file);
+    tc_print_header();
+    tc_print_row(TC_VERSION, ctx.input_rows, iterations, tc,
+                 ctx.t_fileio, ctx.t_h2d, ctx.t_setup, build_seconds,
+                 med_t, min_t, d2h, ctx.peak_mem_mb, repeats, input_file);
 
     tc_destroy(ctx);
     tc_teardown(ctx);

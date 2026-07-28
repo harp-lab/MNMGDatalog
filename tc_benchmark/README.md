@@ -163,61 +163,108 @@ Notes:
 Datasets come from the parent `../data` checkout.
 
 ```shell
-make run1 DATA=../data/data_7035.bin   # baseline
+make run0 DATA=../data/data_7035.bin   # reference (thrust sort/merge)
+make run1 DATA=../data/data_7035.bin   # baseline (hash set)
 make run2 DATA=../data/data_7035.bin   # cudagraph
 make run3 DATA=../data/data_7035.bin   # conditional
 
 # or directly:  ./v1_baseline/tc_v1.out <data.bin> [capacity_mult] [repeats]
 ```
 
-Output is one CSV line:
+Every version (v0–v3) prints the **same** CSV line with a full timing breakdown,
+peak memory, and an end-to-end total:
 
 ```
-# Version,# Input,# Iterations,# TC,MedianTime,MinTime,BuildTime,Repeats,# Data
-baseline,7035,64,146120,0.001234,0.001200,0.000000,10,../data/data_7035.bin
+# Version,# Input,# Iterations,# TC,TotalTime,FileIO,H2D,Setup,Build,Compute,ComputeMin,D2H,PeakMemMB,Repeats,# Data
+baseline,7035,64,146120,0.006000,0.001000,0.000500,0.002000,0.000000,0.003600,0.003500,0.000010,300.00,10,../data/data_7035.bin
 ```
 
-- `capacity_mult` (default 64) sizes the result hash set as
-  `next_pow2(n_edges * mult)`. Increase it for very dense graphs.
-- `repeats` (default 1) is the number of **timed** fixpoint runs; a warm-up run
-  always precedes them. `MedianTime`/`MinTime` are over the timed runs and cover
-  the fixpoint only. `BuildTime` is the one-time graph build+instantiate cost
-  (0 for the baseline), reported separately so it is not counted in the loop
-  time.
+### Reported metrics
+
+| Column       | Meaning                                                              |
+|--------------|---------------------------------------------------------------------|
+| `Iterations` | fixpoint rounds. **Reported by every version** and they must agree. |
+| `TC`         | transitive-closure size (correctness).                              |
+| `FileIO`     | host read of the `.bin` file.                                       |
+| `H2D`        | host→device copy of the edges (data transfer in).                   |
+| `Setup`      | edge-table build + buffer allocation + first seed.                  |
+| `Build`      | one-time CUDA-graph capture+instantiate (**0** for v0 and v1).      |
+| `Compute`    | fixpoint loop, **median** over the timed repeats.                   |
+| `ComputeMin` | fixpoint loop, minimum over the timed repeats.                      |
+| `D2H`        | device→host copy of the result count (0 for v0, host counter).      |
+| `TotalTime`  | **end-to-end** = FileIO+H2D+Setup+Build+Compute(median)+D2H.        |
+| `PeakMemMB`  | peak device memory in use (MB).                                     |
+
+So both the **end-to-end total** and the **breakdown** (data transfer vs compute
+vs build vs setup) are available. A warm-up run always precedes the timed
+repeats. `Setup`/`FileIO`/`H2D`/`Build` are one-time costs measured once; only
+`Compute` is repeated.
+
+### `capacity_mult` (arg 2)
+
+The result hash set is sized `next_pow2(n_edges * capacity_mult)`; the two
+frontier buffers match that capacity. It must be **≥ ~2× the TC size**. If it is
+too small the run **fails fast** with
+`ERROR: result set / frontier overflow ... increase capacity_mult` (a bounded
+probe count prevents the old infinite-hang). Rough memory cost:
+`~ result_cap * 8 B (set) + 2 * result_cap * 8 B (frontiers)`.
 
 ## Benchmark
 
-`tests/benchmark.sh` runs all four versions with a warm-up + N timed runs over a
-set of datasets, prints median fixpoint times with **speedups relative to the
-original reference (v0)**, and writes a CSV under `results/` for plotting.
+`tests/benchmark.sh` runs all four versions (warm-up + N timed runs) over a set
+of datasets and prints, **per version**, the end-to-end total time, the compute
+(fixpoint) time, the graph build time, and peak memory, with **speedups relative
+to the original reference (v0)**. It cross-checks that iteration counts agree
+across versions, **skips** any version that OOMs/overflows (instead of aborting),
+and writes the full breakdown CSV under `results/` for plotting.
 
 ```shell
-make benchmark                       # REPEATS=10, default dataset spread
+make benchmark                       # REPEATS=10, BENCH_MULT=4096, default datasets
 make benchmark REPEATS=20            # more timed runs
-make benchmark DS="data_7035.bin data_165435.bin"   # pick datasets
+make benchmark DS="data_7035.bin data_49152.bin"   # pick datasets
+make benchmark BENCH_MULT=8192       # larger result-set capacity
 
-# or directly:
+# or directly (TIMEOUT=<sec> optionally caps each run):
 bash tests/benchmark.sh [REPEATS] [MULT] [dataset.bin ...]
 ```
 
-The default dataset spread favours high iteration counts, where the CUDA-graph
-strategies (fewer/zero per-iteration launches) matter most — e.g. `data_165435`
-(606 iterations) and `data_409593` (247 iterations). For few-iteration graphs the
-versions perform similarly.
-
-Table columns (times = median fixpoint time in ms; `sp_* = ref(v0) / version`,
-higher is faster):
+Example output (one block per dataset, one row per version):
 
 ```
-dataset          iters      TC    ref(ms)  base(ms) graph(ms)  cond(ms)  sp_base  sp_grph  sp_cond
----------------------------------------------------------------------------------------------------------------
-data_7035.bin       64  146120       ...      ...      ...       ...       ...x     ...x     ...x
+### data_7035.bin
+version        iters          TC  total(ms)   comp(ms)  build(ms)   mem(MB)   sp_tot  sp_comp
+reference      64         146120     30.000     23.500      0.000     256.0    1.00x    1.00x
+baseline       64         146120      6.000      3.600      0.000     300.0    5.00x    6.53x
+cudagraph      64         146120      5.500      2.700      0.300     300.0    5.45x    8.70x
+conditional    64         146120      5.000      2.000      0.400     300.0    6.00x   11.75x
 ```
 
-`sp_base` isolates the gain from the **hash-set redesign** (v1 vs v0); `sp_grph`
-and `sp_cond` add the gain from **CUDA graphs** (v2) and the **on-GPU loop**
-(v3). The combined CSV in `results/` has one row per (version, dataset) with
-`median_time`, `min_time`, and `build_time` for plotting (e.g. with the repo's
+`sp_comp` isolates the compute win; `sp_tot` is the end-to-end win (which also
+carries the one-time FileIO/H2D/Setup/Build). `sp_tot` for v1 shows the gain from
+the **hash-set redesign**; v2 adds **CUDA graphs**; v3 adds the **on-GPU loop**.
+
+### Datasets and single-GPU memory limits
+
+The default spread increases compute while fitting a single **40 GB** GPU:
+
+```
+data_7035  data_23874  data_49152  data_88234  data_51971  data_223001
+```
+
+Some `MNMGDatalog` TC datasets have **billion-pair** closures and do **not** fit
+one 40 GB GPU with this dense hash-set design — they need much more memory or the
+multi-GPU MNMG engine. These are intentionally excluded from the default and will
+be reported as `SKIP (OOM/...)` if you add them:
+
+| Dataset        | Input   | TC size        | Note                         |
+|----------------|---------|----------------|------------------------------|
+| `data_147892`  | 147,892 | 884,179,859    | ~borderline / likely OOM     |
+| `data_165435`  | 165,435 | 871,365,688    | needs >40 GB / multi-GPU     |
+| `data_409593`  | 409,593 | 1,669,750,513  | needs >40 GB / multi-GPU     |
+
+The combined CSV in `results/` has one row per (version, dataset) with every
+breakdown column (`total_time`, `fileio`, `h2d`, `setup`, `build`, `compute`,
+`compute_min`, `d2h`, `peak_mem_mb`) for plotting (e.g. with the repo's
 `generate_graphs.py`).
 
 ## Verify

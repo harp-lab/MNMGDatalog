@@ -17,10 +17,13 @@ NVCCFLAGS = -O3 -std=c++17 -arch=$(GPU_ARCH)
 NVCCFLAGS += --extended-lambda
 
 # Datasets used for verification live in the parent MNMGDatalog checkout.
-DATA_DIR ?= ../data
-DATA     ?= $(DATA_DIR)/data_10.bin
-MULT     ?= 64
-REPEATS  ?= 10
+DATA_DIR   ?= ../data
+DATA       ?= $(DATA_DIR)/data_10.bin
+MULT       ?= 64
+# Larger default capacity multiplier for the benchmark's higher-compute datasets
+# (result set is sized next_pow2(n_edges * MULT); too small -> fast overflow error).
+BENCH_MULT ?= 4096
+REPEATS    ?= 10
 
 V0 = v0_reference/tc_v0.out
 V1 = v1_baseline/tc_v1.out
@@ -61,7 +64,7 @@ test: all
 # median/min times and speedups vs the reference. Override datasets:
 # `make benchmark DS="a.bin b.bin"`.
 benchmark: all
-	@bash tests/benchmark.sh $(REPEATS) $(MULT) $(DS)
+	@bash tests/benchmark.sh $(REPEATS) $(BENCH_MULT) $(DS)
 
 clean:
 	rm -f $(V0) $(V1) $(V2) $(V3)

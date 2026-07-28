@@ -137,6 +137,10 @@ struct V0State {
 
     Entity *t_delta = nullptr;  int t_delta_size = 0;
     Entity *t_full  = nullptr;  long long t_full_size = 0;
+
+    // timing breakdown (seconds) + peak memory (MB)
+    double t_fileio = 0.0, t_h2d = 0.0, t_setup = 0.0;
+    double peak_mem_mb = 0.0;
 };
 
 static void v0_setup(V0State &s, const char *file) {
@@ -145,20 +149,30 @@ static void v0_setup(V0State &s, const char *file) {
     cudaDeviceGetAttribute(&sm, cudaDevAttrMultiProcessorCount, dev);
     s.block = 512; s.grid = 32 * sm;
 
+    // ---- file IO (host read) ----
+    double t0 = tc_now();
     int *edges_host = tc_read_bin(file, &s.n_edges);
     s.input_rows = s.n_edges;
+    s.t_fileio = tc_now() - t0;
+
+    // ---- host -> device transfer ----
+    t0 = tc_now();
     checkCuda(cudaMalloc((void **)&s.d_edges, s.n_edges * 2 * sizeof(int)));
     checkCuda(cudaMemcpy(s.d_edges, edges_host, s.n_edges * 2 * sizeof(int),
                          cudaMemcpyHostToDevice));
+    checkCuda(cudaDeviceSynchronize());
+    s.t_h2d = tc_now() - t0;
     free(edges_host);
 
-    // Edge hash table (keyed by source), 0.6 load factor -> power of two.
+    // ---- setup (edge hash table, keyed by source, 0.6 load factor) ----
+    t0 = tc_now();
     s.hash_table_size = tc_next_pow2((long)std::ceil(s.n_edges / 0.6));
     if (s.hash_table_size < 2) s.hash_table_size = 2;
     checkCuda(cudaMalloc((void **)&s.hash_table, (long)s.hash_table_size * sizeof(Entity)));
     checkCuda(cudaMemset(s.hash_table, 0xFF, (long)s.hash_table_size * sizeof(Entity)));
     v0_build_edges<<<s.grid, s.block>>>(s.d_edges, s.n_edges, s.hash_table, s.hash_table_size);
     checkCuda(cudaDeviceSynchronize());
+    s.t_setup = tc_now() - t0;
 }
 
 // Rebuild the initial t_delta / t_full for a fresh run (the "seed", untimed,
@@ -215,6 +229,10 @@ static int v0_run_once(V0State &s, double *seconds) {
                       s.t_full, s.t_full + s.t_full_size,
                       s.t_delta, s.t_delta + s.t_delta_size,
                       new_full, set_cmp());
+        // Peak memory occurs here, while both t_full and new_full are live.
+        double used = tc_mem_used_mb();
+        if (used > s.peak_mem_mb) s.peak_mem_mb = used;
+
         cudaFree(s.t_full);
         s.t_full = new_full;
 
@@ -240,8 +258,9 @@ static void v0_teardown(V0State &s) {
     if (s.t_full)  cudaFree(s.t_full);
 }
 
-// Same CSV layout as tc_main so verify.sh / benchmark.sh parse it identically.
-//   Version,Input,Iterations,TC,MedianTime,MinTime,BuildTime,Repeats,Data
+// Same CSV layout as tc_main (via tc_print_row) so verify.sh / benchmark.sh
+// parse every version identically. v0 has no graph, so Build = 0. Unlike v1-v3,
+// v0 allocates during the loop, so peak memory is sampled inside v0_run_once.
 int main(int argc, char **argv) {
     const char *input_file = (argc >= 2) ? argv[1] : "../data/data_10.bin";
     (void)((argc >= 3) ? atol(argv[2]) : 64);      // capacity_mult unused by v0
@@ -255,7 +274,6 @@ int main(int argc, char **argv) {
     double warm = 0.0;
     v0_reset_state(s);
     int iterations = v0_run_once(s, &warm);
-    unsigned long long tc = (unsigned long long)s.t_full_size;
 
     double *times = (double *)malloc(repeats * sizeof(double));
     double min_t = 1e300;
@@ -266,13 +284,15 @@ int main(int argc, char **argv) {
         times[r] = t;
         if (t < min_t) min_t = t;
     }
-    tc = (unsigned long long)s.t_full_size;
+    unsigned long long tc = (unsigned long long)s.t_full_size;
     double med_t = tc_median(times, repeats);
     free(times);
 
-    printf("# Version,# Input,# Iterations,# TC,MedianTime,MinTime,BuildTime,Repeats,# Data\n");
-    printf("%s,%d,%d,%llu,%.6lf,%.6lf,%.6lf,%d,%s\n",
-           TC_VERSION, s.input_rows, iterations, tc, med_t, min_t, 0.0, repeats, input_file);
+    // No separate D2H for v0 (result size is a host-side counter).
+    tc_print_header();
+    tc_print_row(TC_VERSION, s.input_rows, iterations, tc,
+                 s.t_fileio, s.t_h2d, s.t_setup, /*build=*/0.0,
+                 med_t, min_t, /*d2h=*/0.0, s.peak_mem_mb, repeats, input_file);
 
     v0_teardown(s);
     return 0;
