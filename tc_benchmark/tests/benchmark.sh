@@ -135,7 +135,15 @@ run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
   echo "$line"
 }
 
-BENCH_SCRIPT_VERSION="v3-robust-parser"
+BENCH_SCRIPT_VERSION="v4-sentinel"
+# Self-check: confirm THIS file actually contains the sentinel-aware parser.
+# Catches the case where a stale/partial copy has the new banner but an old
+# run_bin (which is exactly what produces spurious "BADLINE: 72" reference rows).
+if ! grep -q '\$1=="__TCROW__" && \$2==w' "${BASH_SOURCE[0]}"; then
+  echo "!!! STALE benchmark.sh: this file lacks the __TCROW__ parser."
+  echo "!!! Re-copy tests/benchmark.sh in full, then rerun. Aborting."
+  exit 3
+fi
 printf "[benchmark.sh %s]  Repeats=%s  Mult=%s  DataDir=%s\n\n" \
   "$BENCH_SCRIPT_VERSION" "$REPEATS" "$MULT" "$DATA_DIR"
 hdr() {
