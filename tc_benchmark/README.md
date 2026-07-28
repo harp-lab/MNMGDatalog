@@ -261,6 +261,38 @@ instead of a garbled row.
 carries the one-time FileIO/H2D/Setup/Build). `sp_tot` for v1 shows the gain from
 the **hash-set redesign**; v2 adds **CUDA graphs**; v3 adds the **on-GPU loop**.
 
+### Why is this faster than published Datalog engines (e.g. GPUlog)?
+
+These versions compute the **same reachability/TC** result as general engines
+(the TC sizes match, e.g. Gnutella31 = 884,179,859), yet finish in far less time
+than GPUlog (ASPLOS'25) reports on an H100 — even though we run on a slower A100.
+That is expected, and **not** an apples-to-apples comparison:
+
+- **Specialized vs general.** This is a hand-written **single-rule** TC
+  (`path(a,c) :- path(a,b), edge(b,c)`). GPUlog is a *general* Datalog engine
+  (arbitrary rules, multi-column/n-way joins, same-generation, program analysis).
+- **No sort, no merge, no index.** GPUlog maintains a **sorted, range-indexed**
+  relation (HISA) and spends most of its time there — the paper reports
+  **join ≈ 39%** and **merge ≈ 42%** of runtime. Our fixpoint has *neither*: a
+  single `atomicCAS` into an unordered open-addressing hash set does
+  deduplication **and** the "is this new?" test in one operation. We never sort
+  or rebuild an index.
+- **Memory traded for speed.** We over-allocate a sparse hash set (low load
+  factor → few collisions → fast atomics), so our `PeakMemMB` is high. GPUlog's
+  HISA is far more memory-efficient. If you shrink `capacity_mult` toward the TC
+  size, our atomics slow down as the set fills.
+- **Scope of the timer.** `Compute` is the fixpoint kernels only; but even our
+  end-to-end `TotalTime` beats the engine numbers because the algorithmic work
+  is simply less.
+- **Not a general engine.** This benchmark cannot run arbitrary Datalog; it only
+  measures how the three CUDA execution strategies compare *on this one query*.
+  It is a controlled microbenchmark for the graph-execution study, not a
+  replacement for GPUlog.
+
+Bottom line: the speed comes from doing **less work** (no relational-algebra
+machinery) and using **more memory**, on a fixed single rule — so it complements,
+rather than competes with, a general engine like GPUlog.
+
 ### Datasets and single-GPU memory
 
 The dominant cost is the result hash set (`~2*TC` slots × 8 B). Frontier buffers

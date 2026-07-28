@@ -131,7 +131,9 @@ run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
   echo "$line"
 }
 
-printf "Repeats=%s  Mult=%s  DataDir=%s\n\n" "$REPEATS" "$MULT" "$DATA_DIR"
+BENCH_SCRIPT_VERSION="v3-robust-parser"
+printf "[benchmark.sh %s]  Repeats=%s  Mult=%s  DataDir=%s\n\n" \
+  "$BENCH_SCRIPT_VERSION" "$REPEATS" "$MULT" "$DATA_DIR"
 hdr() {
   printf "%-12s %-6s %12s %9s %9s %9s %7s %9s %7s %8s %8s\n" \
     "version" "iters" "TC" "total(ms)" "comp(ms)" "setup(ms)" "io(ms)" "build(ms)" \
