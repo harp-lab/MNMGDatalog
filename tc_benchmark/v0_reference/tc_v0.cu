@@ -166,7 +166,7 @@ static void v0_setup(V0State &s, const char *file) {
 
     // ---- setup (edge hash table, keyed by source, 0.6 load factor) ----
     t0 = tc_now();
-    s.hash_table_size = tc_next_pow2((long)std::ceil(s.n_edges / 0.6));
+    s.hash_table_size = (int)tc_next_pow2((long)std::ceil(s.n_edges / 0.6));
     if (s.hash_table_size < 2) s.hash_table_size = 2;
     checkCuda(cudaMalloc((void **)&s.hash_table, (long)s.hash_table_size * sizeof(Entity)));
     checkCuda(cudaMemset(s.hash_table, 0xFF, (long)s.hash_table_size * sizeof(Entity)));

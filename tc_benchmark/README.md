@@ -168,7 +168,7 @@ make run1 DATA=../data/data_7035.bin   # baseline (hash set)
 make run2 DATA=../data/data_7035.bin   # cudagraph
 make run3 DATA=../data/data_7035.bin   # conditional
 
-# or directly:  ./v1_baseline/tc_v1.out <data.bin> [capacity_mult] [repeats]
+# or directly:  ./v1_baseline/tc_v1.out <data.bin> [capacity_mult] [repeats] [frontier_slots]
 ```
 
 Every version (v0–v3) prints the **same** CSV line with a full timing breakdown,
@@ -202,12 +202,23 @@ repeats. `Setup`/`FileIO`/`H2D`/`Build` are one-time costs measured once; only
 
 ### `capacity_mult` (arg 2)
 
-The result hash set is sized `next_pow2(n_edges * capacity_mult)`; the two
-frontier buffers match that capacity. It must be **≥ ~2× the TC size**. If it is
-too small the run **fails fast** with
+The result hash set is sized `next_pow2(n_edges * capacity_mult)` and must be
+**≥ ~2× the TC size**. If it is too small the run **fails fast** with
 `ERROR: result set / frontier overflow ... increase capacity_mult` (a bounded
-probe count prevents the old infinite-hang). Rough memory cost:
-`~ result_cap * 8 B (set) + 2 * result_cap * 8 B (frontiers)`.
+probe count prevents the old infinite-hang).
+
+The two frontier buffers are **decoupled** from the set: each is
+`min(result_cap, 2^28)` slots by default (arg 4 `frontier_slots` overrides). So
+memory is `~ result_cap*8 B (set) + 2 * frontier_cap*8 B` — the frontiers add at
+most ~4 GB regardless of TC, which is what lets billion-pair closures fit 40 GB.
+
+**Setup time scales with capacity.** `Setup` includes a `cudaMemset` over the
+whole result set, so an over-sized `capacity_mult` inflates both `PeakMemMB` and
+the end-to-end `TotalTime` (the fixpoint `Compute` is unaffected). If `Setup`
+dominates `TotalTime` for a dataset, lower `capacity_mult` toward ~2× its real TC
+size. Example: `data_223001` (TC ≈ 80 M) with `capacity_mult=4096` allocates a
+~1 B-slot set (~25 GB, tens of ms of memset); `capacity_mult=1024` is plenty and
+much faster, while still avoiding overflow.
 
 ## Benchmark
 
@@ -243,24 +254,44 @@ conditional    64         146120      5.000      2.000      0.400     300.0    6
 carries the one-time FileIO/H2D/Setup/Build). `sp_tot` for v1 shows the gain from
 the **hash-set redesign**; v2 adds **CUDA graphs**; v3 adds the **on-GPU loop**.
 
-### Datasets and single-GPU memory limits
+### Datasets and single-GPU memory
 
-The default spread increases compute while fitting a single **40 GB** GPU:
+The dominant cost is the result hash set (`~2*TC` slots × 8 B). Frontier buffers
+are **decoupled** and small (each `min(result_cap, 2^28)` slots), so only the set
+grows with TC. That lets even billion-pair closures fit one **40 GB** GPU.
 
+Because TC/edge ratios vary enormously, `tests/benchmark.sh` picks a
+**per-dataset `capacity_mult`** (see `ds_mult`) so `result_cap ≈ next_pow2(2*TC)`.
+The default spread has increasing compute and TC size:
+
+| Dataset (file)                     | TC size | `capacity_mult` | set mem | fits 40 GB |
+|------------------------------------|---------|-----------------|---------|------------|
+| `data_7035.bin`   (OL.cedge)       | 146 K   | 64              | small   | yes        |
+| `data_23874.bin`  (TG.cedge)       | 481 K   | 64              | small   | yes        |
+| `data_223001.bin` (SF.cedge)       | 80 M    | 1024            | ~2 GB   | yes        |
+| `data_163734.bin` (fe_body)        | 156 M   | 2048            | ~4 GB   | yes        |
+| `data_147892.bin` (p2p-Gnutella31) | 884 M   | 12288           | ~17 GB  | yes        |
+| `vsp_finan…rlfddd.bin` (vsp_finan) | 910 M   | 3456            | ~17 GB  | yes        |
+
+Two larger datasets sit near the 40 GB limit (result set alone ~34 GB). They use
+smaller frontier buffers (`ds_frontier`) and are **opt-in** — add them explicitly
+and they'll run if memory permits, else report `SKIP (OOM/...)`:
+
+```shell
+make benchmark DS="data_409593.bin com-dblpungraph.bin"   # fe_ocean 1.67B, com-dblp 1.91B
 ```
-data_7035  data_23874  data_49152  data_88234  data_51971  data_223001
-```
 
-Some `MNMGDatalog` TC datasets have **billion-pair** closures and do **not** fit
-one 40 GB GPU with this dense hash-set design — they need much more memory or the
-multi-GPU MNMG engine. These are intentionally excluded from the default and will
-be reported as `SKIP (OOM/...)` if you add them:
+| Dataset (file)         | TC size       | `capacity_mult` | set mem | note                 |
+|------------------------|---------------|-----------------|---------|----------------------|
+| `data_409593.bin`      | 1,669,750,513 | 8192            | ~34 GB  | fe_ocean, tight      |
+| `com-dblpungraph.bin`  | 1,911,754,892 | 3800            | ~34 GB  | com-dblp, tight      |
 
-| Dataset        | Input   | TC size        | Note                         |
-|----------------|---------|----------------|------------------------------|
-| `data_147892`  | 147,892 | 884,179,859    | ~borderline / likely OOM     |
-| `data_165435`  | 165,435 | 871,365,688    | needs >40 GB / multi-GPU     |
-| `data_409593`  | 409,593 | 1,669,750,513  | needs >40 GB / multi-GPU     |
+Note: the **reference (v0)** may OOM or overflow `int` sizes on the billion-pair
+datasets (its thrust `t_full`+merge can transiently need ~2×TC Entities); if so it
+shows `SKIP` and `sp_*` become `-`, while v1–v3 still report their own numbers.
+
+To size a custom dataset by hand: `capacity_mult ≈ ceil(2 * TC / n_edges)` (the
+run fails fast with an overflow error if it is too small).
 
 The combined CSV in `results/` has one row per (version, dataset) with every
 breakdown column (`total_time`, `fileio`, `h2d`, `setup`, `build`, `compute`,

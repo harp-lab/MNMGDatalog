@@ -285,16 +285,21 @@ inline int *tc_read_bin(const char *path, int *n_edges_out) {
     return data;
 }
 
-inline int tc_next_pow2(long v) {
-    int p = 1;
-    while ((long)p < v) p <<= 1;
+inline long tc_next_pow2(long v) {
+    long p = 1;
+    while (p < v) p <<= 1;
     return p;
 }
 
 // ---------------------------------------------------------------------------
 // Setup / teardown (identical for all three versions). Fills timing breakdown.
 // ---------------------------------------------------------------------------
-inline void tc_setup(TCContext &ctx, const char *input_file, long capacity_mult) {
+// frontier_slots: capacity of EACH frontier buffer (0 = auto). The frontier
+// only holds one iteration's new facts, so it can be far smaller than the result
+// set. Decoupling it is what lets billion-pair TCs fit in one GPU: the result
+// set is unavoidably ~2*TC, but the two frontier buffers stay small.
+inline void tc_setup(TCContext &ctx, const char *input_file, long capacity_mult,
+                     long frontier_slots) {
     int number_of_sm = 0, device_id = 0;
     cudaGetDevice(&device_id);
     cudaDeviceGetAttribute(&number_of_sm, cudaDevAttrMultiProcessorCount, device_id);
@@ -321,7 +326,7 @@ inline void tc_setup(TCContext &ctx, const char *input_file, long capacity_mult)
     // ---- setup (edge table + buffers + first seed) ----
     t0 = tc_now();
     // Edge table sized by 0.6 load factor (matches get_hash_table logic).
-    ctx.edge_cap = tc_next_pow2((long)std::ceil(ctx.n_edges / 0.6));
+    ctx.edge_cap = (int)tc_next_pow2((long)std::ceil(ctx.n_edges / 0.6));
     if (ctx.edge_cap < 2) ctx.edge_cap = 2;
     checkCuda(cudaMalloc((void **)&ctx.d_edge_table, (long)ctx.edge_cap * sizeof(Entity)));
     // 0xFF bytes -> every int field becomes -1 (empty slot marker).
@@ -334,7 +339,14 @@ inline void tc_setup(TCContext &ctx, const char *input_file, long capacity_mult)
     long est = (long)ctx.n_edges * capacity_mult;
     if (est < 4096) est = 4096;
     ctx.result_cap  = tc_next_pow2(est);
-    ctx.frontier_cap = (int)ctx.result_cap;   // safe upper bound
+
+    // Frontier buffers: default cap = min(result_cap, 2^28 = 268M slots = 2 GB
+    // each). One iteration's new facts almost never approach this; if they do,
+    // the overflow guard trips and the run is skipped with a clear message.
+    long fcap = (frontier_slots > 0) ? tc_next_pow2(frontier_slots) : (1L << 28);
+    if (fcap > ctx.result_cap) fcap = ctx.result_cap;
+    ctx.frontier_cap = (int)fcap;
+
     checkCuda(cudaMalloc((void **)&ctx.d_result_set, ctx.result_cap * sizeof(unsigned long long)));
     checkCuda(cudaMemset(ctx.d_result_set, 0xFF, ctx.result_cap * sizeof(unsigned long long)));
     checkCuda(cudaMalloc((void **)&ctx.d_frontier,     (long)ctx.frontier_cap * sizeof(unsigned long long)));
@@ -454,18 +466,20 @@ inline void tc_print_row(const char *version, int input, int iterations,
 }
 
 // ---------------------------------------------------------------------------
-// Shared main. Usage: ./tc.out <data_file.bin> [capacity_mult] [repeats]
-//   capacity_mult : sizes the result set as next_pow2(n_edges * mult) (def 64)
-//   repeats       : timed fixpoint runs, preceded by 1 warm-up (def 1)
+// Shared main. Usage: ./tc.out <data.bin> [capacity_mult] [repeats] [frontier_slots]
+//   capacity_mult  : sizes the result set as next_pow2(n_edges * mult) (def 64)
+//   repeats        : timed fixpoint runs, preceded by 1 warm-up (def 1)
+//   frontier_slots : capacity of each frontier buffer (0/absent = auto, 2^28)
 // ---------------------------------------------------------------------------
 inline int tc_main(int argc, char **argv) {
     const char *input_file = (argc >= 2) ? argv[1] : "../data/data_10.bin";
-    long capacity_mult = (argc >= 3) ? atol(argv[2]) : 64;
-    int  repeats       = (argc >= 4) ? atoi(argv[3]) : 1;
+    long capacity_mult  = (argc >= 3) ? atol(argv[2]) : 64;
+    int  repeats        = (argc >= 4) ? atoi(argv[3]) : 1;
+    long frontier_slots = (argc >= 5) ? atol(argv[4]) : 0;
     if (repeats < 1) repeats = 1;
 
     TCContext ctx;
-    tc_setup(ctx, input_file, capacity_mult);
+    tc_setup(ctx, input_file, capacity_mult, frontier_slots);
 
     // Build any graph once (measured separately from the fixpoint).
     double build_seconds = 0.0;
