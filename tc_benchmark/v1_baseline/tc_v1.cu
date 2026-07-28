@@ -9,7 +9,13 @@
 
 const char *TC_VERSION = "baseline";
 
-int tc_run(TCContext &ctx, double *seconds) {
+// No graph to build for the baseline.
+void tc_build(TCContext &ctx, double *build_seconds) {
+    (void)ctx;
+    *build_seconds = 0.0;
+}
+
+int tc_run_once(TCContext &ctx, double *seconds) {
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
@@ -44,6 +50,8 @@ int tc_run(TCContext &ctx, double *seconds) {
     cudaEventDestroy(stop);
     return iterations;
 }
+
+void tc_destroy(TCContext &ctx) { (void)ctx; }
 
 int main(int argc, char **argv) {
     return tc_main(argc, argv);

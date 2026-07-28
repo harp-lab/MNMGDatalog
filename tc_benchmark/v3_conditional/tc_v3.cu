@@ -27,15 +27,21 @@ __global__ void tc_set_sizes_cond(int *frontier_size, const int *new_count,
     cudaGraphSetConditional(handle, (*new_count > 0) ? 1u : 0u);
 }
 
-int tc_run(TCContext &ctx, double *seconds) {
-    cudaGraph_t graph;
-    checkCuda(cudaGraphCreate(&graph, 0));
+// Build the whole fixpoint as a graph with a conditional WHILE node, and
+// instantiate it once.
+void tc_build(TCContext &ctx, double *build_seconds) {
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start, 0);
+
+    checkCuda(cudaGraphCreate(&ctx.graph, 0));
 
     // Default value 1 makes this a do-while: the body always runs at least once
     // (the base frontier is already seeded), then the handle set inside the body
     // decides whether to continue.
     cudaGraphConditionalHandle handle;
-    checkCuda(cudaGraphConditionalHandleCreate(&handle, graph, 1, cudaGraphCondAssignDefault));
+    checkCuda(cudaGraphConditionalHandleCreate(&handle, ctx.graph, 1, cudaGraphCondAssignDefault));
 
     cudaGraphNodeParams cParams = {};
     cParams.type = cudaGraphNodeTypeConditional;
@@ -44,7 +50,7 @@ int tc_run(TCContext &ctx, double *seconds) {
     cParams.conditional.size   = 1;
 
     cudaGraphNode_t condNode;
-    checkCuda(cudaGraphAddNode(&condNode, graph, nullptr, 0, &cParams));
+    checkCuda(cudaGraphAddNode(&condNode, ctx.graph, nullptr, 0, &cParams));
 
     cudaGraph_t body = cParams.conditional.phGraph_out[0];
 
@@ -67,21 +73,28 @@ int tc_run(TCContext &ctx, double *seconds) {
     checkCuda(cudaStreamEndCapture(capStream, nullptr));
     checkCuda(cudaStreamDestroy(capStream));
 
-    cudaGraphExec_t exec;
-    checkCuda(cudaGraphInstantiate(&exec, graph, 0));
+    checkCuda(cudaGraphInstantiate(&ctx.exec, ctx.graph, 0));
+    checkCuda(cudaStreamCreate(&ctx.stream));
 
-    cudaStream_t stream;
-    checkCuda(cudaStreamCreate(&stream));
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    float ms = 0.0f;
+    cudaEventElapsedTime(&ms, start, stop);
+    *build_seconds = ms / 1000.0;
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+}
 
+int tc_run_once(TCContext &ctx, double *seconds) {
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
-    cudaEventRecord(start, stream);
+    cudaEventRecord(start, ctx.stream);
 
     // The whole fixpoint runs inside this single launch.
-    checkCuda(cudaGraphLaunch(exec, stream));
+    checkCuda(cudaGraphLaunch(ctx.exec, ctx.stream));
 
-    cudaEventRecord(stop, stream);
+    cudaEventRecord(stop, ctx.stream);
     cudaEventSynchronize(stop);
     float ms = 0.0f;
     cudaEventElapsedTime(&ms, start, stop);
@@ -93,10 +106,13 @@ int tc_run(TCContext &ctx, double *seconds) {
 
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
-    cudaGraphExecDestroy(exec);
-    cudaGraphDestroy(graph);
-    cudaStreamDestroy(stream);
     return (int)h_iter;
+}
+
+void tc_destroy(TCContext &ctx) {
+    if (ctx.exec)   cudaGraphExecDestroy(ctx.exec);
+    if (ctx.graph)  cudaGraphDestroy(ctx.graph);
+    if (ctx.stream) cudaStreamDestroy(ctx.stream);
 }
 
 int main(int argc, char **argv) {

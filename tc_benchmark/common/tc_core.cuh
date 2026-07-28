@@ -217,6 +217,11 @@ struct TCContext {
     unsigned long long *d_result_count = nullptr;
     unsigned long long *d_iter_count   = nullptr; // used by v3
 
+    // Optional CUDA-graph state (used by v2 / v3; ignored by v1).
+    cudaStream_t    stream = nullptr;
+    cudaGraph_t     graph  = nullptr;
+    cudaGraphExec_t exec   = nullptr;
+
     // host-side results
     int input_rows = 0;
 };
@@ -294,12 +299,18 @@ inline void tc_setup(TCContext &ctx, const char *input_file, long capacity_mult)
     checkCuda(cudaMalloc((void **)&ctx.d_new_count,     sizeof(int)));
     checkCuda(cudaMalloc((void **)&ctx.d_result_count,  sizeof(unsigned long long)));
     checkCuda(cudaMalloc((void **)&ctx.d_iter_count,    sizeof(unsigned long long)));
+}
+
+// Reset all fixpoint state and re-seed the base facts. Called before every
+// (warm-up and timed) repeat so each run starts from a clean slate. The edge
+// table and device buffers are reused, so their addresses stay stable, which
+// keeps any instantiated CUDA graph valid across repeats.
+inline void tc_reset_state(TCContext &ctx) {
+    checkCuda(cudaMemset(ctx.d_result_set, 0xFF, ctx.result_cap * sizeof(unsigned long long)));
     checkCuda(cudaMemset(ctx.d_frontier_size, 0, sizeof(int)));
     checkCuda(cudaMemset(ctx.d_new_count,     0, sizeof(int)));
     checkCuda(cudaMemset(ctx.d_result_count,  0, sizeof(unsigned long long)));
     checkCuda(cudaMemset(ctx.d_iter_count,    0, sizeof(unsigned long long)));
-
-    // Seed with base facts.
     tc_init_base<<<ctx.grid_size, ctx.block_size>>>(ctx.d_edges, ctx.n_edges,
                                                     ctx.d_result_set, ctx.result_cap,
                                                     ctx.d_frontier, ctx.d_frontier_size,
@@ -327,32 +338,74 @@ inline unsigned long long tc_result_count(const TCContext &ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// Version hook. Each version's .cu defines TC_VERSION and tc_run().
-// tc_run drives the fixpoint and returns the number of iterations; it must set
-// *seconds to the measured fixpoint time (setup/IO excluded).
+// Version hooks. Each version's .cu defines TC_VERSION and these three:
+//   tc_build     : build/instantiate any CUDA graph (v2/v3); no-op for v1.
+//                  Reports the one-time build+instantiate cost in *build_seconds.
+//   tc_run_once  : run the fixpoint exactly once (state must already be reset),
+//                  return #iterations, set *run_seconds to the fixpoint time.
+//   tc_destroy   : release any graph resources.
 // ---------------------------------------------------------------------------
 extern const char *TC_VERSION;
-int tc_run(TCContext &ctx, double *seconds);
+void tc_build(TCContext &ctx, double *build_seconds);
+int  tc_run_once(TCContext &ctx, double *run_seconds);
+void tc_destroy(TCContext &ctx);
+
+// Median of a small array (sorts a copy).
+inline double tc_median(double *v, int n) {
+    for (int i = 0; i < n; i++)
+        for (int j = i + 1; j < n; j++)
+            if (v[j] < v[i]) { double t = v[i]; v[i] = v[j]; v[j] = t; }
+    if (n == 0) return 0.0;
+    return (n & 1) ? v[n / 2] : 0.5 * (v[n / 2 - 1] + v[n / 2]);
+}
 
 // ---------------------------------------------------------------------------
-// Shared main. Usage: ./tc.out <data_file.bin> [capacity_mult]
+// Shared main. Usage: ./tc.out <data_file.bin> [capacity_mult] [repeats]
+//   capacity_mult : sizes the result set as next_pow2(n_edges * mult) (def 64)
+//   repeats       : timed fixpoint runs, preceded by 1 warm-up (def 1)
+//
+// Output CSV columns (stable positions for tests/verify.sh: 3=iters, 4=TC):
+//   Version,Input,Iterations,TC,MedianTime,MinTime,BuildTime,Repeats,Data
 // ---------------------------------------------------------------------------
 inline int tc_main(int argc, char **argv) {
     const char *input_file = (argc >= 2) ? argv[1] : "../data/data_10.bin";
     long capacity_mult = (argc >= 3) ? atol(argv[2]) : 64;
+    int  repeats       = (argc >= 4) ? atoi(argv[3]) : 1;
+    if (repeats < 1) repeats = 1;
 
     TCContext ctx;
     tc_setup(ctx, input_file, capacity_mult);
 
-    double seconds = 0.0;
-    int iterations = tc_run(ctx, &seconds);
+    // Build any graph once (measured separately from the fixpoint).
+    double build_seconds = 0.0;
+    tc_build(ctx, &build_seconds);
 
+    // Warm-up run (not timed): pays JIT / first-launch / cache costs.
+    double warm = 0.0;
+    tc_reset_state(ctx);
+    int iterations = tc_run_once(ctx, &warm);
     unsigned long long tc = tc_result_count(ctx);
 
-    printf("# Version,# Input,# Iterations,# TC,Time,# Data\n");
-    printf("%s,%d,%d,%llu,%.4lf,%s\n",
-           TC_VERSION, ctx.input_rows, iterations, tc, seconds, input_file);
+    // Timed repeats.
+    double *times = (double *)malloc(repeats * sizeof(double));
+    double min_t = 1e300;
+    for (int r = 0; r < repeats; r++) {
+        double s = 0.0;
+        tc_reset_state(ctx);
+        iterations = tc_run_once(ctx, &s);
+        times[r] = s;
+        if (s < min_t) min_t = s;
+    }
+    tc = tc_result_count(ctx);
+    double med_t = tc_median(times, repeats);
+    free(times);
 
+    printf("# Version,# Input,# Iterations,# TC,MedianTime,MinTime,BuildTime,Repeats,# Data\n");
+    printf("%s,%d,%d,%llu,%.6lf,%.6lf,%.6lf,%d,%s\n",
+           TC_VERSION, ctx.input_rows, iterations, tc,
+           med_t, min_t, build_seconds, repeats, input_file);
+
+    tc_destroy(ctx);
     tc_teardown(ctx);
     return 0;
 }

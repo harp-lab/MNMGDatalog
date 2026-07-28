@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# Verify all three TC versions against the expected TC sizes from the
-# MNMGDatalog README, on four datasets.
+# Verify all four TC versions against the expected TC size AND iteration count
+# from the MNMGDatalog README, on four datasets.
+#
+# Both must match: TC size checks the result is correct; iteration count checks
+# the semi-naive fixpoint converges in the expected number of rounds (catches
+# subtle bugs that leave the TC size right but the loop structure wrong).
 #
 # Usage: bash tests/verify.sh
 # Run from the tc_benchmark directory (or anywhere; paths are resolved relative
@@ -12,6 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DATA_DIR="${DATA_DIR:-$ROOT_DIR/../data}"
 
+V0="$ROOT_DIR/v0_reference/tc_v0.out"
 V1="$ROOT_DIR/v1_baseline/tc_v1.out"
 V2="$ROOT_DIR/v2_cudagraph/tc_v2.out"
 V3="$ROOT_DIR/v3_conditional/tc_v3.out"
@@ -32,7 +37,7 @@ get_field() { # $1=output  $2=field index
 pass=0
 fail=0
 
-for label in "baseline:$V1" "cudagraph:$V2" "conditional:$V3"; do
+for label in "reference:$V0" "baseline:$V1" "cudagraph:$V2" "conditional:$V3"; do
   name="${label%%:*}"
   bin="${label##*:}"
   if [[ ! -x "$bin" ]]; then
@@ -51,13 +56,14 @@ for label in "baseline:$V1" "cudagraph:$V2" "conditional:$V3"; do
     out="$("$bin" "$df" 64 2>/dev/null)"
     got_tc="$(get_field "$out" 4)"
     got_iter="$(get_field "$out" 3)"
-    if [[ "$got_tc" == "$exp_tc" ]]; then
-      note=""
-      [[ "$got_iter" != "$exp_iter" ]] && note="  (iters=$got_iter, expected $exp_iter)"
-      printf "  PASS  %-16s TC=%s%s\n" "$ds" "$got_tc" "$note"
+    if [[ "$got_tc" == "$exp_tc" && "$got_iter" == "$exp_iter" ]]; then
+      printf "  PASS  %-16s TC=%s iters=%s\n" "$ds" "$got_tc" "$got_iter"
       pass=$((pass+1))
     else
-      printf "  FAIL  %-16s TC=%s expected %s\n" "$ds" "${got_tc:-<none>}" "$exp_tc"
+      reason=""
+      [[ "$got_tc"   != "$exp_tc"   ]] && reason="TC=${got_tc:-<none>} (exp $exp_tc)"
+      [[ "$got_iter" != "$exp_iter" ]] && reason="$reason${reason:+, }iters=${got_iter:-<none>} (exp $exp_iter)"
+      printf "  FAIL  %-16s %s\n" "$ds" "$reason"
       fail=$((fail+1))
     fi
   done
