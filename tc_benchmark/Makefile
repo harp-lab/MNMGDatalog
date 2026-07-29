@@ -66,7 +66,12 @@ test: all
 benchmark: all
 	@bash tests/benchmark.sh $(REPEATS) $(BENCH_MULT) $(DS)
 
+# Plot the latest results/*.csv (or pass CSV=<path>) into results/charts/.
+# Requires matplotlib (pip install matplotlib).
+plot:
+	python3 tests/plot_results.py $(CSV)
+
 clean:
 	rm -f $(V0) $(V1) $(V2) $(V3)
 
-.PHONY: all run0 run1 run2 run3 test benchmark clean
+.PHONY: all run0 run1 run2 run3 test benchmark plot clean
