@@ -592,15 +592,22 @@ inline int tc_main(int argc, char **argv) {
     double med_t = tc_median(times, repeats);
     free(times);
 
+    // Disk write of the result file (unless TC_NO_OUTPUT=1). This is file I/O, so
+    // its time is added to `fileio` (symmetric with the input read). Done before
+    // printing so the reported fileio includes it. Format matches MNMGDatalog.
+    double fileio = ctx.t_fileio;               // input read
+    if (!getenv("TC_NO_OUTPUT")) {
+        double tw = tc_now();
+        tc_write_output_from_host(host, cap, input_file);
+        fileio += tc_now() - tw;                // + output write
+    }
+
     tc_print_header();
     tc_print_row(TC_VERSION, ctx.input_rows, iterations, tc,
-                 ctx.t_fileio, ctx.t_h2d, ctx.t_setup, build_seconds,
+                 fileio, ctx.t_h2d, ctx.t_setup, build_seconds,
                  med_t, min_t, d2h, ctx.peak_mem_mb, repeats, input_file);
 
-    // Disk write (NOT timed) from the already-copied host buffer, unless
-    // TC_NO_OUTPUT=1. Format matches MNMGDatalog's <input>_tc.bin.
-    if (!getenv("TC_NO_OUTPUT")) tc_write_output_from_host(host, cap, input_file);
-    // Optional text dump for content verification (TC_DUMP=<file>).
+    // Text dump for content verification only (TC_DUMP=<file>); not timed.
     const char *dump = getenv("TC_DUMP");
     if (dump && dump[0]) tc_dump_from_host(host, cap, dump);
     free(host);

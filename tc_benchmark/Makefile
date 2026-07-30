@@ -74,4 +74,15 @@ plot:
 clean:
 	rm -f $(V0) $(V1) $(V2) $(V3)
 
-.PHONY: all run0 run1 run2 run3 test benchmark plot clean
+# Remove generated TC result files (can be many GB for large closures) and
+# results CSV/charts. Use this to free disk space.
+clean-output:
+	rm -f $(DATA_DIR)/*_reference_tc.bin $(DATA_DIR)/*_baseline_tc.bin \
+	      $(DATA_DIR)/*_cudagraph_tc.bin $(DATA_DIR)/*_conditional_tc.bin \
+	      $(DATA_DIR)/*_tc.bin
+	rm -rf results/charts results/*.csv
+
+# Everything: binaries + generated outputs.
+distclean: clean clean-output
+
+.PHONY: all run0 run1 run2 run3 test benchmark plot clean clean-output distclean

@@ -117,14 +117,18 @@ Notes:
   `_tc.bin` format; convert with `binary_file_utils.py bin_to_txt`). The write is
   done once, after timing, so it does not affect the reported times. Set
   `TC_NO_OUTPUT=1` to skip it (e.g. for pure timing or the huge closures).
-- **Data-transfer timing:** `H2D` counts the input transfer (edges host$\to$device)
-  and `D2H` counts the output transfer (the final TC relation device$\to$host);
-  both are included in `total`. The subsequent disk write and the benchmark's file
-  deletion are **not** timed.
-- **`make benchmark` cleans up:** each version's `_tc.bin` is deleted right after
-  its row is written to the results CSV, so the disk stays clear (billion-pair
-  closures produce multi-GB files). Pass `BENCH_KEEP_OUTPUT=1` to keep them. The
-  deletion happens in the shell after the binary exits, so it is never timed.
+- **Phase timing:** `H2D` = input transfer (edges host$\to$device); `D2H` = output
+  transfer (final TC relation device$\to$host, always measured); `fileio` = disk
+  read of the input **plus** the disk write of the result file (when written).
+  All are in `total`. `D2H` is unaffected by `TC_NO_OUTPUT`; only the `fileio`
+  write component is skipped when no output is written.
+- **`make benchmark` writes no result files by default** (`TC_NO_OUTPUT=1`): the
+  GPU$\to$CPU transfer is still timed as `D2H`, so numbers are identical while
+  producing \emph{zero} multi-GB `_tc.bin` files. In this mode `fileio` is the
+  input read only. Pass `BENCH_KEEP_OUTPUT=1` to also write (and keep) the result
+  files, in which case `fileio` includes the write for every version.
+- Free space anytime with `make clean-output` (removes `*_tc.bin` + results CSV/
+  charts) or `make distclean` (that plus binaries).
 - **`make test` checks the actual tuples:** it runs every version, dumps all
   discovered `(src,dst)` pairs, sorts them, and diffs v1/v2/v3 against
   MNMGDatalog (v0) — a version passes only if its full tuple set is identical to

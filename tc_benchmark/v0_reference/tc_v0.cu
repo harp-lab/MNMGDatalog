@@ -308,14 +308,12 @@ int main(int argc, char **argv) {
                          cudaMemcpyDeviceToHost));
     double d2h = tc_now() - t0;
 
-    tc_print_header();
-    tc_print_row(TC_VERSION, s.input_rows, iterations, tc,
-                 s.t_fileio, s.t_h2d, s.t_setup, /*build=*/0.0,
-                 med_t, min_t, d2h, s.peak_mem_mb, repeats, input_file);
-
-    // Disk write (NOT timed) from the already-copied host buffer, unless
-    // TC_NO_OUTPUT=1. Binary int32 (src,dst) pairs, MNMGDatalog `_tc.bin` format.
+    // Disk write of the result file (unless TC_NO_OUTPUT=1). Counted as file I/O
+    // (added to fileio, symmetric with the input read), done before printing.
+    // Binary int32 (src,dst) pairs = "value key", MNMGDatalog `_tc.bin` format.
+    double fileio = s.t_fileio;                  // input read
     if (!getenv("TC_NO_OUTPUT")) {
+        double tw = tc_now();
         char path[4096];
         snprintf(path, sizeof(path), "%s_%s_tc.bin", input_file, TC_VERSION);
         FILE *f = fopen(path, "wb");
@@ -327,7 +325,13 @@ int main(int argc, char **argv) {
             fclose(f);
             printf("# wrote %lld tuples to %s\n", (long long)s.t_full_size, path);
         }
+        fileio += tc_now() - tw;                 // + output write
     }
+
+    tc_print_header();
+    tc_print_row(TC_VERSION, s.input_rows, iterations, tc,
+                 fileio, s.t_h2d, s.t_setup, /*build=*/0.0,
+                 med_t, min_t, d2h, s.peak_mem_mb, repeats, input_file);
 
     // Optional: text dump for content-level verification (TC_DUMP=<file>).
     const char *dump = getenv("TC_DUMP");

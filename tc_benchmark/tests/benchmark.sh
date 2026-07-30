@@ -115,13 +115,18 @@ TIMEOUT="${TIMEOUT:-}"
 # the binary writes the row to a file via TC_CSV, and we read that file. This is
 # immune to stray stdout and awk/grep dialects. Returns non-zero on failure or if
 # the row's first field is not the expected version.
+# By default we do NOT write the multi-GB <data>_<version>_tc.bin result files
+# during benchmarking: the meaningful GPU->CPU transfer is always measured as the
+# D2H phase regardless, so skipping the disk write gives identical numbers with no
+# disk usage. Set BENCH_KEEP_OUTPUT=1 to actually write (and keep) the result files.
+if [[ "${BENCH_KEEP_OUTPUT:-0}" == "1" ]]; then NOOUT=""; else NOOUT="1"; fi
 run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
   local bin="$1" df="$2" want="$3" dm="$4" fs="$5" rowfile line
   rowfile="$TMP/row.csv"; rm -f "$rowfile"
   if [[ -n "$TIMEOUT" ]] && command -v timeout >/dev/null 2>&1; then
-    TC_CSV="$rowfile" timeout "$TIMEOUT" "$bin" "$df" "$dm" "$REPEATS" "$fs" >/dev/null 2>&1
+    TC_NO_OUTPUT="$NOOUT" TC_CSV="$rowfile" timeout "$TIMEOUT" "$bin" "$df" "$dm" "$REPEATS" "$fs" >/dev/null 2>&1
   else
-    TC_CSV="$rowfile" "$bin" "$df" "$dm" "$REPEATS" "$fs" >/dev/null 2>&1
+    TC_NO_OUTPUT="$NOOUT" TC_CSV="$rowfile" "$bin" "$df" "$dm" "$REPEATS" "$fs" >/dev/null 2>&1
   fi
   [[ -s "$rowfile" ]] || return 2          # no row written -> failed / OOM
   line="$(head -n 1 "$rowfile")"
@@ -166,10 +171,6 @@ for ds in "${DATASETS[@]}"; do
       l=""
       echo "  NOTE: $v produced no result row (OOM / overflow / crash)"
     fi
-    # Delete this version's TC output file now that its row is in the CSV, to keep
-    # disk clear (billion-pair closures produce multi-GB files). Set
-    # BENCH_KEEP_OUTPUT=1 to keep them.
-    [[ "${BENCH_KEEP_OUTPUT:-0}" == "1" ]] || rm -f "${df}_${v}_tc.bin"
     LINES[$idx]="$l"
     idx=$((idx+1))
   done
