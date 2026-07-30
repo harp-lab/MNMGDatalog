@@ -44,13 +44,40 @@ Run a single version: `make run0 DATA=../data/data_51971.bin MULT=4096 REPEATS=3
 
 ## Results
 
-Populate after a JLSE run: `make benchmark && make plot` writes the two charts to
-`results/charts/`. End-to-end **total time** (ms) with total-time speedup (`t↑`)
-and **compute-only** speedup (`c↑`) vs MNMGDatalog; all versions produce identical
-SG size, iteration count, and byte-identical tuple sets (`make test`).
+JLSE A100-PCIE-40GB, CUDA 12.9.1, median of 3 runs. End-to-end **total time** (ms)
+with total-time speedup (`t↑`) and **compute-only** speedup (`c↑`) vs MNMGDatalog.
+All four versions produce identical SG size, iteration count, and byte-identical
+tuple sets (`make test`).
 
 ![End-to-end total time (log)](results/charts/total_time.png)
+
+| Dataset | # Iter | # SG | mnmg | fused | +graph | +cond | fused t↑/c↑ | +graph t↑/c↑ | +cond t↑/c↑ |
+|---------|-------:|-----:|-----:|------:|-------:|------:|:-----------:|:------------:|:-----------:|
+| CA-HepTh (`data_51971`)       |   9 | 74,618,689  |    602 |  779 |  762 |  763 | 0.8/0.7 | 0.8/0.7 | 0.8/0.7 |
+| fe_sphere (`data_49152`)      | 127 | 205,814,096 |  4,615 | 1,127 | 1,130 | 1,129 | 4.1/5.1 | 4.1/5.1 | 4.1/5.1 |
+| loc-Brightkite (`data_214078`)|  18 | 92,398,050  |  1,691 | 2,005 | 2,018 | 2,007 | 0.8/0.8 | 0.8/0.8 | 0.8/0.8 |
+| fe_body (`data_163734`)       | 125 | 408,443,204 | 10,315 | 2,736 | 2,954 | 2,748 | 3.8/4.5 | 3.5/4.5 | 3.8/4.5 |
+
 ![Per-phase breakdown (broken y-axis)](results/charts/breakdown.png)
+
+**Reading the results — fusion helps only when the round count is high.** SG's
+fused win depends on iteration count, not graph size:
+
+- **High-iteration graphs win big:** fe_sphere (127 rounds) → 5.1× compute,
+  fe_body (125 rounds) → 4.5×. With many rounds, MNMGDatalog re-sorts/re-merges a
+  growing 200–400 M-tuple relation *every* round, while the fused hash set pays a
+  flat cost per fact.
+- **Low-iteration graphs lose (0.7–0.8×):** CA-HepTh (9 rounds) and loc-Brightkite
+  (18 rounds). Too few rounds to amortize the fused kernel's per-round two-hop
+  cross product (for each `sg(a,b)`, it enumerates every `edge(a,x)`×`edge(b,y)`),
+  and MNMGDatalog's handful of large batched Thrust joins win. This is the same
+  crossover as TC's low-iteration outliers, shifted right because SG's per-round
+  work is a two-hop cross product rather than a single join.
+- **CUDA graph / conditional add ~nothing here** — every SG dataset is heavily
+  compute-bound (few, very heavy rounds), so there is no per-round launch overhead
+  to remove (`+graph`/`+cond` ≈ `fused`). The fe_body `+graph` setup spike
+  (≈230 ms one run) is a noisy one-off `cudaMemset`, not systematic (`+cond` with
+  the same graph machinery shows ≈14 ms).
 
 ## Phase timing / memory
 

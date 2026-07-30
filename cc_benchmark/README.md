@@ -54,11 +54,42 @@ Run a single version: `make run0 DATA=../data/WikiTalk.bin REPEATS=3`
 
 ## Results
 
-Populate after a JLSE run. End-to-end **total time** (ms) with total-time speedup
-(`t↑`) and **compute-only** speedup (`c↑`) vs MNMGDatalog.
+JLSE A100-PCIE-40GB, CUDA 12.9.1, median of 3 runs. End-to-end **total time** (ms)
+with total-time speedup (`t↑`) and **compute-only** speedup (`c↑`) vs MNMGDatalog.
+All four versions produce the identical `(node, component)` labeling (`make test`);
+`# Rounds` lists v0 vs the fused versions — they legitimately differ (see below).
 
 ![End-to-end total time (log)](results/charts/total_time.png)
+
+| Dataset | # Rounds (v0/fused) | # Nodes | mnmg | fused | +graph | +cond | fused t↑/c↑ | +graph t↑/c↑ | +cond t↑/c↑ |
+|---------|:-------------------:|--------:|-----:|------:|-------:|------:|:-----------:|:------------:|:-----------:|
+| CA-HepTh (`data_51971`)   | 13/12 |    68,746  |    10.7 |  1.7 |  1.8 |  1.6 | 6.5/22 | 6.0/26 | 6.7/40 |
+| WikiTalk (`WikiTalk`)     | 8/4   | 2,394,385  | 3,960.1 | 29.1 | 29.4 | 29.7 | 136/2640 | 135/2664 | 134/2734 |
+| web-Google (`web-Google`) | 16/7  |   916,428  |   506.8 | 30.3 | 29.4 | 29.5 | 17/82 | 17/81 | 17/84 |
+| as-skitter (`as-skitter`) | 22/9  | 1,696,415  | 2,646.0 | 59.1 | 55.5 | 55.7 | 45/252 | 48/243 | 47/248 |
+| roadNet-CA (`roadNet-CA`) | 555/222 | 1,971,281 | 2,221.8 | 69.9 | 66.3 | 65.4 | 32/50 | 34/50 | 34/52 |
+
 ![Per-phase breakdown (broken y-axis)](results/charts/breakdown.png)
+
+**Reading the results — fusion is a massive win for CC (up to ~136× total, ~2700×
+compute).** Two effects compound:
+
+- **Dense `atomicMin` beats materialized min-label sort-merge** by orders of
+  magnitude in compute: MNMGDatalog joins/sorts/merges/dedups a growing relation
+  every round, whereas the fused kernel is one atomicMin pass over the edge array
+  per round with an in-place label array. On WikiTalk the fixpoint compute drops
+  from 2.6 s to ~1 ms (~2700×).
+- **Fewer rounds, too:** atomicMin lets a label jump multiple hops within a single
+  round (a thread reads a neighbour's already-lowered label), so the fused versions
+  converge in fewer rounds than one-hop-per-round sort-merge (WikiTalk 8→4,
+  roadNet-CA 555→222). The result set is identical (min-label has a unique
+  fixpoint), which is why `make test` passes despite different round counts.
+- **Fused CC is now IO/transfer-bound, not compute-bound** (see the breakdown:
+  file IO + data transfer dominate the tiny fused bars). Because compute is already
+  ~1 ms, **`+graph`/`+cond` add essentially nothing** — there is no meaningful
+  per-round launch overhead left to remove.
+- **MNMGDatalog `setup` is a visible cost on big graphs** (e.g. WikiTalk: a ~1.3 s
+  one-shot memset), part of why its total towers over the fused versions.
 
 ## Datasets
 

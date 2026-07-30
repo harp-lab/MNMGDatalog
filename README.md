@@ -8,6 +8,11 @@ This repository hosts code for Datalog applications optimized for multi-node, mu
 - Weakly Connected Components (WCC): [wcc.cu](wcc.cu)
 - Single join: [single_join.cu](single_join.cu)
 
+**Single-GPU execution-strategy study** (sort-merge vs. fused vs. CUDA graphs vs.
+conditional graph nodes for TC, SG, and WCC): see
+[SINGLE_GPU_BENCHMARKS.md](SINGLE_GPU_BENCHMARKS.md) and the `tc_benchmark/`,
+`sg_benchmark/`, `cc_benchmark/` folders.
+
 Two buffer preparation strategies (sorting and two-pass based) and two all-to-all communication techniques (CUDA-Aware-MPI and traditional MPI) are supported:
 
 ![alt commincation ](drawing/comminication.png)
