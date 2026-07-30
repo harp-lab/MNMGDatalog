@@ -515,10 +515,24 @@ inline void tc_print_row(const char *version, int input, int iterations,
                          double compute_min, double d2h, double peak_mem_mb,
                          int repeats, const char *data) {
     double total = fileio + h2d + setup + build + compute + d2h;
+    // Human/stdout view (sentinel-prefixed).
     printf("%s,%s,%d,%d,%llu,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.2lf,%d,%s\n",
            TC_ROW_SENTINEL, version, input, iterations, tc, total, fileio, h2d, setup,
            build, compute, compute_min, d2h, peak_mem_mb, repeats, data);
     fflush(stdout);
+    // Machine view: if TC_CSV=<path> is set, write the SAME 15 columns (without
+    // the sentinel) to that file. Scripts read this file instead of parsing
+    // stdout -- immune to stray output and awk/grep dialect issues.
+    const char *csv = getenv("TC_CSV");
+    if (csv && csv[0]) {
+        FILE *cf = fopen(csv, "w");
+        if (cf) {
+            fprintf(cf, "%s,%d,%d,%llu,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.6lf,%.2lf,%d,%s\n",
+                    version, input, iterations, tc, total, fileio, h2d, setup,
+                    build, compute, compute_min, d2h, peak_mem_mb, repeats, data);
+            fclose(cf);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

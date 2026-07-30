@@ -108,9 +108,10 @@ make plot                             # -> results/charts/{total_time,breakdown}
 Notes:
 - No `gcc` module needed; the system compiler builds this `-std=c++17` code.
 - Single binary run: `./v1_baseline/tc_v1.out <data.bin> [capacity_mult] [repeats] [frontier_slots]`.
-- Each binary prints one sentinel-tagged CSV row
-  (`__TCROW__,<version>,input,iters,tc,total,fileio,h2d,setup,build,compute,compute_min,d2h,peak_mem_mb,repeats,data`);
-  `benchmark.sh` matches the sentinel so stray stdout can't corrupt parsing.
+- Each binary prints a CSV row to stdout and, when `TC_CSV=<file>` is set, writes
+  the same 15-column row to that file. `benchmark.sh`/`verify.sh` read the
+  **`TC_CSV` file** (never parse stdout), so results are immune to stray output or
+  `awk`/`grep` differences across environments.
 - **Result output:** every version (v0–v3) writes its final TC to
   `<data>_<version>_tc.bin` (binary int32 `(src,dst)` pairs, the MNMGDatalog
   `_tc.bin` format; convert with `binary_file_utils.py bin_to_txt`). The write is

@@ -37,15 +37,17 @@ CASES=(
 TMP="$(mktemp -d 2>/dev/null || echo /tmp/tcverify_$$)"; mkdir -p "$TMP"
 trap 'rm -rf "$TMP"' EXIT
 
-get_field() { echo "$1" | awk -F',' '$1=="__TCROW__" {print $'"$2"'; exit}'; }
-
 # run <bin> <datafile> <dumpfile> -> echoes "iters tc" (empty on failure).
-# TC_NO_OUTPUT=1 avoids writing the default <input>_*_tc.bin next to the dataset;
-# verification uses the text TC_DUMP instead.
+# We read the binary's metrics from its TC_CSV file (not stdout) so parsing is
+# immune to stray output. TC_NO_OUTPUT=1 avoids writing the default
+# <input>_*_tc.bin next to the dataset; TC_DUMP gives the tuple text for diffing.
 run_tc() {
-  local out
-  out="$(TC_NO_OUTPUT=1 TC_DUMP="$3" "$1" "$2" 64 2>/dev/null)" || return 1
-  local it tc; it="$(get_field "$out" 4)"; tc="$(get_field "$out" 5)"
+  local rowfile="$TMP/row.csv"; rm -f "$rowfile"
+  TC_NO_OUTPUT=1 TC_CSV="$rowfile" TC_DUMP="$3" "$1" "$2" 64 >/dev/null 2>&1 || return 1
+  [[ -s "$rowfile" ]] || return 1
+  # CSV columns: version,input,iterations(3),tc(4),... -> iters=$3, tc=$4
+  local it tc
+  it="$(cut -d',' -f3 "$rowfile")"; tc="$(cut -d',' -f4 "$rowfile")"
   [[ -n "$it" && -n "$tc" ]] || return 1
   echo "$it $tc"
 }

@@ -107,66 +107,28 @@ mkdir -p "$(dirname "$OUT")"
 # CSV header mirrors the binary output plus dataset file + human-readable name.
 echo "version,input,iterations,tc,total_time,fileio,h2d,setup,build,compute,compute_min,d2h,peak_mem_mb,repeats,dataset,name" > "$OUT"
 
+TMP="$(mktemp -d 2>/dev/null || echo /tmp/tcbench_$$)"; mkdir -p "$TMP"
+trap 'rm -rf "$TMP"' EXIT
+
 TIMEOUT="${TIMEOUT:-}"
-# Run a version and return the LAST data line that looks like a valid 15-field
-# CSV row whose first field matches the expected version name. Returns non-zero
-# if the process failed or produced no valid row. Any stray/malformed stdout is
-# thus ignored rather than mis-parsed into "72"-style garbage.
+# Run a version and echo its canonical 15-field CSV row. We do NOT parse stdout:
+# the binary writes the row to a file via TC_CSV, and we read that file. This is
+# immune to stray stdout and awk/grep dialects. Returns non-zero on failure or if
+# the row's first field is not the expected version.
 run_bin() { # $1=bin $2=datafile $3=expected_version $4=mult $5=frontier_slots
-  local bin="$1" df="$2" want="$3" dm="$4" fs="$5" out rc line
+  local bin="$1" df="$2" want="$3" dm="$4" fs="$5" rowfile line
+  rowfile="$TMP/row.csv"; rm -f "$rowfile"
   if [[ -n "$TIMEOUT" ]] && command -v timeout >/dev/null 2>&1; then
-    out="$(timeout "$TIMEOUT" "$bin" "$df" "$dm" "$REPEATS" "$fs" 2>/dev/null)"; rc=$?
+    TC_CSV="$rowfile" timeout "$TIMEOUT" "$bin" "$df" "$dm" "$REPEATS" "$fs" >/dev/null 2>&1
   else
-    out="$("$bin" "$df" "$dm" "$REPEATS" "$fs" 2>/dev/null)"; rc=$?
+    TC_CSV="$rowfile" "$bin" "$df" "$dm" "$REPEATS" "$fs" >/dev/null 2>&1
   fi
-  if [[ "${BENCH_DEBUG:-0}" == "1" ]]; then
-    echo "---- DEBUG raw stdout of $want (rc=$rc) ----" >&2
-    echo "$out" >&2
-    echo "--------------------------------------------" >&2
-  fi
-  # Pick the sentinel-tagged data row for this version using grep (no awk in the
-  # critical path -> immune to awk-dialect differences), then strip the sentinel
-  # prefix with bash so the rest of the script sees the canonical 15-field line
-  # (version=$1...). Stray stdout (e.g. a bare "72") can never carry the sentinel,
-  # so it is ignored. The row is accepted regardless of exit code, so a result
-  # printed just before a teardown crash is still used.
-  line="$(printf '%s\n' "$out" | grep "^__TCROW__,${want}," | tail -n 1)"
-  line="${line#__TCROW__,}"   # strip the sentinel prefix
-  if [[ "${BENCH_DEBUG:-0}" == "1" ]]; then
-    echo "---- DEBUG run_bin extracted for $want: >>${line}<< ----" >&2
-  fi
-  [[ -n "$line" ]] || { echo "RAW>>${out}<<RAW"; return 2; }
-  echo "$line"
+  [[ -s "$rowfile" ]] || return 2          # no row written -> failed / OOM
+  line="$(head -n 1 "$rowfile")"
+  case "$line" in "$want",*) echo "$line" ;; *) return 2 ;; esac
 }
 
-BENCH_SCRIPT_VERSION="v7-awkfree"
-
-# Runtime self-test: exercise the ACTUAL run_bin with a fake binary that prints a
-# stray "72" plus a valid sentinel row. If the active parser doesn't return the
-# clean 15-field row, the on-disk script is stale/corrupted (e.g. a merge left an
-# old run_bin active) -> abort loudly instead of printing "BADLINE: 72".
-_bench_selftest() {
-  local tmp got rc nf
-  tmp="$(mktemp -d 2>/dev/null || echo /tmp/tcbench_$$)"; mkdir -p "$tmp"
-  {
-    printf '#!/usr/bin/env bash\n'
-    printf 'echo 72\n'
-    printf 'echo "# hdr"\n'
-    printf 'echo "__TCROW__,baseline,7035,64,146120,0.02,0.001,0.0005,0.002,0.0,0.017,0.017,0.0,256.0,1,x"\n'
-  } > "$tmp/fake"; chmod +x "$tmp/fake"
-  got="$(REPEATS=1 TIMEOUT="" MULT=64 run_bin "$tmp/fake" "$tmp/none" baseline 64 0)"; rc=$?
-  nf="$(printf '%s' "$got" | awk -F',' 'END{print NF}')"
-  rm -rf "$tmp"
-  if [[ "$rc" -ne 0 || "$got" != baseline,* || "$nf" != 15 ]]; then
-    echo "!!! benchmark.sh runtime self-test FAILED."
-    echo "!!! run_bin returned >>$got<< (rc=$rc, fields=$nf), expected a 15-field"
-    echo "!!! line starting 'baseline,'. This tests/benchmark.sh is stale/corrupted;"
-    echo "!!! re-copy it in FULL (do not merge). Aborting."
-    exit 4
-  fi
-}
-_bench_selftest
-
+BENCH_SCRIPT_VERSION="v8-csvfile"
 printf "[benchmark.sh %s]  Repeats=%s  Mult=%s  DataDir=%s\n\n" \
   "$BENCH_SCRIPT_VERSION" "$REPEATS" "$MULT" "$DATA_DIR"
 hdr() {
@@ -188,9 +150,9 @@ for ds in "${DATASETS[@]}"; do
   ref_total=""; ref_comp=""; iters_seen=""; iters_mismatch=0
   idx=0
   for v in "${ORDER[@]}"; do
-    l=""; raw=""
+    l=""
     if l="$(run_bin "${BINS[$idx]}" "$df" "$v" "$dm" "$fs")"; then
-      # Split the canonical 15-field row with bash (no awk).
+      # Split the canonical 15-field row (read from the binary's TC_CSV file).
       IFS=',' read -r c_ver c_in c_it c_tc c_tot c_fio c_h2d c_setup c_build c_comp c_cmin c_d2h c_mem c_rep c_data <<< "$l"
       # CSV: replace the data path with the .bin filename and append the name.
       printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
@@ -201,10 +163,8 @@ for ds in "${DATASETS[@]}"; do
       [[ "$it" != "$iters_seen" ]] && iters_mismatch=1
       if [[ "$v" == "reference" ]]; then ref_total="$c_tot"; ref_comp="$c_comp"; fi
     else
-      [[ "$l" == RAW\>\>* ]] && raw="${l#RAW>>}" && raw="${raw%<<RAW}"
       l=""
-      [[ -n "$raw" ]] && echo "  NOTE: $v produced no valid CSV row; raw stdout was:" \
-                       && echo "        ${raw//$'\n'/ | }"
+      echo "  NOTE: $v produced no result row (OOM / overflow / crash)"
     fi
     # Delete this version's TC output file now that its row is in the CSV, to keep
     # disk clear (billion-pair closures produce multi-GB files). Set
