@@ -221,6 +221,22 @@ __global__ void tc_set_sizes(int *frontier_size, const int *new_count) {
     *frontier_size = *new_count;
 }
 
+// Stream-compact the sparse result set into a dense array `out` of exactly the
+// discovered pairs, so the final device->host copy transfers only TC tuples
+// (comparable to MNMGDatalog's compact t_full) instead of the whole table.
+__global__ void tc_compact(const unsigned long long *set, long cap,
+                           unsigned long long *out, unsigned long long *out_count) {
+    long index = (long)blockIdx.x * blockDim.x + threadIdx.x;
+    long stride = (long)blockDim.x * gridDim.x;
+    for (long i = index; i < cap; i += stride) {
+        unsigned long long s = set[i];
+        if (s != TC_EMPTY64) {
+            unsigned long long w = atomicAdd(out_count, 1ULL);
+            out[w] = s;
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Context holding all device state + launch configuration
 // ---------------------------------------------------------------------------
@@ -427,39 +443,34 @@ inline unsigned long long tc_result_count(const TCContext &ctx) {
 // helpers below embed it in the result filename.
 extern const char *TC_VERSION;
 
-// Write the final TC (already copied to host buffer `host` of `cap` slots) to a
-// binary file of int32 (src,dst) pairs, matching the MNMGDatalog `<input>_tc.bin`
-// format. Disk write only -- the device->host transfer is timed separately as D2H.
-inline long long tc_write_output_from_host(const unsigned long long *host, long cap,
+// Write the compact TC (host buffer of `n` packed pairs) to a binary file of
+// int32 (src,dst) pairs, matching the MNMGDatalog `<input>_tc.bin` format.
+// Disk write only -- the device->host transfer is timed separately as D2H.
+inline long long tc_write_output_from_host(const unsigned long long *host, long long n,
                                            const char *input_file) {
     char path[4096];
     snprintf(path, sizeof(path), "%s_%s_tc.bin", input_file, TC_VERSION);
     FILE *f = fopen(path, "wb");
     if (!f) { fprintf(stderr, "Cannot open output file %s\n", path); return -1; }
-    long long cnt = 0;
-    for (long i = 0; i < cap; i++) {
+    for (long long i = 0; i < n; i++) {
         unsigned long long s = host[i];
-        if (s != TC_EMPTY64) {
-            int pair[2] = { (int)(s >> 32), (int)(s & 0xffffffffULL) };  // (src,dst)
-            fwrite(pair, sizeof(int), 2, f);
-            cnt++;
-        }
+        int pair[2] = { (int)(s >> 32), (int)(s & 0xffffffffULL) };  // (src,dst)
+        fwrite(pair, sizeof(int), 2, f);
     }
     fclose(f);
-    printf("# wrote %lld tuples to %s\n", cnt, path);  // '#' -> parsers ignore it
-    return cnt;
+    printf("# wrote %lld tuples to %s\n", n, path);  // '#' -> parsers ignore it
+    return n;
 }
 
-// Text dump of every TC tuple (one "src dst" per line) from an already-copied
-// host buffer; used by tests/verify.sh for content-level comparison against v0.
-inline void tc_dump_from_host(const unsigned long long *host, long cap,
+// Text dump of the compact TC (host buffer of `n` packed pairs), one "src dst"
+// per line; used by tests/verify.sh for content comparison against v0.
+inline void tc_dump_from_host(const unsigned long long *host, long long n,
                               const char *path) {
     FILE *f = fopen(path, "w");
     if (!f) { fprintf(stderr, "Cannot open dump file %s\n", path); return; }
-    for (long i = 0; i < cap; i++) {
+    for (long long i = 0; i < n; i++) {
         unsigned long long s = host[i];
-        if (s != TC_EMPTY64)
-            fprintf(f, "%d %d\n", (int)(s >> 32), (int)(s & 0xffffffffULL));
+        fprintf(f, "%d %d\n", (int)(s >> 32), (int)(s & 0xffffffffULL));
     }
     fclose(f);
 }
@@ -578,16 +589,30 @@ inline int tc_main(int argc, char **argv) {
     }
     tc_check_overflow(ctx);
 
-    // D2H: transfer the final TC result from device to host (timed). This is the
-    // output copy that a caller must pay to read results back; for the hash-set
-    // versions it is the full result table (scanned host-side to extract tuples).
+    tc = tc_result_count(ctx);   // TC size (small counter copy)
+
+    // Free the frontier buffers (not needed post-fixpoint) to make room for the
+    // compact result buffer, especially on billion-pair closures.
+    cudaFree(ctx.d_frontier);     ctx.d_frontier = nullptr;
+    cudaFree(ctx.d_new_frontier); ctx.d_new_frontier = nullptr;
+
+    // D2H: stream-compact the sparse result set into a dense array of exactly TC
+    // tuples on the device, then copy just those TC tuples to the host (timed).
+    // This makes the output transfer directly comparable to MNMGDatalog's compact
+    // t_full (TC x 8 bytes), instead of copying the whole sparse table.
     double t0 = tc_now();
-    long cap = ctx.result_cap;
-    unsigned long long *host = (unsigned long long *)malloc((size_t)cap * sizeof(unsigned long long));
-    checkCuda(cudaMemcpy(host, ctx.d_result_set, (size_t)cap * sizeof(unsigned long long),
+    unsigned long long *d_compact = nullptr, *d_cnt = nullptr;
+    checkCuda(cudaMalloc((void **)&d_compact, (size_t)(tc ? tc : 1) * sizeof(unsigned long long)));
+    checkCuda(cudaMalloc((void **)&d_cnt, sizeof(unsigned long long)));
+    checkCuda(cudaMemset(d_cnt, 0, sizeof(unsigned long long)));
+    tc_compact<<<ctx.grid_size, ctx.block_size>>>(ctx.d_result_set, ctx.result_cap,
+                                                  d_compact, d_cnt);
+    checkCuda(cudaDeviceSynchronize());
+    unsigned long long *host = (unsigned long long *)malloc((size_t)(tc ? tc : 1) * sizeof(unsigned long long));
+    checkCuda(cudaMemcpy(host, d_compact, (size_t)tc * sizeof(unsigned long long),
                          cudaMemcpyDeviceToHost));
     double d2h = tc_now() - t0;
-    tc = tc_result_count(ctx);  // small counter copy (negligible)
+    cudaFree(d_compact); cudaFree(d_cnt);
 
     double med_t = tc_median(times, repeats);
     free(times);
@@ -598,7 +623,7 @@ inline int tc_main(int argc, char **argv) {
     double fileio = ctx.t_fileio;               // input read
     if (!getenv("TC_NO_OUTPUT")) {
         double tw = tc_now();
-        tc_write_output_from_host(host, cap, input_file);
+        tc_write_output_from_host(host, (long long)tc, input_file);
         fileio += tc_now() - tw;                // + output write
     }
 
@@ -609,7 +634,7 @@ inline int tc_main(int argc, char **argv) {
 
     // Text dump for content verification only (TC_DUMP=<file>); not timed.
     const char *dump = getenv("TC_DUMP");
-    if (dump && dump[0]) tc_dump_from_host(host, cap, dump);
+    if (dump && dump[0]) tc_dump_from_host(host, (long long)tc, dump);
     free(host);
 
     tc_destroy(ctx);

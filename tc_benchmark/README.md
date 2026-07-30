@@ -122,6 +122,11 @@ Notes:
   read of the input **plus** the disk write of the result file (when written).
   All are in `total`. `D2H` is unaffected by `TC_NO_OUTPUT`; only the `fileio`
   write component is skipped when no output is written.
+- **D2H is apples-to-apples:** v1–v3 first **stream-compact** the sparse result
+  set into a dense array of exactly the TC tuples on the device, then copy only
+  `TC × 8` bytes to the host — the same amount MNMGDatalog copies from its compact
+  `t_full`. (Right-sizing `capacity_mult` still matters for `setup`/memory, but no
+  longer for D2H.)
 - **`make benchmark` writes no result files by default** (`TC_NO_OUTPUT=1`): the
   GPU$\to$CPU transfer is still timed as `D2H`, so numbers are identical while
   producing \emph{zero} multi-GB `_tc.bin` files. In this mode `fileio` is the

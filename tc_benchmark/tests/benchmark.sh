@@ -41,8 +41,12 @@ fi
 
 # Per-dataset capacity_mult so result_cap = next_pow2(n_edges*mult) >= ~2*TC.
 # TC/edge ratios vary hugely, so a single mult cannot fit all. Values below are
-# ~ceil(2*TC/n_edges) rounded up. Unknown datasets fall back to the CLI MULT.
+# ~ceil(2*TC/n_edges) rounded up. RIGHT-SIZING matters: an over-sized result set
+# inflates D2H (the output transfer copies the whole table), so small datasets use
+# small mults. Unknown datasets fall back to the CLI MULT.
 #   dataset (TC)                         mult   result_cap   ~set memory
+#   data_7035   OL.cedge   ( 146 K)        64     512 K       ~4 MB
+#   data_23874  TG.cedge   ( 481 K)        64       2 M      ~16 MB
 #   data_223001 SF.cedge   (  80 M)      1024     256 M        2 GB
 #   data_163734 fe_body    ( 156 M)      2048     512 M        4 GB
 #   data_147892 Gnutella31 ( 884 M)     12288     2.1 B       17 GB
@@ -51,6 +55,8 @@ fi
 #   com-dblpungraph        (1.91 B)      3800     4.3 B       34 GB (opt-in)
 ds_mult() {
   case "$1" in
+    data_7035.bin)                        echo 64 ;;
+    data_23874.bin)                       echo 64 ;;
     data_223001.bin)                      echo 1024 ;;
     data_163734.bin)                      echo 2048 ;;
     data_147892.bin)                      echo 12288 ;;
