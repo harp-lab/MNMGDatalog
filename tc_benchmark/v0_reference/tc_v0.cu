@@ -299,11 +299,14 @@ int main(int argc, char **argv) {
     double med_t = tc_median(times, repeats);
     free(times);
 
-    // D2H: transfer the final TC relation (t_full) from device to host (timed),
-    // symmetric with v1-v3. t_full stores (key=dst, value=src); canonical output
-    // is "src dst" = "value key".
-    double t0 = tc_now();
+    // D2H: transfer the final TC relation (t_full) from device to host (timed:
+    // memcpy only, symmetric with v1-v3). The host receive buffer malloc is
+    // allocation, not transfer, so it is excluded from the d2h timer. t_full is
+    // already dense (kept sorted/merged inside the timed fixpoint, so its
+    // densification is counted in Compute); t_full stores (key=dst, value=src)
+    // and the canonical output is "src dst" = "value key".
     Entity *host = (Entity *)malloc((size_t)s.t_full_size * sizeof(Entity));
+    double t0 = tc_now();
     checkCuda(cudaMemcpy(host, s.t_full, (size_t)s.t_full_size * sizeof(Entity),
                          cudaMemcpyDeviceToHost));
     double d2h = tc_now() - t0;

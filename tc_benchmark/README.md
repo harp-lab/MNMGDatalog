@@ -39,57 +39,52 @@ via `cudaGraphSetConditional` (v2 evaluates the same test on the CPU).
 > operators* (sorted relation + discrete RA operators) vs *fused kernel + hash
 > set*, not the fixpoint strategy itself.
 
-## Results (JLSE A100-PCIE-40GB, CUDA 12.9.1, 3 timed repeats)
+## Results (JLSE A100-PCIE-40GB, CUDA 12.9.1, median of 3 runs)
 
-End-to-end **total time** (ms) and **total-time speedup vs mnmg**. All versions
-produce identical TC size / iteration count per dataset.
+End-to-end **total time** (ms) with total-time speedup (`t↑`) and **compute-only**
+speedup (`c↑`) vs MNMGDatalog. All versions produce identical TC size, iteration
+count, and byte-identical tuple sets (`make test`).
 
-![End-to-end total time (log)](docs/charts/total_time.png)
+![End-to-end total time (log)](results/charts/total_time.png)
 
-| Dataset | # Iter | # TC | mnmg | fused | fused+graph | fused+cond | fused↑ | +graph↑ | +cond↑ |
-|---------|-------:|-----:|-----:|------:|------------:|-----------:|-------:|--------:|-------:|
-| OL.cedge (`data_7035`)        |  64 | 146,120       | 24.9 | 4.2 | 3.7 | 3.0 | 6.0× | 6.7× | 8.4× |
-| TG.cedge (`data_23874`)       |  58 | 481,121       | 23.7 | 3.9 | 3.8 | 3.4 | 6.0× | 6.3× | 7.0× |
-| SF.cedge (`data_223001`)      | 287 | 80,498,014    | 3,373.4 | 121.5 | 111.0 | 104.3 | 27.8× | 30.4× | 32.4× |
-| fe_body (`data_163734`)       | 188 | 156,120,489   | 4,901.5 | 368.5 | 360.4 | 357.1 | 13.3× | 13.6× | 13.7× |
-| p2p-Gnutella31 (`data_147892`)|  31 | 884,179,859   | 5,275.7 | 2,992.6 | 2,716.5 | 2,799.2 | 1.8× | 1.9× | 1.9× |
-| vsp_finan                     | 520 | 910,070,918   | 81,913.8 | 2,677.9 | 2,446.5 | 2,472.3 | 30.6× | 33.5× | 33.1× |
+| Dataset | # Iter | # TC | mnmg | fused | +graph | +cond | fused t↑/c↑ | +graph t↑/c↑ | +cond t↑/c↑ |
+|---------|-------:|-----:|-----:|------:|-------:|------:|:-----------:|:------------:|:-----------:|
+| OL.cedge (`data_7035`)        |  64 | 146,120       | 22.9 | 4.5 | 4.3 | 3.5 | 5.1/7.3 | 5.3/8.1 | 6.6/11.6 |
+| TG.cedge (`data_23874`)       |  58 | 481,121       | 24.3 | 5.9 | 5.9 | 5.2 | 4.1/10.1 | 4.1/10.7 | 4.6/15.4 |
+| SF.cedge (`data_223001`)      | 287 | 80,498,014    | 3,492 | 241 | 229 | 226 | 14.5/29.4 | 15.2/31.5 | 15.5/32.3 |
+| fe_body (`data_163734`)       | 188 | 156,120,489   | 5,115 | 581 | 595 | 593 | 8.8/14.2 | 8.6/13.6 | 8.6/13.6 |
+| p2p-Gnutella31 (`data_147892`)|  31 | 884,179,859   | 6,457 | 3,856 | 3,814 | 4,148 | 1.7/2.0 | 1.7/2.1 | 1.6/2.1 |
+| vsp_finan                     | 520 | 910,070,918   | 83,149 | 3,525 | 3,547 | 3,865 | 23.6/36.8 | 23.4/36.6 | 21.5/36.7 |
 
 Per-phase breakdown (absolute stacked — bar height = total time in ms; phases:
-file IO, data transfer = H2D+D2H, setup, graph build, compute). Each dataset uses
-a **broken y-axis**: the thin top slice shows `mnmg`'s true (large) total, and the
-zoomed bottom makes the fused versions' composition readable — otherwise `mnmg`
-(10–80× taller, ~100% compute) would flatten everything.
+file IO, data transfer = H2D+D2H, setup, graph build, compute). A **broken y-axis**
+per dataset shows `mnmg`'s true (large) total in the top slice while the zoomed
+bottom makes the fused versions' composition readable.
 
-![Per-phase total-time breakdown (broken y-axis)](docs/charts/breakdown.png)
+![Per-phase total-time breakdown (broken y-axis)](results/charts/breakdown.png)
 
-What it shows:
-- On small graphs (OL/TG) the fixed overheads — file IO, data transfer, `setup`,
-  and `graph build` (only in `+graph`/`+cond`) — are a real fraction of the few-ms
-  total.
-- On `p2p-Gnutella31` and `vsp_finan`, `setup` (the `cudaMemset` of a 17–21 GB
-  hash set) is the largest non-compute cost, which is why a smaller
-  `capacity_mult` helps end-to-end time there.
-- `mnmg` is essentially all `compute`; everywhere else `compute` still dominates
-  the fused versions, and `+graph`/`+cond` trim it via the CUDA graph.
+Reading the results:
 
-Reading it:
+- **Fusion vs sort-merge is the big win** — 7–37× in **compute** (`c↑`),
+  5–24× end-to-end. It grows with iteration count: `vsp_finan` (520 iters) → 37×
+  compute, because mnmg re-sorts/merges a ~910 M-tuple relation every round while
+  the fused hash set is flat cost per fact.
+- **CUDA graph (+graph)** improves **compute** on every launch-bound graph
+  (OL 7.3→8.1, TG 10.1→10.7, SF 29.4→31.5); **+cond** additionally removes the
+  per-iteration host round-trip and gives the **best compute** on the
+  many-short-round graphs (OL 11.6×, TG 15.4×, SF 32.3×).
+- **On the largest closures, the simplest `fused` wins end-to-end.** For fe_body,
+  p2p-Gnutella31, and vsp_finan the non-compute time is dominated by a one-shot
+  17–21 GB `setup` memset and the compact D2H of hundreds of millions of tuples;
+  the small graph build of +graph/+cond isn't amortized over so few/heavy rounds,
+  so `fused` posts the best total (e.g. vsp_finan 23.6× vs 23.4/21.5×). These
+  one-shot costs are also noisy run-to-run.
+- **mnmg (v0) validates against the source engine**: `fe_body` = 5.1 s,
+  `vsp_finan` = 83.1 s — the expected regime for discrete sort-merge RA.
 
-- **fused operators vs mnmg sort-merge is the big win** (up to ~33×), and it
-  grows with iteration count: `vsp_finan` (520 iters) → ~33×, because mnmg
-  re-sorts/merges a ~910 M-tuple relation every round while the fused hash set is
-  flat cost per fact.
-- **CUDA graph (v2) adds a further ~5–10%** where iterations are many and short;
-  **v3 (GPU condition) ≈ v2** here — once the graph is replayed, removing the
-  per-iteration CPU sync buys little for this workload.
-- **`p2p-Gnutella31` is the outlier (~1.9×)**: only 31 iterations, so mnmg's
-  sort-merge isn't amortized, and the fused versions' `setup` (memset of a 17 GB
-  hash set) is a visible fraction of total time (see the breakdown).
-- **mnmg (v0) validates against the source engine**: `fe_body` = 4.9 s, `vsp_finan`
-  = 81.9 s — the expected regime for discrete sort-merge RA.
-
-Charts/CSV above are committed under `docs/`; regenerate on your machine with
-`make benchmark && make plot`.
+Charts are written to `results/charts/` by `make plot`; regenerate with
+`make benchmark && make plot`. (The committed paper figures live in the paper
+repo under `docs/6a6a5ea53af9534104e4079b/figures/`.)
 
 ## Build & run (JLSE)
 
@@ -122,11 +117,16 @@ Notes:
   read of the input **plus** the disk write of the result file (when written).
   All are in `total`. `D2H` is unaffected by `TC_NO_OUTPUT`; only the `fileio`
   write component is skipped when no output is written.
-- **D2H is apples-to-apples:** v1–v3 first **stream-compact** the sparse result
-  set into a dense array of exactly the TC tuples on the device, then copy only
-  `TC × 8` bytes to the host — the same amount MNMGDatalog copies from its compact
-  `t_full`. (Right-sizing `capacity_mult` still matters for `setup`/memory, but no
-  longer for D2H.)
+- **D2H is apples-to-apples, and phases are attributed symmetrically:** v1–v3
+  **stream-compact** the sparse result set into a dense array of exactly the TC
+  tuples on the device, then copy `TC × 8` bytes to the host — the same amount
+  MNMGDatalog copies from its dense `t_full`. `D2H` times **only** the
+  `cudaMemcpy` (device$\to$host) for every version; the host receive-buffer
+  `malloc` is allocation, not transfer, and is excluded. The v1–v3 **compaction
+  kernel** (plus its device buffers) is result *materialization* and is counted in
+  `compute`, mirroring MNMGDatalog which keeps its result dense *inside* the timed
+  fixpoint. This removes the earlier artifact where compaction/alloc overhead
+  inflated the v1–v3 "data transfer" band on small graphs.
 - **`make benchmark` writes no result files by default** (`TC_NO_OUTPUT=1`): the
   GPU$\to$CPU transfer is still timed as `D2H`, so numbers are identical while
   producing \emph{zero} multi-GB `_tc.bin` files. In this mode `fileio` is the
@@ -159,7 +159,8 @@ v3_conditional/tc_v3.cu  fused operators, conditional WHILE node (GPU condition)
 tests/verify.sh          correctness: v1-v3 TC tuples == MNMGDatalog (content diff)
 tests/benchmark.sh       timing + breakdown + speedups, writes results CSV
 tests/plot_results.py    two charts (total time, per-phase breakdown)
-docs/                    committed example CSV + charts for this README
+tests/make_flowchart.py  loop-control flowchart (results/charts/workflow.*)
+results/charts/          committed charts rendered in this README
 Makefile
 ```
 

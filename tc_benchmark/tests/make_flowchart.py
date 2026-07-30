@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the loop-control flowchart for the four TC versions.
 
-Writes docs/charts/workflow.{png,pdf} (AGENTS.md: always emit png + pdf).
+Writes results/charts/workflow.{png,pdf} (AGENTS.md: always emit png + pdf).
 Pure matplotlib. Three panels contrast how the recursive fixpoint loop is
 driven: host loop (MNMGDatalog / fused), replayed CUDA graph (fused+graph), and
 the on-GPU conditional WHILE node (fused+cond).
@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Patch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(os.path.dirname(HERE), "docs", "charts", "workflow")
+OUT = os.path.join(os.path.dirname(HERE), "results", "charts", "workflow")
 
 CPU = "#d9e8fb"    # host / CPU boxes
 GPU = "#dff0d8"    # device / GPU boxes

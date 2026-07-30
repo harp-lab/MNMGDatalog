@@ -20,8 +20,9 @@
   for every figure (PNG for quick viewing / README embedding, PDF for
   papers/vector use). The `tests/plot_results.py` `_save()` helper already does
   this — keep it that way, and route all figure saving through `_save()`.
-- Committed example charts live under `docs/charts/` (both formats). Fresh
-  benchmark runs write to `results/charts/` via `make plot`.
+- Generate all charts into `results/charts/` (both formats), **never** into
+  `docs/`. `make plot` writes there; the committed charts the README renders also
+  live in `results/charts/`. The `docs/` tree is reserved for the paper repo only.
 
 ## Naming
 - Never abbreviate the reference version as `mnmg`; always write **MNMGDatalog**.
@@ -36,3 +37,14 @@
   memory are reported as tables in the README, not extra charts.
 - Do not put chart titles on the figures; use axis labels and the dataset
   sub-titles only.
+
+## Paper repo (`docs/6a6a5ea53af9534104e4079b/`)
+- This is a **separate Overleaf git repo** (remote
+  `https://git@git.overleaf.com/6a6a5ea53af9534104e4079b`, branch `main`).
+- Before editing the paper, **`git pull`** in that directory to sync Overleaf.
+- After editing, commit and **`git push origin main`** so Overleaf reflects it.
+- Paper figures live in that repo's `figures/` as `cudagraph_{total_time,
+  breakdown,workflow}.pdf`; refresh them by copying the newest PDFs from
+  `results/charts/` after `make plot`.
+- All numbers/claims in the paper must come from the latest `results/benchmark_*.csv`
+  (source of truth), reported as compute speedup and end-to-end (total) speedup.

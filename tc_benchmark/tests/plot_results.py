@@ -138,12 +138,20 @@ def plot_total_time(datasets, rows, outpath):
     _save(fig, outpath)
 
 
-def _stacked(ax, rows, d, vers, xs):
-    """Draw the phase-stacked bars for one dataset on `ax`; return per-bar totals."""
+def _stacked(ax, rows, d, vers, xs, only=None):
+    """Draw the phase-stacked bars for one dataset on `ax`; return per-bar totals.
+
+    `only` (optional set of version keys) restricts which bars are actually drawn
+    while keeping the x positions aligned across the top/bottom broken panels. This
+    lets the broken top slice draw *only* the towering reference bar's cap, so the
+    shorter fused bars can never leak in as spurious floating bars.
+    """
     bottoms = [0.0] * len(vers)
     for col, lbl, color in PHASES:
         vals = [rows[d].get(v, {}).get(col, 0.0) for v in vers]
-        ax.bar(xs, vals, width=0.6, bottom=bottoms, label=lbl, color=color)
+        drawn = [val if (only is None or v in only) else 0.0
+                 for v, val in zip(vers, vals)]
+        ax.bar(xs, drawn, width=0.6, bottom=bottoms, label=lbl, color=color)
         bottoms = [b + v for b, v in zip(bottoms, vals)]
     return bottoms
 
@@ -173,15 +181,24 @@ def plot_breakdown(datasets, rows, outpath, versions):
         vers = [v for v in versions if v in rows[d]]
         xs = list(range(len(vers)))
 
-        _stacked(top, rows, d, vers, xs)
-        totals = _stacked(bot, rows, d, vers, xs)
-        if legend_handles is None:
-            legend_handles = bot.get_legend_handles_labels()
-
+        # Decide whether MNMGDatalog towers over the fused bars enough to warrant a
+        # broken y-axis. Compute totals first (draw bars afterwards so the top slice
+        # is only populated when we actually break the axis).
+        totals = [sum(rows[d].get(v, {}).get(col, 0.0) for col, _, _ in PHASES)
+                  for v in vers]
         overall = max(totals)
         fused = [t for v, t in zip(vers, totals) if v != "reference"]
         low = (max(fused) if fused else overall) * 1.20
         broken = overall > 1.4 * low   # only break when MNMGDatalog towers over
+
+        # Bottom panel always carries every bar. The top slice gets ONLY the
+        # reference cap, and ONLY when broken (otherwise it stays empty/off so no
+        # stray cap floats above a single-panel dataset like p2p-Gnutella31).
+        _stacked(bot, rows, d, vers, xs)
+        if broken:
+            _stacked(top, rows, d, vers, xs, only={"reference"})
+        if legend_handles is None:
+            legend_handles = bot.get_legend_handles_labels()
 
         for ax in (top, bot):
             ax.set_xlim(-0.6, len(vers) - 0.4)
@@ -190,7 +207,12 @@ def plot_breakdown(datasets, rows, outpath, versions):
 
         if broken:
             bot.set_ylim(0, low)
-            top.set_ylim(overall * 0.98, overall * 1.06)
+            # Top slice shows only the reference bar's cap, sitting tight against
+            # the break with a small headroom for its value label. The window is a
+            # thin band just below `overall` (sized to the top panel's 1:6 height
+            # ratio) so the cap looks proportional in every dataset.
+            top_span = low / 6.0
+            top.set_ylim(overall - top_span, overall + top_span * 0.45)
             top.spines["bottom"].set_visible(False)
             bot.spines["top"].set_visible(False)
             top.tick_params(labelbottom=False, bottom=False)

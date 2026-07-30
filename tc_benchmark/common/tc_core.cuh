@@ -509,7 +509,10 @@ inline double tc_median(double *v, int n) {
 //
 // TotalTime = FileIO + H2D + Setup + Build + Compute(median) + D2H, i.e. the
 // end-to-end cost of one representative solve (Compute is the median over the
-// timed repeats; the per-phase one-time costs are added once).
+// timed repeats; the per-phase one-time costs are added once). Compute also
+// includes the one-shot result compaction/materialization (v1-v3 densify their
+// sparse hash set here; MNMGDatalog densifies inside its timed fixpoint), so D2H
+// is purely the device->host memcpy and is symmetric across all versions.
 // ---------------------------------------------------------------------------
 // The data row starts with a unique sentinel token so downstream parsers can
 // pick it out unambiguously, even if the program (or any library it links)
@@ -596,11 +599,19 @@ inline int tc_main(int argc, char **argv) {
     cudaFree(ctx.d_frontier);     ctx.d_frontier = nullptr;
     cudaFree(ctx.d_new_frontier); ctx.d_new_frontier = nullptr;
 
-    // D2H: stream-compact the sparse result set into a dense array of exactly TC
-    // tuples on the device, then copy just those TC tuples to the host (timed).
-    // This makes the output transfer directly comparable to MNMGDatalog's compact
-    // t_full (TC x 8 bytes), instead of copying the whole sparse table.
-    double t0 = tc_now();
+    // Materialize the result: stream-compact the sparse hash set into a dense
+    // device array of exactly TC tuples, so the host copy is TC x 8 bytes, directly
+    // comparable to MNMGDatalog's already-dense t_full. Phase attribution (no work
+    // is dropped, every phase is symmetric with v0):
+    //   * compaction kernel + its device buffers + sync = result *materialization*,
+    //     GPU compute work. MNMGDatalog keeps its result dense *inside* the timed
+    //     fixpoint, so its equivalent densification is already counted in Compute.
+    //     We therefore add this compaction time to `compute` (NOT to d2h), so the
+    //     "data transfer" band means only host<->device copies for every version.
+    //   * host malloc of the receive buffer = allocation, not transfer -> excluded
+    //     from d2h in both v1-v3 and v0 (see tc_v0.cu).
+    //   * d2h = ONLY the cudaMemcpy DeviceToHost, symmetric with v0.
+    double tcomp0 = tc_now();
     unsigned long long *d_compact = nullptr, *d_cnt = nullptr;
     checkCuda(cudaMalloc((void **)&d_compact, (size_t)(tc ? tc : 1) * sizeof(unsigned long long)));
     checkCuda(cudaMalloc((void **)&d_cnt, sizeof(unsigned long long)));
@@ -608,13 +619,22 @@ inline int tc_main(int argc, char **argv) {
     tc_compact<<<ctx.grid_size, ctx.block_size>>>(ctx.d_result_set, ctx.result_cap,
                                                   d_compact, d_cnt);
     checkCuda(cudaDeviceSynchronize());
+    double compact_seconds = tc_now() - tcomp0;   // -> folded into compute below
+
     unsigned long long *host = (unsigned long long *)malloc((size_t)(tc ? tc : 1) * sizeof(unsigned long long));
+
+    // D2H: copy exactly TC compacted tuples to the host (timed: memcpy only).
+    double t0 = tc_now();
     checkCuda(cudaMemcpy(host, d_compact, (size_t)tc * sizeof(unsigned long long),
                          cudaMemcpyDeviceToHost));
     double d2h = tc_now() - t0;
     cudaFree(d_compact); cudaFree(d_cnt);
 
-    double med_t = tc_median(times, repeats);
+    // Fixpoint compute (median/min over repeats) PLUS the one-shot result
+    // compaction, since both are GPU result-producing work (v0 counts its
+    // densification inside the fixpoint).
+    double med_t = tc_median(times, repeats) + compact_seconds;
+    min_t += compact_seconds;
     free(times);
 
     // Disk write of the result file (unless TC_NO_OUTPUT=1). This is file I/O, so
