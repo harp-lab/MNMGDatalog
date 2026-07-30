@@ -423,6 +423,10 @@ inline unsigned long long tc_result_count(const TCContext &ctx) {
     return h;
 }
 
+// Each version's .cu defines its display name; declared here because the output
+// helpers below embed it in the result filename.
+extern const char *TC_VERSION;
+
 // Write the final TC (already copied to host buffer `host` of `cap` slots) to a
 // binary file of int32 (src,dst) pairs, matching the MNMGDatalog `<input>_tc.bin`
 // format. Disk write only -- the device->host transfer is timed separately as D2H.
@@ -468,7 +472,7 @@ inline void tc_dump_from_host(const unsigned long long *host, long cap,
 //                  return #iterations, set *run_seconds to the fixpoint time.
 //   tc_destroy   : release any graph resources.
 // ---------------------------------------------------------------------------
-extern const char *TC_VERSION;
+// (TC_VERSION is declared earlier, near the output helpers.)
 void tc_build(TCContext &ctx, double *build_seconds);
 int  tc_run_once(TCContext &ctx, double *run_seconds);
 void tc_destroy(TCContext &ctx);
