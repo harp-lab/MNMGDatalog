@@ -48,4 +48,7 @@ build/*
 
 # MacOS
 .DS_Store
+
+# Etc
 tc_benchmark/docs/6a6a5ea53af9534104e4079b/
+papers/

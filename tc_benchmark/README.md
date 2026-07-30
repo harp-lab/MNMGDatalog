@@ -49,12 +49,12 @@ count, and byte-identical tuple sets (`make test`).
 
 | Dataset | # Iter | # TC | mnmg | fused | +graph | +cond | fused t↑/c↑ | +graph t↑/c↑ | +cond t↑/c↑ |
 |---------|-------:|-----:|-----:|------:|-------:|------:|:-----------:|:------------:|:-----------:|
-| OL.cedge (`data_7035`)        |  64 | 146,120       | 22.9 | 4.5 | 4.3 | 3.5 | 5.1/7.3 | 5.3/8.1 | 6.6/11.6 |
-| TG.cedge (`data_23874`)       |  58 | 481,121       | 24.3 | 5.9 | 5.9 | 5.2 | 4.1/10.1 | 4.1/10.7 | 4.6/15.4 |
-| SF.cedge (`data_223001`)      | 287 | 80,498,014    | 3,492 | 241 | 229 | 226 | 14.5/29.4 | 15.2/31.5 | 15.5/32.3 |
-| fe_body (`data_163734`)       | 188 | 156,120,489   | 5,115 | 581 | 595 | 593 | 8.8/14.2 | 8.6/13.6 | 8.6/13.6 |
-| p2p-Gnutella31 (`data_147892`)|  31 | 884,179,859   | 6,457 | 3,856 | 3,814 | 4,148 | 1.7/2.0 | 1.7/2.1 | 1.6/2.1 |
-| vsp_finan                     | 520 | 910,070,918   | 83,149 | 3,525 | 3,547 | 3,865 | 23.6/36.8 | 23.4/36.6 | 21.5/36.7 |
+| OL.cedge (`data_7035`)        |  64 | 146,120       | 25.7 | 4.9 | 4.4 | 3.4 | 5.3/7.1 | 5.9/8.8 | 7.5/13.2 |
+| TG.cedge (`data_23874`)       |  58 | 481,121       | 25.1 | 6.0 | 5.8 | 5.1 | 4.2/7.3 | 4.3/7.4 | 4.9/9.5 |
+| SF.cedge (`data_223001`)      | 287 | 80,498,014    | 3,477 | 240 | 228 | 229 | 14.5/26.7 | 15.2/28.4 | 15.2/29.1 |
+| fe_body (`data_163734`)       | 188 | 156,120,489   | 5,117 | 584 | 594 | 595 | 8.8/13.4 | 8.6/12.8 | 8.6/12.9 |
+| p2p-Gnutella31 (`data_147892`)|  31 | 884,179,859   | 6,452 | 3,871 | 3,799 | 4,170 | 1.7/2.0 | 1.7/2.0 | 1.5/2.0 |
+| vsp_finan                     | 520 | 910,070,918   | 83,124 | 3,530 | 3,526 | 3,872 | 23.6/35.4 | 23.6/35.3 | 21.5/35.4 |
 
 Per-phase breakdown (absolute stacked — bar height = total time in ms; phases:
 file IO, data transfer = H2D+D2H, setup, graph build, compute). A **broken y-axis**
@@ -65,20 +65,25 @@ bottom makes the fused versions' composition readable.
 
 Reading the results:
 
-- **Fusion vs sort-merge is the big win** — 7–37× in **compute** (`c↑`),
-  5–24× end-to-end. It grows with iteration count: `vsp_finan` (520 iters) → 37×
-  compute, because mnmg re-sorts/merges a ~910 M-tuple relation every round while
-  the fused hash set is flat cost per fact.
+- **Fusion vs sort-merge is the big win** — up to 35× in **compute** (`c↑`),
+  up to 24× end-to-end. It grows with iteration count: `vsp_finan` (520 iters) →
+  ~35× compute, because mnmg re-sorts/merges a ~910 M-tuple relation every round
+  while the fused hash set is flat cost per fact.
 - **CUDA graph (+graph)** improves **compute** on every launch-bound graph
-  (OL 7.3→8.1, TG 10.1→10.7, SF 29.4→31.5); **+cond** additionally removes the
-  per-iteration host round-trip and gives the **best compute** on the
-  many-short-round graphs (OL 11.6×, TG 15.4×, SF 32.3×).
-- **On the largest closures, the simplest `fused` wins end-to-end.** For fe_body,
-  p2p-Gnutella31, and vsp_finan the non-compute time is dominated by a one-shot
-  17–21 GB `setup` memset and the compact D2H of hundreds of millions of tuples;
-  the small graph build of +graph/+cond isn't amortized over so few/heavy rounds,
-  so `fused` posts the best total (e.g. vsp_finan 23.6× vs 23.4/21.5×). These
-  one-shot costs are also noisy run-to-run.
+  (OL 7.1→8.8, TG 7.3→7.4, SF 26.7→28.4) and never hurts total time; **+cond**
+  additionally removes the per-iteration host round-trip and gives the **best
+  compute** on the many-short-round graphs (OL 13.2×, TG 9.5×, SF 29.1×).
+- **On the largest closures, `+graph`/`fused` win end-to-end, not `+cond`.** For
+  fe_body, p2p-Gnutella31, and vsp_finan the non-compute time is dominated by a
+  one-shot 17–21 GB `setup` memset and the D2H of hundreds of millions of tuples.
+  `+cond` also pays a much larger setup on the billion-pair graphs (~330 ms vs
+  ~12 ms for the others, to init its conditional-graph state), which over so
+  few/heavy rounds isn't repaid — so `+graph` or `fused` posts the best total
+  (e.g. vsp_finan 23.6× vs +cond 21.5×).
+- **Timing note:** `D2H` times only the device→host copy for every version; the
+  fused versions' one-shot result compaction is counted in `compute` (mirroring
+  mnmg, which keeps its result dense inside the fixpoint), so the transfer band is
+  apples-to-apples.
 - **mnmg (v0) validates against the source engine**: `fe_body` = 5.1 s,
   `vsp_finan` = 83.1 s — the expected regime for discrete sort-merge RA.
 
