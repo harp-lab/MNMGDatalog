@@ -299,11 +299,47 @@ int main(int argc, char **argv) {
     double med_t = tc_median(times, repeats);
     free(times);
 
-    // No separate D2H for v0 (result size is a host-side counter).
+    // D2H: transfer the final TC relation (t_full) from device to host (timed),
+    // symmetric with v1-v3. t_full stores (key=dst, value=src); canonical output
+    // is "src dst" = "value key".
+    double t0 = tc_now();
+    Entity *host = (Entity *)malloc((size_t)s.t_full_size * sizeof(Entity));
+    checkCuda(cudaMemcpy(host, s.t_full, (size_t)s.t_full_size * sizeof(Entity),
+                         cudaMemcpyDeviceToHost));
+    double d2h = tc_now() - t0;
+
     tc_print_header();
     tc_print_row(TC_VERSION, s.input_rows, iterations, tc,
                  s.t_fileio, s.t_h2d, s.t_setup, /*build=*/0.0,
-                 med_t, min_t, /*d2h=*/0.0, s.peak_mem_mb, repeats, input_file);
+                 med_t, min_t, d2h, s.peak_mem_mb, repeats, input_file);
+
+    // Disk write (NOT timed) from the already-copied host buffer, unless
+    // TC_NO_OUTPUT=1. Binary int32 (src,dst) pairs, MNMGDatalog `_tc.bin` format.
+    if (!getenv("TC_NO_OUTPUT")) {
+        char path[4096];
+        snprintf(path, sizeof(path), "%s_%s_tc.bin", input_file, TC_VERSION);
+        FILE *f = fopen(path, "wb");
+        if (f) {
+            for (long long i = 0; i < s.t_full_size; i++) {
+                int pair[2] = { host[i].value, host[i].key };  // (src,dst)
+                fwrite(pair, sizeof(int), 2, f);
+            }
+            fclose(f);
+            printf("# wrote %lld tuples to %s\n", (long long)s.t_full_size, path);
+        }
+    }
+
+    // Optional: text dump for content-level verification (TC_DUMP=<file>).
+    const char *dump = getenv("TC_DUMP");
+    if (dump && dump[0]) {
+        FILE *f = fopen(dump, "w");
+        if (f) {
+            for (long long i = 0; i < s.t_full_size; i++)
+                fprintf(f, "%d %d\n", host[i].value, host[i].key);
+            fclose(f);
+        }
+    }
+    free(host);
 
     v0_teardown(s);
     return 0;

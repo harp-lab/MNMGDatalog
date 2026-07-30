@@ -423,6 +423,43 @@ inline unsigned long long tc_result_count(const TCContext &ctx) {
     return h;
 }
 
+// Write the final TC (already copied to host buffer `host` of `cap` slots) to a
+// binary file of int32 (src,dst) pairs, matching the MNMGDatalog `<input>_tc.bin`
+// format. Disk write only -- the device->host transfer is timed separately as D2H.
+inline long long tc_write_output_from_host(const unsigned long long *host, long cap,
+                                           const char *input_file) {
+    char path[4096];
+    snprintf(path, sizeof(path), "%s_%s_tc.bin", input_file, TC_VERSION);
+    FILE *f = fopen(path, "wb");
+    if (!f) { fprintf(stderr, "Cannot open output file %s\n", path); return -1; }
+    long long cnt = 0;
+    for (long i = 0; i < cap; i++) {
+        unsigned long long s = host[i];
+        if (s != TC_EMPTY64) {
+            int pair[2] = { (int)(s >> 32), (int)(s & 0xffffffffULL) };  // (src,dst)
+            fwrite(pair, sizeof(int), 2, f);
+            cnt++;
+        }
+    }
+    fclose(f);
+    printf("# wrote %lld tuples to %s\n", cnt, path);  // '#' -> parsers ignore it
+    return cnt;
+}
+
+// Text dump of every TC tuple (one "src dst" per line) from an already-copied
+// host buffer; used by tests/verify.sh for content-level comparison against v0.
+inline void tc_dump_from_host(const unsigned long long *host, long cap,
+                              const char *path) {
+    FILE *f = fopen(path, "w");
+    if (!f) { fprintf(stderr, "Cannot open dump file %s\n", path); return; }
+    for (long i = 0; i < cap; i++) {
+        unsigned long long s = host[i];
+        if (s != TC_EMPTY64)
+            fprintf(f, "%d %d\n", (int)(s >> 32), (int)(s & 0xffffffffULL));
+    }
+    fclose(f);
+}
+
 // ---------------------------------------------------------------------------
 // Version hooks. Each version's .cu defines TC_VERSION and these three:
 //   tc_build     : build/instantiate any CUDA graph (v2/v3); no-op for v1.
@@ -523,10 +560,16 @@ inline int tc_main(int argc, char **argv) {
     }
     tc_check_overflow(ctx);
 
-    // Device -> host copy of the final result count (measured).
+    // D2H: transfer the final TC result from device to host (timed). This is the
+    // output copy that a caller must pay to read results back; for the hash-set
+    // versions it is the full result table (scanned host-side to extract tuples).
     double t0 = tc_now();
-    tc = tc_result_count(ctx);
+    long cap = ctx.result_cap;
+    unsigned long long *host = (unsigned long long *)malloc((size_t)cap * sizeof(unsigned long long));
+    checkCuda(cudaMemcpy(host, ctx.d_result_set, (size_t)cap * sizeof(unsigned long long),
+                         cudaMemcpyDeviceToHost));
     double d2h = tc_now() - t0;
+    tc = tc_result_count(ctx);  // small counter copy (negligible)
 
     double med_t = tc_median(times, repeats);
     free(times);
@@ -535,6 +578,14 @@ inline int tc_main(int argc, char **argv) {
     tc_print_row(TC_VERSION, ctx.input_rows, iterations, tc,
                  ctx.t_fileio, ctx.t_h2d, ctx.t_setup, build_seconds,
                  med_t, min_t, d2h, ctx.peak_mem_mb, repeats, input_file);
+
+    // Disk write (NOT timed) from the already-copied host buffer, unless
+    // TC_NO_OUTPUT=1. Format matches MNMGDatalog's <input>_tc.bin.
+    if (!getenv("TC_NO_OUTPUT")) tc_write_output_from_host(host, cap, input_file);
+    // Optional text dump for content verification (TC_DUMP=<file>).
+    const char *dump = getenv("TC_DUMP");
+    if (dump && dump[0]) tc_dump_from_host(host, cap, dump);
+    free(host);
 
     tc_destroy(ctx);
     tc_teardown(ctx);

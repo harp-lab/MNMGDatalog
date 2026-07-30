@@ -206,6 +206,10 @@ for ds in "${DATASETS[@]}"; do
       [[ -n "$raw" ]] && echo "  NOTE: $v produced no valid CSV row; raw stdout was:" \
                        && echo "        ${raw//$'\n'/ | }"
     fi
+    # Delete this version's TC output file now that its row is in the CSV, to keep
+    # disk clear (billion-pair closures produce multi-GB files). Set
+    # BENCH_KEEP_OUTPUT=1 to keep them.
+    [[ "${BENCH_KEEP_OUTPUT:-0}" == "1" ]] || rm -f "${df}_${v}_tc.bin"
     LINES[$idx]="$l"
     idx=$((idx+1))
   done

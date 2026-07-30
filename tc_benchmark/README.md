@@ -100,7 +100,7 @@ module load cuda/12.9.1               # 12.3.0 is too old for v3
 cd MNMGDatalog/tc_benchmark
 make GPU_ARCH=sm_80 all               # A100 = sm_80 (H100 = sm_90; or GPU_ARCH=native)
 
-make test                             # correctness: TC size + iterations (16 checks)
+make test                             # correctness: v1-v3 tuples identical to MNMGDatalog
 make benchmark REPEATS=3              # times all four, writes results/*.csv
 make plot                             # -> results/charts/{total_time,breakdown}.{png,pdf}
 ```
@@ -111,6 +111,23 @@ Notes:
 - Each binary prints one sentinel-tagged CSV row
   (`__TCROW__,<version>,input,iters,tc,total,fileio,h2d,setup,build,compute,compute_min,d2h,peak_mem_mb,repeats,data`);
   `benchmark.sh` matches the sentinel so stray stdout can't corrupt parsing.
+- **Result output:** every version (v0–v3) writes its final TC to
+  `<data>_<version>_tc.bin` (binary int32 `(src,dst)` pairs, the MNMGDatalog
+  `_tc.bin` format; convert with `binary_file_utils.py bin_to_txt`). The write is
+  done once, after timing, so it does not affect the reported times. Set
+  `TC_NO_OUTPUT=1` to skip it (e.g. for pure timing or the huge closures).
+- **Data-transfer timing:** `H2D` counts the input transfer (edges host$\to$device)
+  and `D2H` counts the output transfer (the final TC relation device$\to$host);
+  both are included in `total`. The subsequent disk write and the benchmark's file
+  deletion are **not** timed.
+- **`make benchmark` cleans up:** each version's `_tc.bin` is deleted right after
+  its row is written to the results CSV, so the disk stays clear (billion-pair
+  closures produce multi-GB files). Pass `BENCH_KEEP_OUTPUT=1` to keep them. The
+  deletion happens in the shell after the binary exits, so it is never timed.
+- **`make test` checks the actual tuples:** it runs every version, dumps all
+  discovered `(src,dst)` pairs, sorts them, and diffs v1/v2/v3 against
+  MNMGDatalog (v0) — a version passes only if its full tuple set is identical to
+  v0's (not merely the same count).
 
 ## Memory / capacity
 
@@ -129,7 +146,7 @@ v0_reference/tc_v0.cu    mnmg sort-merge (discrete iterative RA) reference
 v1_baseline/tc_v1.cu     fused operators, host while-loop
 v2_cudagraph/tc_v2.cu    fused operators, replayed CUDA graph (CPU condition)
 v3_conditional/tc_v3.cu  fused operators, conditional WHILE node (GPU condition)
-tests/verify.sh          correctness: TC size + iteration count
+tests/verify.sh          correctness: v1-v3 TC tuples == MNMGDatalog (content diff)
 tests/benchmark.sh       timing + breakdown + speedups, writes results CSV
 tests/plot_results.py    two charts (total time, per-phase breakdown)
 docs/                    committed example CSV + charts for this README
