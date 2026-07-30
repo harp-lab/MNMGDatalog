@@ -5,8 +5,4 @@ __pycache__/
 
 # Benchmark run artifacts are transient; keep only the committed charts
 # (results/charts/*.png|pdf) that the README renders.
-results/*.csv
 results/*.bin
-results/*.txt
-!results/charts/
-!results/charts/*
