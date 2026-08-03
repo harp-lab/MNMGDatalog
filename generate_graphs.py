@@ -951,74 +951,115 @@ def combined_slog_and_breakdown(line_df, bar_df, output_file='combined_chart.png
     plt.close()
 
 
-def plot_power_time_energy(df, output_file='power_time_energy_smooth.pdf', smooth_window=15):
+def plot_power_time_energy(df, output_file='power_time_energy_smooth.pdf', smooth_window=15,
+                           zoom_engine='cuDF', zoom_margin=1.15,
+                           show_ylabel=True, show_xlabel=True, show_legend=True):
+    """Power-vs-time traces per dataset.
+
+    The main x-axis is clipped to the range of the *non-``zoom_engine``* engines so
+    the fast, closely-spaced engines remain self-comparable (they are otherwise
+    squashed by cuDF's long low-power tail). When ``zoom_engine`` (cuDF) runs much
+    longer than the rest, its full trace is preserved in a zoomed inset so no data
+    is lost while the common region stays readable.
+    """
     # Maintain explicit order
     engines = ['MNMGDatalog', 'INLJoin', 'GPULog', 'BJoin', 'cuDF']
     datasets = df['Dataset'].unique()
     cmap = plt.get_cmap('tab10')
     engine_colors = {engine: cmap(i % 10) for i, engine in enumerate(engines)}
 
-    fig, axes = plt.subplots(len(datasets), 1, figsize=(12, 4 * len(datasets)))
+    fig, axes = plt.subplots(len(datasets), 1, figsize=(12, 2.6 * len(datasets)))
     if len(datasets) == 1:
         axes = [axes]
-    # for idx, dataset in enumerate(datasets):
+
+    def _samples(engine, dataset):
+        """Return (time_points, smoothed_power, total_time, energy) or None."""
+        row = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
+        if row.empty or float(row['TotalTime(S)'].values[0]) == 0:
+            return None
+        power_str = row['AllDrawSamples(W)'].values[0]
+        if not isinstance(power_str, str) or not power_str.strip():
+            return None
+        power_samples = list(map(float, power_str.replace('"', '').split(',')))
+        total_time = float(row['TotalTime(S)'].values[0])
+        time_points = np.linspace(0, total_time, len(power_samples))
+        power_smoothed = pd.Series(power_samples).rolling(
+            window=smooth_window, min_periods=1, center=True).mean()
+        return time_points, power_smoothed, total_time, float(row['TotalEnergy(J)'].values[0])
 
     for idx, dataset in enumerate(datasets):
         ax1 = axes[idx]
         ax2 = ax1.twinx()
-        ax1.set_title(f'{dataset}', fontsize=16, pad=5, fontweight='bold')
+        ax1.set_title(f'{dataset}', fontsize=20, pad=5, fontweight='bold')
+        ax1.tick_params(axis='both', labelsize=16)
         ax2.set_yticks([])  # Hide right y-axis ticks
-        all_times = []
+
+        # Runtimes with/without the zoom engine (cuDF) to decide the clip window.
+        other_times = [float(r['TotalTime(S)'])
+                       for eng in engines if eng != zoom_engine
+                       for _, r in df[(df['Dataset'] == dataset) & (df['Engine'] == eng)].iterrows()
+                       if float(r['TotalTime(S)']) > 0]
+        zoom_data = _samples(zoom_engine, dataset)
+        zoom_dominates = bool(other_times) and zoom_data is not None and \
+            zoom_data[2] > zoom_margin * max(other_times)
+
         for engine in engines:
-            row = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
-            if not row.empty and float(row['TotalTime(S)']) > 0:
-                all_times.append(float(row['TotalTime(S)']))
-        for i, engine in enumerate(engines):
-            row = df[(df['Dataset'] == dataset) & (df['Engine'] == engine)]
-            if row.empty or float(row['TotalTime(S)']) == 0:
+            data = _samples(engine, dataset)
+            if data is None:
                 continue
-
-            total_time = float(row['TotalTime(S)'])
-            power_str = row['AllDrawSamples(W)'].values[0]
-            if not power_str.strip():
-                continue
-            power_samples = list(map(float, power_str.replace('"', '').split(',')))
-
-            n = len(power_samples)
-            # Time starts from 0, ends at total_time (already correct)
-            time_points = np.linspace(0, total_time, n)
+            time_points, power_smoothed, total_time, energy = data
             color = engine_colors[engine]
-            power_smoothed = pd.Series(power_samples).rolling(window=smooth_window, min_periods=1, center=True).mean()
-
             ax1.plot(time_points, power_smoothed, label=engine, color=color, linewidth=2)
-            # Scatter at end with total energy as annotation
-            ax1.scatter([total_time], [power_smoothed.iloc[-1]], color=color, edgecolor='black', zorder=3, s=50)
-            energy = float(row['TotalEnergy(J)'])
-            ax1.text(
-                total_time, power_smoothed.iloc[-1], f' {energy:.0f}J',
-                fontsize=12, color=color, va='center', ha='left', fontweight='bold'
-            )
-        if all_times:
-            ax1.set_xlim(left=0, right=int(math.ceil(max(all_times)*1.05)))
+            # Endpoint marker + energy label only for engines whose endpoint is on-axis.
+            if not (zoom_dominates and engine == zoom_engine):
+                ax1.scatter([total_time], [power_smoothed.iloc[-1]], color=color,
+                            edgecolor='black', zorder=3, s=50)
+                ax1.text(total_time, power_smoothed.iloc[-1], f' {energy:.0f}J',
+                         fontsize=14, color=color, va='center', ha='left', fontweight='bold')
 
-        if idx == 0:
+        # Clip main axis to the common (fast-engine) region so engines self-compare.
+        if zoom_dominates:
+            right = int(math.ceil(max(other_times) * 1.05))
+            ax1.set_xlim(left=0, right=right)
+            zt, zp, ztt, ze = zoom_data
+            # cuDF's low, near-flat trace stays visible up to the clip edge; mark that it
+            # continues off-axis and report its true endpoint (runtime + energy) in text.
+            y_edge = float(zp.iloc[np.searchsorted(zt, right) - 1])
+            ax1.annotate('', xy=(0.995, y_edge), xycoords=('axes fraction', 'data'),
+                         xytext=(0.94, y_edge), textcoords=('axes fraction', 'data'),
+                         arrowprops=dict(arrowstyle='-|>', color=engine_colors[zoom_engine], lw=2))
+            ax1.text(0.5, 0.06,
+                     f'{zoom_engine} continues off-axis: {ztt:.0f} s, {ze:.0f} J total',
+                     transform=ax1.transAxes, ha='center', va='bottom',
+                     fontsize=13, color=engine_colors[zoom_engine], fontweight='bold',
+                     bbox=dict(boxstyle='round,pad=0.25', fc='white',
+                               ec=engine_colors[zoom_engine], alpha=0.85))
+        else:
+            all_times = other_times + ([zoom_data[2]] if zoom_data else [])
+            if all_times:
+                ax1.set_xlim(left=0, right=int(math.ceil(max(all_times) * 1.05)))
+
+        if idx == 0 and show_legend:
             # Make legend for ALL engines, even if not all plotted here
             handles = [
                 mlines.Line2D([], [], color=engine_colors[engine], linewidth=4, label=engine)
                 for engine in engines
             ]
-            ax1.legend(handles=handles, loc='best', fontsize=14, frameon=True)
+            ax1.legend(handles=handles, loc='upper left', fontsize=17, frameon=True)
         else:
             if ax1.get_legend():
                 ax1.get_legend().remove()
         ax1.grid(True, which='both', axis='both', linestyle='--', alpha=0.4)
 
-    # Shared axis labels, closer to axes
-    fig.supxlabel("Total Time (Seconds)", fontsize=16, y=0.01)
-    fig.supylabel("Power Draw (W)", fontsize=16, x=0.01)
+    # Shared axis labels, closer to axes (optional so side-by-side figures
+    # need not repeat identical labels; keep only the left y-label and one x-label).
+    if show_xlabel:
+        fig.supxlabel("Total Time (Seconds)", fontsize=20, y=0.01)
+    if show_ylabel:
+        fig.supylabel("Power Draw (W)", fontsize=20, x=0.01)
     # Reduce space between subplots and labels
     # fig.subplots_adjust(left=0.08, right=0.98, top=0.98, bottom=0.07, hspace=0.12)
-    fig.subplots_adjust(left=0.08, right=0.98, top=1, bottom=0.05, hspace=0.22)
+    fig.subplots_adjust(left=0.08, right=0.98, top=1, bottom=0.07, hspace=0.35)
 
     plt.savefig(output_file, bbox_inches='tight', dpi=300)
     plt.close()
@@ -1036,54 +1077,124 @@ def plot_gpu_scaling(df, output_file='scaling_study.pdf'):
     time_range = time_max - time_min
     energy_range = energy_max - energy_min
 
-    fig, ax1 = plt.subplots(figsize=(8, 4))
+    fig, ax1 = plt.subplots(figsize=(6, 4.2))
     ax2 = ax1.twinx()
 
+    FS = 20  # base font size (single-column figure needs larger text)
 
     # Set categorical x-ticks
     ax1.set_xticks(x)
-    ax1.set_xticklabels(labels, fontsize=14)
-    ax1.set_xlabel("Number of GPUs", fontsize=14)
+    ax1.set_xticklabels(labels, fontsize=FS)
+    ax1.set_xlabel("Number of GPUs", fontsize=FS)
 
 
 
     ax1.set_ylim(time_min - 0.15 * time_range, time_max + 0.18 * time_range)
     ax2.set_ylim(energy_min - 0.15 * energy_range, energy_max + 0.18 * energy_range)
 
-    ax1.set_ylabel("Total Time (Seconds)", fontsize=14, color='tab:blue')
-    ax2.set_ylabel("Total Energy (Joules)", fontsize=14, color='tab:orange')
-    ax1.tick_params(axis='y', labelcolor='tab:blue')
-    ax2.tick_params(axis='y', labelcolor='tab:orange')
+    ax1.set_ylabel("Total Time (Seconds)", fontsize=FS, color='tab:blue')
+    ax2.set_ylabel("Total Energy (Joules)", fontsize=FS, color='tab:orange')
+    ax1.tick_params(axis='y', labelcolor='tab:blue', labelsize=FS-2)
+    ax2.tick_params(axis='y', labelcolor='tab:orange', labelsize=FS-2)
     ax1.grid(True, axis='y', linestyle='--', alpha=0.3)
 
     # Total time
     l1 = ax1.plot(
         x, df['Total Time (s)'],
-        color='tab:blue', marker='o', linewidth=2, label='Total Time (s)'
+        color='tab:blue', marker='o', linewidth=2.5, markersize=9, label='Total Time (s)'
     )
     offset = 0.03 * (time_max - time_min)
     for xi, y in zip(x, df['Total Time (s)']):
-        ax1.text(xi, y + offset, f'{y:.1f}s', fontsize=14, color='tab:blue', va='bottom', ha='center', zorder=10)
+        ax1.text(xi, y + offset, f'{y:.1f}s', fontsize=FS-2, color='tab:blue', va='bottom', ha='center', zorder=10)
 
     # Total energy
     offset = 0.03 * (energy_max - energy_min)
     l2 = ax2.plot(
         x, df['Total Energy (J)'],
-        color='tab:orange', marker='o', linewidth=2, label='Total Energy (J)'
+        color='tab:orange', marker='o', linewidth=2.5, markersize=9, label='Total Energy (J)'
     )
     for xi, y in zip(x, df['Total Energy (J)']):
-        ax2.text(xi, y - offset, f'{y:.0f}J', fontsize=14, color='tab:orange', va='top', ha='center', zorder=10)
+        ax2.text(xi, y - offset, f'{y:.0f}J', fontsize=FS-2, color='tab:orange', va='top', ha='center', zorder=10)
 
 
     # Combine legends
     lines = l1 + l2
     labels_leg = [l.get_label() for l in lines]
-    ax1.legend(lines, labels_leg, loc='upper center', fontsize=14)
+    ax1.legend(lines, labels_leg, loc='upper center', fontsize=FS-3)
 
     plt.tight_layout()
     plt.savefig(output_file, bbox_inches='tight', dpi=300)
     plt.close()
     print(f"Saved {output_file}")
+
+
+def plot_gpu_scaling_combined(panels, output_file='scaling_combined.pdf'):
+    """Two scaling panels (e.g., TC and SG) in one figure sharing a single legend
+    and axis labels. `panels` is a list of (title, dataframe). Energy is shown in
+    kilojoules (k) to keep the secondary axis compact.
+
+    Time uses the shared left y-axis; energy uses the shared right y-axis. Per-panel
+    x/y axis labels are omitted; the figure carries one time label (left), one
+    energy label (right), one x-label (bottom), and one legend on top.
+    """
+    FS = 20
+    time_color, energy_color = 'tab:blue', 'tab:orange'
+    n = len(panels)
+    fig, axes = plt.subplots(1, n, figsize=(5.6 * n, 4.0), sharex=False)
+    if n == 1:
+        axes = [axes]
+    ax2s = []
+    line_handles = None
+
+    for i, (title, df) in enumerate(panels):
+        ax1 = axes[i]
+        ax2 = ax1.twinx()
+        ax2s.append(ax2)
+        labels = [f"{g}" for g in df['GPUs']]
+        x = range(len(labels))
+
+        tmin, tmax = df['Total Time (s)'].min(), df['Total Time (s)'].max()
+        e_k = df['Total Energy (J)'] / 1000.0  # kilojoules
+        emin, emax = e_k.min(), e_k.max()
+        trange, erange = tmax - tmin, emax - emin
+
+        ax1.set_xticks(list(x))
+        ax1.set_xticklabels(labels, fontsize=FS)
+        ax1.set_ylim(tmin - 0.15 * trange, tmax + 0.20 * trange)
+        ax2.set_ylim(emin - 0.15 * erange, emax + 0.20 * erange)
+        ax1.tick_params(axis='y', labelcolor=time_color, labelsize=FS - 3)
+        ax2.tick_params(axis='y', labelcolor=energy_color, labelsize=FS - 3)
+        ax1.grid(True, axis='y', linestyle='--', alpha=0.3)
+        ax1.set_title(title, fontsize=FS)
+
+        l1 = ax1.plot(x, df['Total Time (s)'], color=time_color, marker='o',
+                      linewidth=2.5, markersize=9, label='Total Time (s)')
+        off = 0.04 * trange
+        for xi, y in zip(x, df['Total Time (s)']):
+            ax1.text(xi, y + off, f'{y:.0f}s', fontsize=FS - 4, color=time_color,
+                     va='bottom', ha='center', zorder=10)
+        l2 = ax2.plot(x, e_k, color=energy_color, marker='s',
+                      linewidth=2.5, markersize=9, label='Total Energy (kJ)')
+        off = 0.04 * erange
+        for xi, y in zip(x, e_k):
+            ax2.text(xi, y - off, f'{y:.1f}k', fontsize=FS - 4, color=energy_color,
+                     va='top', ha='center', zorder=10)
+        if line_handles is None:
+            line_handles = l1 + l2
+
+    # Shared labels: time on far-left, energy on far-right, one centered x-label, one legend.
+    axes[0].set_ylabel("Total Time (s)", fontsize=FS, color=time_color)
+    ax2s[-1].set_ylabel("Total Energy (kJ)", fontsize=FS, color=energy_color)
+    fig.legend(line_handles, [h.get_label() for h in line_handles],
+               loc='upper center', ncol=2, fontsize=FS - 3,
+               bbox_to_anchor=(0.5, 1.14), frameon=True)
+    # Tight spacing; leave headroom for legend (top) and the shared x-label (bottom).
+    fig.subplots_adjust(left=0.10, right=0.90, top=0.88, bottom=0.18, wspace=0.28)
+    fig.text(0.5, 0.05, "Number of GPUs", ha='center', va='center', fontsize=FS)
+    plt.savefig(output_file, bbox_inches='tight', dpi=300)
+    plt.close()
+    print(f"Saved {output_file}")
+
 
 def show_table_for_metrics(df):
 

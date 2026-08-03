@@ -22,12 +22,36 @@ NPROCS?=3
 LDFLAGSLOCAL = -I/usr/lib/x86_64-linux-gnu/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi
 MPIGTLFLAG = /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so
 
+# ---- JLSE build (nvhpc HPCX OpenMPI) ----
+# Requires: module load cuda/12.9.1 nvhpc/nvhpc/25.11
+# Auto-detects the HPCX mpi.h / libmpi from the loaded nvhpc module. Falls back
+# to the known 25.11 install path if NVHPC_ROOT is not exported by the module.
+NVHPC_BASE ?= $(if $(NVHPC_ROOT),$(NVHPC_ROOT),/soft/compilers/nvhpc/Linux_x86_64/25.11)
+MPI_INC := $(dir $(firstword $(shell find $(NVHPC_BASE)/comm_libs -name mpi.h 2>/dev/null)))
+MPI_LIB := $(dir $(firstword $(shell find $(NVHPC_BASE)/comm_libs -name 'libmpi.so*' 2>/dev/null)))
+LDFLAGS_JLSE = -I$(MPI_INC) -L$(MPI_LIB) -lmpi
+
 
 buildtc:
 	nvcc $(SRC_TC) -o $(TARGET_TC).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
 testtc:
 	${MPIRUN} -np $(NPROCS) ./$(TARGET_TC).out $(DATA_FILE) $(CUDA_AWARE_MPI) $(METHOD)
+
+# ---- JLSE targets (nvhpc HPCX MPI) ----
+buildjlsetc:
+	nvcc $(SRC_TC) -o $(TARGET_TC).out $(LDFLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+
+buildjlsesg:
+	nvcc $(SRC_SG) -o $(TARGET_SG).out $(LDFLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+
+buildjlsetcnl:
+	nvcc $(SRC_TC_NL) -o $(TARGET_TC_NL).out $(LDFLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+
+buildjlsesgnl:
+	nvcc $(SRC_SG_NL) -o $(TARGET_SG_NL).out $(LDFLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+
+buildjlse: buildjlsetc buildjlsesg buildjlsetcnl buildjlsesgnl
 
 buildtcnl:
 	nvcc $(SRC_TC_NL) -o $(TARGET_TC_NL).out $(LDFLAGSLOCAL) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)

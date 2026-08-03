@@ -45,3 +45,5 @@ data/large_datasets/
 venv/*
 build/*
 .venv/*
+__pycache__
+
