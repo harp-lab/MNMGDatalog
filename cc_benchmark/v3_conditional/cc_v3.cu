@@ -47,7 +47,7 @@ void cc_build(CCContext &ctx, double *build_seconds) {
                                             cudaStreamCaptureModeRelaxed));
     cc_reset<<<1, 1, 0, capStream>>>(ctx.d_changed);
     cc_propagate<<<ctx.grid_size, ctx.block_size, 0, capStream>>>(
-        ctx.d_edges, ctx.n_edges, ctx.d_label, ctx.d_changed);
+        ctx.d_edges, ctx.d_n_edges, ctx.d_label, ctx.d_changed);
     cc_cond<<<1, 1, 0, capStream>>>(ctx.d_iter_count, ctx.d_changed, handle);
     checkCuda(cudaStreamEndCapture(capStream, nullptr));
     checkCuda(cudaStreamDestroy(capStream));

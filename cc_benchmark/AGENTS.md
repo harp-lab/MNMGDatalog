@@ -38,6 +38,25 @@ includes the one-shot label compaction; D2H = device->host memcpy only. H2D also
 builds the symmetric edge list on the host before transfer. `make benchmark` runs
 with `CC_NO_OUTPUT=1` by default; `BENCH_KEEP_OUTPUT=1` to write result files.
 
+## Incremental / streaming mode (edge insertions)
+- Setting **`CC_DELTA_FRAC`** switches the binary from the batch benchmark to
+  `cc_incremental_main`: it splits the input in-driver (first `1-f` rows = base
+  graph, last `f` rows = insertion stream), computes base WCC, then per batch
+  times INCREMENTAL maintenance (reuse the resident `d_label`) vs. full RECOMPUTE
+  (re-init labels) on the identical cumulative graph, and verifies the maintained
+  labeling equals the recomputed one.
+- The edge count is **device-resident** (`ctx.d_n_edges`, read by `cc_propagate`)
+  so a captured graph (v2/v3) stays valid after `cc_append_edges` grows the edge
+  list. `d_edges` is pre-allocated to the full graph's symmetric capacity; batches
+  are memcpy'd in at the current offset (no realloc).
+- Env: `CC_DELTA_FRAC`, `CC_DELTA_BATCHES`, `CC_INC_CSV` (appended; header written
+  by `tests/incremental.sh`), `CC_NAME`. Driver: `tests/incremental.sh`; plot:
+  `tests/plot_incremental.py` -> `results/charts/incremental.{png,pdf}`.
+- **Scope:** insertions only (WCC is monotone, so this is sound and complete);
+  deletions are non-monotone and out of scope; incremental TC/SG are future work.
+  Only the fused family (v1/v2/v3) runs incrementally; v0 is the from-scratch
+  MNMGDatalog reference.
+
 ## Charts / Naming
 - Always emit **both `.png` and `.pdf`** (via `_save()`); charts go to
   `results/charts/`, never `docs/`. Two figures only: `total_time`, `breakdown`.

@@ -18,7 +18,7 @@ void cc_build(CCContext &ctx, double *build_seconds) {
     checkCuda(cudaStreamBeginCapture(ctx.stream, cudaStreamCaptureModeGlobal));
     cc_reset<<<1, 1, 0, ctx.stream>>>(ctx.d_changed);
     cc_propagate<<<ctx.grid_size, ctx.block_size, 0, ctx.stream>>>(
-        ctx.d_edges, ctx.n_edges, ctx.d_label, ctx.d_changed);
+        ctx.d_edges, ctx.d_n_edges, ctx.d_label, ctx.d_changed);
     checkCuda(cudaStreamEndCapture(ctx.stream, &ctx.graph));
     checkCuda(cudaGraphInstantiate(&ctx.exec, ctx.graph, 0));
 

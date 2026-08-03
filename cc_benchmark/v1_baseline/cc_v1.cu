@@ -23,7 +23,7 @@ int cc_run_once(CCContext &ctx, double *seconds) {
     while (true) {
         cc_reset<<<1, 1>>>(ctx.d_changed);
         cc_propagate<<<ctx.grid_size, ctx.block_size>>>(
-            ctx.d_edges, ctx.n_edges, ctx.d_label, ctx.d_changed);
+            ctx.d_edges, ctx.d_n_edges, ctx.d_label, ctx.d_changed);
         int changed = 0;
         checkCuda(cudaMemcpy(&changed, ctx.d_changed, sizeof(int),
                              cudaMemcpyDeviceToHost));

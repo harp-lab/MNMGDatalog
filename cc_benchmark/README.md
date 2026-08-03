@@ -91,6 +91,39 @@ compute).** Two effects compound:
 - **MNMGDatalog `setup` is a visible cost on big graphs** (e.g. WikiTalk: a ~1.3 s
   one-shot memset), part of why its total towers over the fused versions.
 
+## Incremental / streaming maintenance under edge insertions
+
+WCC is **monotone under edge insertions** (adding an edge can only lower labels),
+so the fused versions double as an incremental/streaming engine: after a batch of
+new edges arrives, keep the resident label array and re-run the propagation
+fixpoint. Starting from the previous (stale but $\geq$ true) labeling, `atomicMin`
+reconverges to the correct new labeling — usually in far fewer rounds than a
+from-scratch recompute — and, because the min-label fixpoint is unique, the
+maintained labeling is **identical** to a recompute (verified every batch).
+
+```
+make all
+bash tests/incremental.sh 3                 # default graphs + fractions
+# or: FRACS="0.001 0.01 0.05 0.10" BATCHES=1 bash tests/incremental.sh 3 WikiTalk.bin
+python3 tests/plot_incremental.py           # -> results/charts/incremental.{png,pdf}
+```
+
+The driver splits each graph in-driver (first `1-f` rows = base graph `G`, last
+`f` rows = the insertion stream), then per fraction times **incremental
+maintenance** (reuse resident labels) vs. **full recompute** (re-init labels) on
+the identical cumulative graph and kernels — isolating the benefit of
+incrementality. It writes `results/incremental_<ts>.csv` with per-batch
+`inc_rounds/inc_ms`, `rec_rounds/rec_ms`, `speedup`, and a `correct` flag
+(maintained == recomputed labeling). The captured graph (v2/v3) stays valid across
+appends because the edge count is read from device memory (`d_n_edges`).
+
+Env: `CC_DELTA_FRAC` (insertion fraction, triggers incremental mode),
+`CC_DELTA_BATCHES` (batches per fraction), `CC_INC_CSV` (output CSV, appended),
+`CC_NAME` (human dataset name). **Scope:** insertions only (monotone); deletions
+are non-monotone and out of scope, and incremental TC/SG are future work.
+
+![Incremental maintenance vs recompute](results/charts/incremental.png)
+
 ## Datasets
 
 Defaults present in `../data`: CA-HepTh (`data_51971`), WikiTalk, web-Google,

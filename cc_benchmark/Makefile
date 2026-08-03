@@ -56,9 +56,18 @@ test: all
 benchmark: all
 	@bash tests/benchmark.sh $(REPEATS) $(BENCH_MULT) $(DS)
 
+# Incremental / streaming WCC under edge insertions (maintain vs recompute).
+# Override datasets with DS="a.bin b.bin"; fractions/batches via FRACS / BATCHES.
+incremental: all
+	@bash tests/incremental.sh $(REPEATS) $(DS)
+
 # Plot the latest results/*.csv (or pass CSV=<path>) into results/charts/.
 plot:
 	python3 tests/plot_results.py $(CSV)
+
+# Plot the latest incremental_*.csv (or pass CSV=<path>) into results/charts/.
+plot-incremental:
+	python3 tests/plot_incremental.py $(CSV)
 
 clean:
 	rm -f $(V0) $(V1) $(V2) $(V3)
