@@ -14,8 +14,8 @@ mkdir -p logs/ncu/tc logs/ncu/sg
 
 NCU="ncu --metrics sm__inst_executed.sum --target-processes all --csv"
 MPI="mpiexec -n 1"
-TC=./tc.out          # from `make buildtc`  (use ./tc_interactive.out if you kept that)
-SG=./sg.out          # from `make buildsg`
+TC=./tc.out          # from `make buildjlsetc`
+SG=./sg.out          # from `make buildjlsesg`
 DATA=data
 
 declare -A BIN=(
@@ -28,16 +28,27 @@ declare -A BIN=(
   [ca_hepth]=data_51971
 )
 
+# Resumable: skip a run if its CSV already has ncu counter data.
+done_already() {  # done_already <csvfile>
+  [ -s "$1" ] && grep -q 'inst_executed' "$1"
+}
+
+profile() {  # profile <binary> <logfile> <datafile>
+  local bin=$1 log=$2 data=$3
+  if done_already "$log"; then echo "    skip (already done): $log"; return; fi
+  $MPI $NCU --log-file "$log" "$bin" "$data" 0 1 1
+}
+
 echo "=== TC: MNMGDatalog ==="
 for d in fe_body vsp sf usroads; do
   echo ">>> $d"
-  $MPI $NCU --log-file "logs/ncu/tc/${d}_MNMGDatalog.csv" $TC $DATA/${BIN[$d]}.bin 0 1 1
+  profile "$TC" "logs/ncu/tc/${d}_MNMGDatalog.csv" "$DATA/${BIN[$d]}.bin"
 done
 
 echo "=== SG: MNMGDatalog ==="
 for d in fe_body loc-brightkite fe_sphere ca_hepth; do
   echo ">>> $d"
-  $MPI $NCU --log-file "logs/ncu/sg/${d}_MNMGDatalog.csv" $SG $DATA/${BIN[$d]}.bin 0 1 1
+  profile "$SG" "logs/ncu/sg/${d}_MNMGDatalog.csv" "$DATA/${BIN[$d]}.bin"
 done
 
 echo "Done. Combine:"
