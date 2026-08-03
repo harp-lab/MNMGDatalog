@@ -32,8 +32,15 @@ echo "GDLOG_DIR=$GDLOG_DIR"
 SGBIN="$GDLOG_DIR/build/SG"
 if [[ ! -x "$SGBIN" ]]; then
   echo "Building GPUlog (SG) ..."
+  # gdlog's CMake does not set a C++ standard; newer CCCL/CUB (CUDA 12.4+/13.x)
+  # hard-errors unless C++17 is selected. Inject the standard (and a fallback
+  # define) at configure time WITHOUT modifying any gdlog file.
   ( cd "$GDLOG_DIR" && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-        -DCMAKE_CUDA_ARCHITECTURES="${GPU_ARCH_NUM:-80}" -Bbuild . >/dev/null \
+        -DCMAKE_CUDA_ARCHITECTURES="${GPU_ARCH_NUM:-80}" \
+        -DCMAKE_CXX_STANDARD=17 -DCMAKE_CUDA_STANDARD=17 \
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CUDA_STANDARD_REQUIRED=ON \
+        -DCMAKE_CUDA_FLAGS="-DCCCL_IGNORE_DEPRECATED_CPP_DIALECT" \
+        -Bbuild . >/dev/null \
     && make -C build SG -j >/dev/null ) || { echo "gdlog build failed"; exit 1; }
 fi
 [[ -x "$SGBIN" ]] || { echo "SG binary not built at $SGBIN"; exit 1; }
