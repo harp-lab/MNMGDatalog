@@ -1,0 +1,7 @@
+tool,name,dataset,rows,gpulog_tc,gpulog_time_s,repeats,ebm
+gpulog,OL,data_7035.bin,7035,145994,0.0533914,3,0
+gpulog,TG,data_23874.bin,23874,478179,0.0468163,3,0
+gpulog,SF,data_223001.bin,223001,80485066,1.83955,3,0
+gpulog,fe_body,data_163734.bin,163734,156120489,2.67191,3,0
+gpulog,Gnutella31,data_147892.bin,147892,884179859,8.42755,3,0
+gpulog,vsp_finan,vsp_finan512_scagr7-2c_rlfddd.bin,552020,910070918,44.3334,3,0

@@ -1,0 +1,5 @@
+tool,name,dataset,rows,gpulog_sg,gpulog_time_s,repeats
+gpulog,CA-HepTh,data_51971.bin,51971,74618689,2.94079,3
+gpulog,fe_sphere,data_49152.bin,49152,205814096,5.38419,3
+gpulog,loc-Brightkite,data_214078.bin,214078,92398050,6.66997,3
+gpulog,fe_body,data_163734.bin,163734,408443204,12.3569,3
