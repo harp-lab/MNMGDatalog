@@ -31,11 +31,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 plt.rcParams.update({
-    "font.size": 12,
-    "axes.labelsize": 12,
-    "xtick.labelsize": 10,
-    "ytick.labelsize": 10,
-    "legend.fontsize": 10,
+    "font.size": 24,
+    "axes.labelsize": 24,
+    "xtick.labelsize": 20,
+    "ytick.labelsize": 20,
+    "legend.fontsize": 20,
 })
 
 # Column order = draw order (left->right within each dataset group).
@@ -115,7 +115,7 @@ def _panel(ax, order, ours, gpulog, tag):
             if v > 0:
                 ax.annotate(f"{v:.0f}" if v >= 10 else f"{v:.1f}",
                             (b.get_x() + b.get_width() / 2, v),
-                            ha="center", va="bottom", fontsize=7, rotation=90)
+                            ha="center", va="bottom", fontsize=14, rotation=90)
     ax.set_yscale("log")
     ax.set_ylim(top=top * 4.0)   # headroom for the rotated value labels
     ax.set_xlim(-0.5, n - 0.5)
@@ -124,7 +124,7 @@ def _panel(ax, order, ours, gpulog, tag):
     ax.set_ylabel("compute (ms, log)")
     ax.grid(axis="y", ls=":", alpha=0.5)
     # per-panel query tag in the top-left corner
-    ax.text(0.012, 0.93, tag, transform=ax.transAxes, fontsize=12,
+    ax.text(0.012, 0.93, tag, transform=ax.transAxes, fontsize=24,
             fontweight="bold", va="top",
             bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="0.7", alpha=0.9))
 
@@ -154,7 +154,7 @@ def main():
     sg_g = load_gpulog(a.sg_gpulog)
 
     os.makedirs(a.outdir, exist_ok=True)
-    fig, (ax_tc, ax_sg) = plt.subplots(2, 1, figsize=(7.0, 6.4))
+    fig, (ax_tc, ax_sg) = plt.subplots(2, 1, figsize=(13.0, 11.0))
     _panel(ax_tc, TC_ORDER, tc, tc_g, "TC")
     _panel(ax_sg, SG_ORDER, sg, sg_g, "SG")
 
