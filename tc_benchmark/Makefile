@@ -66,6 +66,11 @@ test: all
 benchmark: all
 	@bash tests/benchmark.sh $(REPEATS) $(BENCH_MULT) $(DS)
 
+# Compare against GPUlog (gdlog, ASPLOS'25) on the same graphs. Needs the gdlog
+# checkout; set GDLOG_DIR=/path/to/gdlog (or place it as a sibling of the repo).
+gpulog: all
+	@bash tests/gpulog_compare.sh $(REPEATS) $(DS)
+
 # Plot the latest results/*.csv (or pass CSV=<path>) into results/charts/.
 # Requires matplotlib (pip install matplotlib).
 plot:
@@ -85,4 +90,4 @@ clean-output:
 # Everything: binaries + generated outputs.
 distclean: clean clean-output
 
-.PHONY: all run0 run1 run2 run3 test benchmark plot clean clean-output distclean
+.PHONY: all run0 run1 run2 run3 test benchmark gpulog plot clean clean-output distclean

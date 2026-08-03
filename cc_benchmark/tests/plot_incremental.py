@@ -91,7 +91,8 @@ def main():
         print("no rows for version", PLOT_VERSION)
         return
 
-    fig, (axs, axl) = plt.subplots(1, 2, figsize=(11, 4.2))
+    # Stacked 2-row, compact layout so the figure fits a single paper column.
+    fig, (axs, axl) = plt.subplots(2, 1, figsize=(4.0, 3.9))
     for k, d in enumerate(order):
         rows = by[d]
         xs = [r[0] for r in rows]
@@ -104,18 +105,18 @@ def main():
     axs.axhline(1.0, ls=":", color="k", alpha=0.6)  # break-even
     axs.set_xscale("log")
     axs.set_yscale("log")
-    axs.set_xlabel("edge insertions in batch")
-    axs.set_ylabel("speedup: recompute / incremental")
+    axs.set_ylabel(r"speedup ($\times$)")
     axs.grid(True, which="both", ls=":", alpha=0.5)
-    axs.legend(frameon=True)
+    axs.legend(frameon=True, fontsize=8, ncol=2, loc="upper right")
+    axs.tick_params(labelbottom=False)  # shared x with bottom panel
 
     axl.set_xscale("log")
     axl.set_yscale("log")
     axl.set_xlabel("edge insertions in batch")
-    axl.set_ylabel("incremental maintenance time (ms)")
+    axl.set_ylabel("maint. time (ms)")
     axl.grid(True, which="both", ls=":", alpha=0.5)
 
-    fig.tight_layout(pad=0.6)
+    fig.tight_layout(pad=0.4)
     _save(fig, os.path.join(outdir, "incremental.png"))
     print("charts written to", outdir)
 

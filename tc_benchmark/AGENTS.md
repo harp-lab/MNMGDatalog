@@ -48,3 +48,14 @@
   `results/charts/` after `make plot`.
 - All numbers/claims in the paper must come from the latest `results/benchmark_*.csv`
   (source of truth), reported as compute speedup and end-to-end (total) speedup.
+
+## Comparing against GPUlog (gdlog, ASPLOS'25)
+- `tests/gpulog_compare.sh` (`make gpulog`) runs GPUlog on the SAME graphs and
+  writes `results/gpulog_<ts>.csv`. Set `GDLOG_DIR=/path/to/gdlog` (default: a
+  sibling checkout). It converts `.bin`->`.txt` via `tests/bin_to_txt.py` when a
+  `.txt` is absent (GPUlog reads tab-separated text).
+- GPUlog is a THIRD-PARTY binary with no machine-readable output, so parsing its
+  stdout with `grep` (`TC time:`, `Path counts`) is acceptable here; this is the
+  ONLY place we parse a binary's stdout. Our own binaries still report via `TC_CSV`.
+- GPUlog reports fixpoint `compute` time (compare to our `compute` column). It
+  covers TC and SG only (no WCC).

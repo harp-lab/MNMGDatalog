@@ -42,6 +42,21 @@ make plot                     # -> results/charts/{total_time,breakdown}.{png,pd
 Run a single version: `make run0 DATA=../data/data_51971.bin MULT=4096 REPEATS=3`
 (similarly `run1`/`run2`/`run3`).
 
+### Compare against GPUlog (gdlog, ASPLOS'25)
+
+Compare GPUlog's SG fixpoint time against ours on the identical graphs. Place the
+`gdlog` checkout as a sibling of the repo (or set `GDLOG_DIR`), then:
+
+```shell
+GDLOG_DIR=/path/to/gdlog make gpulog REPEATS=3   # builds gdlog if needed
+# -> results/gpulog_<ts>.csv : tool,name,dataset,rows,gpulog_sg,gpulog_time_s,...
+```
+
+`tests/gpulog_compare.sh` feeds GPUlog the same edges (converting `.bin`$\to$`.txt`
+via `tests/bin_to_txt.py` when needed), runs its `SG` binary, and records the
+reported `sg counts` and `sg time` (its fixpoint compute, comparable to our
+`compute`).
+
 ## Results
 
 JLSE A100-PCIE-40GB, CUDA 12.9.1, median of 3 runs. End-to-end **total time** (ms)

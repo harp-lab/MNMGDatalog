@@ -48,3 +48,14 @@ memcpy; host receive-buffer malloc excluded. `make benchmark` runs with
 Default SG datasets (single-GPU, fit a 40 GB A100): CA-HepTh (`data_51971`),
 fe_sphere (`data_49152`), loc-Brightkite (`data_214078`), fe_body (`data_163734`).
 SG closures blow up fast (two-hop), so right-size `ds_mult` in `benchmark.sh`.
+
+## Comparing against GPUlog (gdlog, ASPLOS'25)
+- `tests/gpulog_compare.sh` (`make gpulog`) runs GPUlog on the SAME graphs and
+  writes `results/gpulog_<ts>.csv`. Set `GDLOG_DIR=/path/to/gdlog` (default: a
+  sibling checkout). It converts `.bin`->`.txt` via `tests/bin_to_txt.py` when a
+  `.txt` is absent (GPUlog reads tab-separated text).
+- GPUlog is a THIRD-PARTY binary with no machine-readable output, so parsing its
+  stdout with `grep` (`sg time:`, `sg counts`) is acceptable here; this is the ONLY
+  place we parse a binary's stdout. Our own binaries still report via `SG_CSV`.
+- GPUlog reports fixpoint `compute` time (compare to our `compute` column). It
+  covers TC and SG only (no WCC).

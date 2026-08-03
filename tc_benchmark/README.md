@@ -105,6 +105,24 @@ make benchmark REPEATS=3              # times all four, writes results/*.csv
 make plot                             # -> results/charts/{total_time,breakdown}.{png,pdf}
 ```
 
+### Compare against GPUlog (gdlog, ASPLOS'25)
+
+GPUlog is a separate state-of-the-art GPU Datalog engine (HISA range-indexed
+relations). We compare its TC fixpoint time against ours on the **identical**
+graphs. Place the `gdlog` checkout as a sibling of this repo (or set `GDLOG_DIR`),
+then:
+
+```shell
+GDLOG_DIR=/path/to/gdlog make gpulog REPEATS=3   # builds gdlog if needed
+# -> results/gpulog_<ts>.csv : tool,name,dataset,rows,gpulog_tc,gpulog_time_s,...
+```
+
+`tests/gpulog_compare.sh` feeds GPUlog the same edges (converting each `.bin` to a
+tab-separated `.txt` via `tests/bin_to_txt.py` when a `.txt` is absent), runs its
+`TC` binary with eager buffer management (`EBM=0`, its best mode), and records the
+reported `Path counts` and `TC time` (its fixpoint compute, comparable to our
+`compute` column). GPUlog covers TC and SG (not WCC).
+
 Notes:
 - No `gcc` module needed; the system compiler builds this `-std=c++17` code.
 - Single binary run: `./v1_baseline/tc_v1.out <data.bin> [capacity_mult] [repeats] [frontier_slots]`.

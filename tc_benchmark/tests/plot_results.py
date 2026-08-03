@@ -41,10 +41,10 @@ VLABEL = {
 # Short two-line x-axis tags for the breakdown (kept narrow so they fit
 # horizontally without rotation).
 SHORT = {
-    "reference": "MNMGDatalog",
-    "baseline": "fused\noperators",
-    "cudagraph": "CUDA Graph",
-    "conditional": "CUDA Graph\nConditional node",
+    "reference": "MNMG\nDatalog",
+    "baseline": "fused",
+    "cudagraph": "+graph",
+    "conditional": "+cond",
 }
 VCOLOR = {
     "reference": "#9e9e9e",
@@ -166,7 +166,11 @@ def plot_breakdown(datasets, rows, outpath, versions):
     # Layout: a single figure with a nested GridSpec. One shared y-axis label,
     # x-axis tags only on the bottom dataset row (all panels share the same 4
     # versions), tight spacing to avoid whitespace.
-    dcol = min(3, len(datasets))
+    # Panel grid: default 3 columns (override with BD_NCOL) => a clean 2x3 for the
+    # six datasets. Rendered as a full-width figure* in the paper.
+    ncol_env = os.environ.get("BD_NCOL")
+    dcol = int(ncol_env) if ncol_env else min(3, len(datasets))
+    dcol = max(1, min(dcol, len(datasets)))
     drow = (len(datasets) + dcol - 1) // dcol
     fig = plt.figure(figsize=(4.3 * dcol, 2.9 * drow))
     outer = fig.add_gridspec(drow, dcol, hspace=0.16, wspace=0.16,
@@ -236,8 +240,7 @@ def plot_breakdown(datasets, rows, outpath, versions):
         # dataset title tight above the top slice
         top.set_title(d, fontsize=12, pad=3)
 
-        # x-axis tags only on the bottom dataset row (identical across rows),
-        # horizontal (no rotation)
+        # x-axis tags only on the bottom dataset row (identical across rows).
         bot.set_xticks(xs)
         if dr == drow - 1:
             bot.set_xticklabels([SHORT[v] for v in vers], fontsize=8.5)
@@ -246,7 +249,7 @@ def plot_breakdown(datasets, rows, outpath, versions):
 
     # shared y-axis label, pulled close to the axes
     fig.supylabel("total time (ms)", fontsize=13, x=0.015)
-    # legend just above the panels (small gap to the first-row titles)
+    # legend just above the panels
     if legend_handles:
         fig.legend(*legend_handles, loc="lower center", ncol=len(PHASES),
                    frameon=True, bbox_to_anchor=(0.5, 0.965))
@@ -272,7 +275,15 @@ def main():
     datasets, rows = load(csv_path)
     # Two charts embedded in the README:
     plot_total_time(datasets, rows, os.path.join(outdir, "total_time.png"))
-    plot_breakdown(datasets, rows, os.path.join(outdir, "breakdown.png"),
+    # The breakdown is dense; restrict it to a few representative datasets (one per
+    # regime) for readability. Override with BD_DATASETS="name1,name2,name3".
+    bd = os.environ.get("BD_DATASETS")
+    if bd:
+        want = [x.strip() for x in bd.split(",") if x.strip()]
+        bd_datasets = [d for d in want if d in rows] or datasets
+    else:
+        bd_datasets = datasets
+    plot_breakdown(bd_datasets, rows, os.path.join(outdir, "breakdown.png"),
                    versions=VERSIONS)
     print("charts written to", outdir)
 
