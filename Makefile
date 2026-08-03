@@ -30,6 +30,8 @@ NVHPC_BASE ?= $(if $(NVHPC_ROOT),$(NVHPC_ROOT),/soft/compilers/nvhpc/Linux_x86_6
 MPI_INC := $(dir $(firstword $(shell find $(NVHPC_BASE)/comm_libs -name mpi.h 2>/dev/null)))
 MPI_LIB := $(dir $(firstword $(shell find $(NVHPC_BASE)/comm_libs -name 'libmpi.so*' 2>/dev/null)))
 LDFLAGS_JLSE = -I$(MPI_INC) -L$(MPI_LIB) -lmpi
+# nvhpc 25.11 ships CUDA 13 whose Thrust/CUB/libcu++ require C++17.
+FLAGS_JLSE = -std=c++17
 
 
 buildtc:
@@ -40,16 +42,16 @@ testtc:
 
 # ---- JLSE targets (nvhpc HPCX MPI) ----
 buildjlsetc:
-	nvcc $(SRC_TC) -o $(TARGET_TC).out $(LDFLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+	nvcc $(SRC_TC) -o $(TARGET_TC).out $(LDFLAGS_JLSE) $(FLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
 buildjlsesg:
-	nvcc $(SRC_SG) -o $(TARGET_SG).out $(LDFLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+	nvcc $(SRC_SG) -o $(TARGET_SG).out $(LDFLAGS_JLSE) $(FLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
 buildjlsetcnl:
-	nvcc $(SRC_TC_NL) -o $(TARGET_TC_NL).out $(LDFLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+	nvcc $(SRC_TC_NL) -o $(TARGET_TC_NL).out $(LDFLAGS_JLSE) $(FLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
 buildjlsesgnl:
-	nvcc $(SRC_SG_NL) -o $(TARGET_SG_NL).out $(LDFLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
+	nvcc $(SRC_SG_NL) -o $(TARGET_SG_NL).out $(LDFLAGS_JLSE) $(FLAGS_JLSE) $(COMPILER_FLAGS) $(COMPILER_FLAGS_LOCAL)
 
 buildjlse: buildjlsetc buildjlsesg buildjlsetcnl buildjlsesgnl
 
