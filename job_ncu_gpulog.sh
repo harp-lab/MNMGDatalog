@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 # JLSE batch job: collect GPULog (gdlog) GPU instruction counts via Nsight Compute.
 # ncu kernel-replay is slow for high-iteration TC/SG runs, so request a long wall time.
 #
@@ -19,8 +19,24 @@ GDLOG_HOME=${GDLOG_HOME:-$HOME/gdlog}
 OUT=${OUT:-$HOME/MNMGDatalog/logs/ncu}
 TC_MODE=${TC_MODE:-0}          # 0 = with EBM (match the timing runs)
 
+# Batch shells don't define `module`; source the init first.
+if ! command -v module >/dev/null 2>&1; then
+  for f in /etc/profile.d/modules.sh /etc/profile.d/lmod.sh \
+           /usr/share/lmod/lmod/init/bash /usr/share/Modules/init/bash; do
+    [ -f "$f" ] && source "$f" && break
+  done
+fi
 module use /soft/modulefiles
 module load cuda/12.9.1
+
+# Fallback: if ncu still isn't on PATH, locate it under the CUDA install.
+if ! command -v ncu >/dev/null 2>&1; then
+  NCU_BIN=$(ls -d /soft/compilers/cuda/cuda-12.9.1*/bin/ncu 2>/dev/null | head -1)
+  [ -z "$NCU_BIN" ] && NCU_BIN=$(find /soft -name ncu -type f 2>/dev/null | head -1)
+  [ -n "$NCU_BIN" ] && export PATH="$(dirname "$NCU_BIN"):$PATH"
+fi
+command -v ncu >/dev/null 2>&1 || { echo "ERROR: ncu not found on PATH"; exit 1; }
+echo "using ncu: $(command -v ncu)"
 
 cd "$GDLOG_HOME" || { echo "gdlog dir not found: $GDLOG_HOME"; exit 1; }
 mkdir -p "$OUT/tc" "$OUT/sg"
