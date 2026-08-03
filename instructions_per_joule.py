@@ -105,14 +105,32 @@ def main():
     cols = ["Dataset", "Engine", "Instructions", "TotalEnergy(J)", "InstrPerJoule"]
     print(merged[cols].to_string(index=False))
 
-    # LaTeX pivot: instructions/joule (in giga-instr/J for readability)
+    # Auto-scale units: pick G/M/k-instructions per joule for readability.
+    vals = merged["InstrPerJoule"].dropna()
+    med = vals.median() if not vals.empty else 0
+    if med >= 1e9:
+        scale, unit = 1e9, "G"
+    elif med >= 1e6:
+        scale, unit = 1e6, "M"
+    else:
+        scale, unit = 1e3, "k"
+
     engines = ["GPULog", "MNMGDatalog", "cuDF", "BJoin", "INLJoin"]
-    merged["GInstrPerJoule"] = merged["InstrPerJoule"] / 1e9
-    pivot = merged.pivot(index="Dataset", columns="Engine", values="GInstrPerJoule").reindex(columns=engines)
-    print("\n% Instructions per joule (Giga-instructions/J)")
+    merged["Scaled"] = merged["InstrPerJoule"] / scale
+    pivot = merged.pivot(index="Dataset", columns="Engine", values="Scaled").reindex(columns=engines)
+    print(f"\n% Instructions per joule ({unit}-instructions/J)")
     print("Dataset & " + " & ".join(engines) + " \\\\")
     for dataset, row in pivot.iterrows():
-        cells = ["--" if pd.isna(row[e]) else f"{row[e]:.2f}" for e in engines]
+        cells = ["--" if pd.isna(row[e]) else f"{row[e]:.1f}" for e in engines]
+        print(f"{dataset:15} & " + " & ".join(cells) + " \\\\")
+
+    # Also emit total instructions (in billions) per engine/dataset.
+    merged["GInstr"] = merged["Instructions"] / 1e9
+    pivot_i = merged.pivot(index="Dataset", columns="Engine", values="GInstr").reindex(columns=engines)
+    print("\n% Total GPU instructions (billions)")
+    print("Dataset & " + " & ".join(engines) + " \\\\")
+    for dataset, row in pivot_i.iterrows():
+        cells = ["--" if pd.isna(row[e]) else f"{row[e]:.1f}" for e in engines]
         print(f"{dataset:15} & " + " & ".join(cells) + " \\\\")
 
 
