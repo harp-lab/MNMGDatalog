@@ -40,7 +40,12 @@ void sg_build(SGContext &ctx, double *build_seconds) {
     cParams.conditional.size   = 1;
 
     cudaGraphNode_t condNode;
+#if CUDART_VERSION >= 12040
+    // CUDA 12.4+ signature adds a dependencyData pointer before numDependencies.
+    checkCuda(cudaGraphAddNode(&condNode, ctx.graph, nullptr, nullptr, 0, &cParams));
+#else
     checkCuda(cudaGraphAddNode(&condNode, ctx.graph, nullptr, 0, &cParams));
+#endif
 
     cudaGraph_t body = cParams.conditional.phGraph_out[0];
 
