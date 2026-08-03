@@ -72,6 +72,11 @@ the raw per-run CSVs in `results/benchmark_*.csv`.
 
 ## Reproduce on JLSE
 
+> **Full step-by-step guide (env, all benchmarks, streaming, the GPUlog comparison
+> incl. its build gotchas, and a result-size correctness cross-check):**
+> [`JLSE_REPRODUCIBILITY.md`](JLSE_REPRODUCIBILITY.md). The quick recipe below
+> covers the three core benchmarks.
+
 Each benchmark is independent and built the same way. **v3 requires CUDA 12.4+**
 (conditional graph nodes); `cuda/12.9.1` is recommended. A100 = `sm_80`,
 Hopper = `sm_90`.
