@@ -306,6 +306,31 @@ python power.py fe_body_sg.csv ./sg_interactive.out data/data_163734.bin 0 1 1
 ```
 
 
+### GPU instruction counts (instructions per joule)
+
+We report **instructions per joule** using total GPU instructions executed
+(`sm__inst_executed.sum`, collected with Nsight Compute) divided by the measured
+energy. Instruction count is deterministic per (engine, dataset, args), so it is
+collected in a separate `ncu` run and combined with the existing energy CSVs.
+
+On a JLSE A100 node (`module load cuda/12.9.1 nvhpc/nvhpc/25.11`):
+
+```bash
+# MNMGDatalog + INLJoin (MPI engines, this repo)
+make buildjlsetc buildjlsesg buildjlsetcnl buildjlsesgnl
+bash run_ncu_mnmg.sh                       # writes logs/ncu/{tc,sg}/<ds>_<engine>.csv
+
+# GPULog (gdlog repo, non-MPI) — see COUNTERS_REPRODUCIBILITY.md for data setup
+cd ~/gdlog && OUT=~/MNMGDatalog/logs/ncu TC_MODE=0 bash run_ncu_gpulog.sh
+
+# Combine counts with energy -> instructions/joule (LaTeX rows)
+python instructions_per_joule.py logs/power_tc.csv logs/ncu/tc
+python instructions_per_joule.py logs/power_sg.csv logs/ncu/sg
+```
+
+Full step-by-step (build flags, dataset mapping, gdlog `edge.facts` setup,
+BJoin/cuDF notes) is in [`COUNTERS_REPRODUCIBILITY.md`](COUNTERS_REPRODUCIBILITY.md).
+
 ### References
 
 - [Polaris User Guides](https://docs.alcf.anl.gov/polaris/getting-started/)
