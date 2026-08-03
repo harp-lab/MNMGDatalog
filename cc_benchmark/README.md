@@ -124,6 +124,24 @@ are non-monotone and out of scope, and incremental TC/SG are future work.
 
 ![Incremental maintenance vs recompute](results/charts/incremental.png)
 
+**Results (A100, median of 3, batches of 0.1–10% of edges; every batch verified
+maintained == recomputed):** incremental maintenance keeps WCC current in **≤3.3 ms**
+per batch (sub-millisecond on WikiTalk/web-Google) at up to **~1.5 B edge
+insertions/s**, and its win over recompute tracks graph diameter:
+
+| Graph | Nodes | speedup vs recompute | incr. latency |
+|-------|------:|:--------------------:|:-------------:|
+| roadNet-CA (high diameter) | 2.0 M | **11–40×** | 0.9–3.3 ms |
+| web-Google | 916 K | 2.5–3.4× | 0.4–0.5 ms |
+| WikiTalk   | 2.4 M | 1.9–2.6× | 0.3–0.5 ms |
+| as-skitter (low diameter) | 1.7 M | 1.0–1.4× | 1.5–2.2 ms |
+
+High-diameter graphs win most because a from-scratch recompute needs many
+propagation rounds (roadNet-CA: ~220) while maintaining from resident labels
+reconverges in a handful (9–32); low-diameter graphs (as-skitter, ~8–11 rounds
+either way) see little benefit. `+graph`/`+cond` track `fused` (incrementality is
+version-independent).
+
 ## Datasets
 
 Defaults present in `../data`: CA-HepTh (`data_51971`), WikiTalk, web-Google,
