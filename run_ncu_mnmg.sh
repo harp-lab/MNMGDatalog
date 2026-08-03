@@ -22,10 +22,6 @@ TC_NL=./tc_nl.out    # INLJoin,     from `make buildjlsetcnl`
 SG_NL=./sg_nl.out    # INLJoin,     from `make buildjlsesgnl`
 DATA=data
 
-# External GPULog (gdlog): non-MPI ./TC ./SG, .txt input, mode 1.
-GDLOG_DIR=${GDLOG_DIR:-/home/ashovon/gdlog/build}
-GDATA=${GDATA:-/eagle/dist_relational_alg/arsho/mnmgJOIN/data}   # .txt dataset dir
-
 declare -A BIN=(
   [fe_body]=data_163734
   [vsp]=vsp_finan512_scagr7-2c_rlfddd
@@ -47,11 +43,7 @@ profile() {  # profile <binary> <logfile> <datafile>   (MPI engines: MNMG/INLJoi
   $MPI $NCU --log-file "$log" "$bin" "$data" 0 1 1
 }
 
-profile_txt() {  # profile_txt <binary> <logfile> <txtfile> <mode>   (non-MPI: GPULog/BJoin)
-  local bin=$1 log=$2 data=$3 mode=$4
-  if done_already "$log"; then echo "    skip (already done): $log"; return; fi
-  $NCU --log-file "$log" "$bin" "$data" "$mode"
-}
+
 
 echo "=== TC: MNMGDatalog ==="
 for d in fe_body vsp sf usroads; do
@@ -77,21 +69,7 @@ for d in fe_body loc-brightkite fe_sphere ca_hepth; do
   profile "$SG_NL" "logs/ncu/sg/${d}_INLJoin.csv" "$DATA/${BIN[$d]}.bin"
 done
 
-# GPULog (gdlog): non-MPI, .txt input, mode 1. Run from its build dir so ./TC ./SG resolve.
-if [ -x "$GDLOG_DIR/TC" ]; then
-  echo "=== TC: GPULog ==="
-  for d in fe_body vsp sf usroads; do
-    echo ">>> $d"
-    profile_txt "$GDLOG_DIR/TC" "logs/ncu/tc/${d}_GPULog.csv" "$GDATA/${BIN[$d]}.txt" 1
-  done
-  echo "=== SG: GPULog ==="
-  for d in fe_body loc-brightkite fe_sphere ca_hepth; do
-    echo ">>> $d"
-    profile_txt "$GDLOG_DIR/SG" "logs/ncu/sg/${d}_GPULog.csv" "$GDATA/${BIN[$d]}.txt" 1
-  done
-else
-  echo "(skip GPULog: $GDLOG_DIR/TC not found; set GDLOG_DIR=...)"
-fi
+# GPULog (gdlog) has its own repo layout/branches; use run_ncu_gpulog.sh there.
 
 echo "Done. Combine:"
 echo "  python instructions_per_joule.py logs/power_tc.csv logs/ncu/tc"
