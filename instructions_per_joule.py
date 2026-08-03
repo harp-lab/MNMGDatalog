@@ -29,34 +29,38 @@ import pandas as pd
 
 
 def parse_ncu_csv(path):
-    """Return total instructions (sum of sm__inst_executed.sum over kernels)."""
-    # ncu --csv output: a header row then one row per kernel invocation.
-    # The metric column is "sm__inst_executed.sum" (unit column may precede value).
-    try:
-        df = pd.read_csv(path, skip_blank_lines=True)
-    except Exception:
-        # Some ncu versions emit preamble lines before the CSV header.
-        with open(path) as f:
-            lines = f.readlines()
-        start = next((i for i, l in enumerate(lines) if l.count(",") > 3), 0)
-        from io import StringIO
-        df = pd.read_csv(StringIO("".join(lines[start:])))
+    """Return total instructions (sum of sm__inst_executed.sum over kernels).
 
-    # Find the metric column (name match is robust to quoting/units).
-    col = None
-    for c in df.columns:
-        if "inst_executed" in c.replace('"', ''):
-            col = c
+    ncu --csv output is preceded by app stdout (e.g. the engine's own
+    "# Input,# Process,..." header and FILE-IO timestamps). We locate the real
+    ncu table by the header line that contains both "ID" and "Metric Value".
+    """
+    from io import StringIO
+    with open(path) as f:
+        lines = f.readlines()
+
+    # Find the ncu CSV header: quoted columns including "Metric Value".
+    start = None
+    for i, l in enumerate(lines):
+        if '"Metric Value"' in l and '"ID"' in l:
+            start = i
             break
-    if col is None:
-        # Fallback: ncu sometimes uses long "Metric Name"/"Metric Value" layout.
-        if {"Metric Name", "Metric Value"}.issubset(df.columns):
-            sub = df[df["Metric Name"].astype(str).str.contains("inst_executed")]
-            vals = pd.to_numeric(
-                sub["Metric Value"].astype(str).str.replace(",", ""), errors="coerce")
-            return float(vals.sum())
-        raise ValueError(f"No inst_executed column found in {path}: {list(df.columns)}")
+    if start is None:
+        raise ValueError(f"No ncu CSV header ('Metric Value') found in {path}")
 
+    df = pd.read_csv(StringIO("".join(lines[start:])))
+
+    # Long layout: one row per (kernel, metric) with Metric Name/Value columns.
+    if {"Metric Name", "Metric Value"}.issubset(df.columns):
+        sub = df[df["Metric Name"].astype(str).str.contains("inst_executed")]
+        vals = pd.to_numeric(
+            sub["Metric Value"].astype(str).str.replace(",", ""), errors="coerce")
+        return float(vals.sum())
+
+    # Wide layout: a dedicated sm__inst_executed.sum column.
+    col = next((c for c in df.columns if "inst_executed" in c.replace('"', '')), None)
+    if col is None:
+        raise ValueError(f"No inst_executed data found in {path}: {list(df.columns)}")
     vals = pd.to_numeric(df[col].astype(str).str.replace(",", ""), errors="coerce")
     return float(vals.sum())
 
