@@ -243,7 +243,7 @@ def plot_breakdown(datasets, rows, outpath, versions):
         # x-axis tags only on the bottom dataset row (identical across rows).
         bot.set_xticks(xs)
         if dr == drow - 1:
-            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=8.5)
+            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=17)
         else:
             bot.set_xticklabels([])
 

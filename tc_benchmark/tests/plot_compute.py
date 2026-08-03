@@ -120,7 +120,7 @@ def _panel(ax, order, ours, gpulog, tag):
     ax.set_ylim(top=top * 4.0)   # headroom for the rotated value labels
     ax.set_xlim(-0.5, n - 0.5)
     ax.set_xticks(range(n))
-    ax.set_xticklabels(order, rotation=0, ha="center")
+    ax.set_xticklabels(order, rotation=20, ha="right", fontsize=40)
     ax.set_ylabel("compute (ms, log)")
     ax.grid(axis="y", ls=":", alpha=0.5)
     # per-panel query tag in the top-left corner
