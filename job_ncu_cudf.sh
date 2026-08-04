@@ -26,12 +26,26 @@ if ! command -v ncu >/dev/null 2>&1; then
   [ -n "$NCU_BIN" ] && export PATH="$(dirname "$NCU_BIN"):$PATH"
 fi
 
-CONDA_ENV=${CONDA_ENV:-rapids-25.04}     # <-- set to your cudf env name
-# activate conda (base is already on PATH in the login shell)
-source "$(conda info --base)/etc/profile.d/conda.sh" 2>/dev/null && conda activate "$CONDA_ENV" 2>/dev/null
+# --- activate conda + cudf env ---
+# JLSE provides conda via a module (like Polaris `module load conda/...`).
+# Set CONDA_MODULE to your JLSE conda module, and CONDA_ENV to the env that has cudf.
+CONDA_MODULE=${CONDA_MODULE:-conda}        # e.g. conda/2023-10-04 (see `module avail conda`)
+CONDA_ENV=${CONDA_ENV:-}                   # e.g. rapids-25.04 (blank = use module's base env)
 
-echo "using ncu: $(command -v ncu)"
-python -c "import cudf; print('cudf', cudf.__version__)" || { echo "ERROR: cudf not importable; set CONDA_ENV"; exit 1; }
+module load "$CONDA_MODULE" 2>/dev/null || echo "note: could not 'module load $CONDA_MODULE'"
+
+# make `conda activate` available, then activate
+if command -v conda >/dev/null 2>&1; then
+  source "$(conda info --base)/etc/profile.d/conda.sh" 2>/dev/null
+  if [ -n "$CONDA_ENV" ]; then conda activate "$CONDA_ENV"; else conda activate; fi
+fi
+
+echo "using ncu:    $(command -v ncu)"
+echo "using python: $(command -v python)"
+python -c "import cudf; print('cudf', cudf.__version__)" || {
+  echo "ERROR: cudf not importable. Load the right conda module/env, e.g.:";
+  echo "  module load conda/2023-10-04 && conda activate && pip install --extra-index-url https://pypi.nvidia.com cudf-cu11";
+  echo "then resubmit with CONDA_MODULE=... CONDA_ENV=... as needed."; exit 1; }
 
 OUT=${OUT:-$HOME/MNMGDatalog/logs/ncu}
 bash run_ncu_cudf.sh

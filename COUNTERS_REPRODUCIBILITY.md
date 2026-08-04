@@ -133,12 +133,27 @@ so keep the numeric `data_<N>.txt` names.
 Only datasets with nonzero cuDF energy in the paper are profiled (the others were
 OOM/timeout): **TC {fe_body, sf}; SG {loc-brightkite, fe_sphere, ca_hepth}**.
 
-Needs a RAPIDS/cudf env (`python -c "import cudf"` must work). Batch job
-(edit `CONDA_ENV` to your rapids env), submitted from `~/MNMGDatalog`:
+Needs a RAPIDS/cudf env. JLSE provides conda via a **module** (not a base-PATH
+conda), so batch shells must `module load conda` and then `conda activate` before
+`import cudf` works. One-time setup (as on Polaris):
 
 ```bash
-qsub -q gpu_a100 -t 300 -n 1 job_ncu_cudf.sh
+module load conda            # see `module avail conda` for the exact name/version
+conda activate
+pip install --extra-index-url https://pypi.nvidia.com cudf-cu11   # match your CUDA
+python -c "import cudf; print(cudf.__version__)"
 ```
+
+Batch job (set `CONDA_MODULE`/`CONDA_ENV` to match the above), from `~/MNMGDatalog`:
+
+```bash
+qsub -q gpu_a100 -t 300 -n 1 \
+  --env CONDA_MODULE=conda --env CONDA_ENV= \
+  job_ncu_cudf.sh
+```
+
+(If `--env` is not supported by your `qsub`, edit the `CONDA_MODULE`/`CONDA_ENV`
+defaults at the top of `job_ncu_cudf.sh` instead.)
 
 Or interactively (with the rapids env active):
 
