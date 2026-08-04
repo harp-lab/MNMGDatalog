@@ -27,25 +27,24 @@ if ! command -v ncu >/dev/null 2>&1; then
 fi
 
 # --- activate conda + cudf env ---
-# JLSE provides conda via a module (like Polaris `module load conda/...`).
-# Set CONDA_MODULE to your JLSE conda module, and CONDA_ENV to the env that has cudf.
-CONDA_MODULE=${CONDA_MODULE:-conda}        # e.g. conda/2023-10-04 (see `module avail conda`)
-CONDA_ENV=${CONDA_ENV:-}                   # e.g. rapids-25.04 (blank = use module's base env)
+# JLSE uses a personal miniconda (from ~/.zshrc: `source ~/miniconda3/bin/activate`).
+# Batch shells don't source ~/.zshrc, so activate it explicitly here.
+CONDA_BASE=${CONDA_BASE:-$HOME/miniconda3}
+CONDA_ENV=${CONDA_ENV:-}                    # optional: a specific env with cudf (blank = base)
 
-module load "$CONDA_MODULE" 2>/dev/null || echo "note: could not 'module load $CONDA_MODULE'"
-
-# make `conda activate` available, then activate
-if command -v conda >/dev/null 2>&1; then
-  source "$(conda info --base)/etc/profile.d/conda.sh" 2>/dev/null
-  if [ -n "$CONDA_ENV" ]; then conda activate "$CONDA_ENV"; else conda activate; fi
+if [ -f "$CONDA_BASE/etc/profile.d/conda.sh" ]; then
+  source "$CONDA_BASE/etc/profile.d/conda.sh"
+elif [ -f "$CONDA_BASE/bin/activate" ]; then
+  source "$CONDA_BASE/bin/activate"
 fi
+[ -n "$CONDA_ENV" ] && conda activate "$CONDA_ENV"
 
 echo "using ncu:    $(command -v ncu)"
 echo "using python: $(command -v python)"
 python -c "import cudf; print('cudf', cudf.__version__)" || {
-  echo "ERROR: cudf not importable. Load the right conda module/env, e.g.:";
-  echo "  module load conda/2023-10-04 && conda activate && pip install --extra-index-url https://pypi.nvidia.com cudf-cu11";
-  echo "then resubmit with CONDA_MODULE=... CONDA_ENV=... as needed."; exit 1; }
+  echo "ERROR: cudf not importable in $CONDA_BASE (env='${CONDA_ENV:-base}').";
+  echo "Install once:  source ~/miniconda3/bin/activate && pip install --extra-index-url https://pypi.nvidia.com cudf-cu12";
+  echo "Or set CONDA_ENV=<env-with-cudf> and resubmit."; exit 1; }
 
 OUT=${OUT:-$HOME/MNMGDatalog/logs/ncu}
 bash run_ncu_cudf.sh

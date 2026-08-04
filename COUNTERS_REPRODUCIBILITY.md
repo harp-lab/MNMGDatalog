@@ -133,27 +133,23 @@ so keep the numeric `data_<N>.txt` names.
 Only datasets with nonzero cuDF energy in the paper are profiled (the others were
 OOM/timeout): **TC {fe_body, sf}; SG {loc-brightkite, fe_sphere, ca_hepth}**.
 
-Needs a RAPIDS/cudf env. JLSE provides conda via a **module** (not a base-PATH
-conda), so batch shells must `module load conda` and then `conda activate` before
-`import cudf` works. One-time setup (as on Polaris):
+Needs a RAPIDS/cudf env. On JLSE this is a **personal miniconda**
+(`~/.zshrc` does `source ~/miniconda3/bin/activate`). Batch shells do not source
+`~/.zshrc`, so `job_ncu_cudf.sh` activates `~/miniconda3` itself. One-time cudf
+install (CUDA 12.x -> `cudf-cu12`):
 
 ```bash
-module load conda            # see `module avail conda` for the exact name/version
-conda activate
-pip install --extra-index-url https://pypi.nvidia.com cudf-cu11   # match your CUDA
+source ~/miniconda3/bin/activate
+pip install --extra-index-url https://pypi.nvidia.com cudf-cu12
 python -c "import cudf; print(cudf.__version__)"
 ```
 
-Batch job (set `CONDA_MODULE`/`CONDA_ENV` to match the above), from `~/MNMGDatalog`:
+Batch job from `~/MNMGDatalog` (override `CONDA_BASE`/`CONDA_ENV` only if cudf
+lives in a non-default location/env):
 
 ```bash
-qsub -q gpu_a100 -t 300 -n 1 \
-  --env CONDA_MODULE=conda --env CONDA_ENV= \
-  job_ncu_cudf.sh
+qsub -q gpu_a100 -t 300 -n 1 job_ncu_cudf.sh
 ```
-
-(If `--env` is not supported by your `qsub`, edit the `CONDA_MODULE`/`CONDA_ENV`
-defaults at the top of `job_ncu_cudf.sh` instead.)
 
 Or interactively (with the rapids env active):
 
