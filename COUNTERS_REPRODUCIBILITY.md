@@ -123,13 +123,43 @@ ls -la logs/ncu/tc/*_GPULog.csv logs/ncu/sg/*_GPULog.csv
 gdlog dataset folders: usroad, vsp_finan, SF.cedge, fe_body (TC);
 fe_body, loc-Brightkite, fe-sphere, CA-HepTH (SG). Input = `data/<folder>/edge.facts`.
 
-## 3. BJoin and cuDF (pending on JLSE)
+## 3. cuDF (RAPIDS, non-MPI)
 
-BJoin (batch_joins, non-MPI, `./TC <file> 90` / `./SG <file> 90`) and cuDF
-(`python related/cudf_programs/tc.py <file>`) are profiled the same way with
-`ncu` (no mpiexec). Add once their builds/env are available on JLSE.
+cuDF is pure RAPIDS Python (`related/cudf_programs/tc.py` / `sg.py`), reads a
+tab-separated `.txt` edge list, and is non-MPI, so `ncu` wraps the python process
+directly. `tc.py`/`sg.py` derive the row count from the digits in the filename,
+so keep the numeric `data_<N>.txt` names.
 
-## 4. Combine counts with energy -> instructions per joule
+Only datasets with nonzero cuDF energy in the paper are profiled (the others were
+OOM/timeout): **TC {fe_body, sf}; SG {loc-brightkite, fe_sphere, ca_hepth}**.
+
+Needs a RAPIDS/cudf env (`python -c "import cudf"` must work). Batch job
+(edit `CONDA_ENV` to your rapids env), submitted from `~/MNMGDatalog`:
+
+```bash
+qsub -q gpu_a100 -t 300 -n 1 job_ncu_cudf.sh
+```
+
+Or interactively (with the rapids env active):
+
+```bash
+OUT=~/MNMGDatalog/logs/ncu bash run_ncu_cudf.sh
+```
+
+Individual command form:
+
+```bash
+ncu --metrics sm__inst_executed.sum --target-processes all --csv \
+    --log-file logs/ncu/tc/fe_body_cuDF.csv \
+    python related/cudf_programs/tc.py data/data_163734.txt
+```
+
+## 4. BJoin (batch_joins, pending on JLSE)
+
+BJoin (non-MPI, `./TC <file> 90` / `./SG <file> 90`, `.txt` input) is profiled the
+same way with `ncu` (no mpiexec). Add once its build is available on JLSE.
+
+## 5. Combine counts with energy -> instructions per joule
 
 ```bash
 cd ~/MNMGDatalog
