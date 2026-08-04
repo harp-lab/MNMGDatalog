@@ -165,10 +165,19 @@ ncu --metrics sm__inst_executed.sum --target-processes all --csv \
     python related/cudf_programs/tc.py data/data_163734.txt
 ```
 
-## 4. BJoin (batch_joins, pending on JLSE)
+## 4. BJoin (batch_joins, non-MPI)
 
-BJoin (non-MPI, `./TC <file> 90` / `./SG <file> 90`, `.txt` input) is profiled the
-same way with `ncu` (no mpiexec). Add once its build is available on JLSE.
+BJoin needs oneTBB + RMM and is built with cmake; it is non-MPI
+(`./build/TC <file> 90` / `./build/SG <file> 90`, tab-separated 2-col input).
+Full build+run steps are in [`BJOIN_JLSE_SETUP.md`](BJOIN_JLSE_SETUP.md). Once
+built and `data/` is populated, collect counts with the batch job (from
+`~/MNMGDatalog`):
+
+```bash
+qsub -q gpu_a100 -t 300 -n 1 job_ncu_bjoin.sh
+```
+
+or interactively: `BJOIN_HOME=~/batch_joins OUT=~/MNMGDatalog/logs/ncu bash run_ncu_bjoin.sh`.
 
 ## 5. Combine counts with energy -> instructions per joule
 
