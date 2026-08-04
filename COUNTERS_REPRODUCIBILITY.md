@@ -9,7 +9,14 @@ combine them with the existing energy measurements to report
   args), so it is collected in a *separate* Nsight run (whose kernel replay
   perturbs timing/power but **not** the count) and paired with the energy from
   `logs/power_tc.csv` / `logs/power_sg.csv`.
-- GPU used: **NVIDIA A100-PCIE-40GB** (JLSE `gpu07`). `ncu` 2025.2/2025.3.
+- GPU used: **NVIDIA A100-PCIE-40GB** (JLSE). `ncu` 2025.2/2025.3.
+
+**Status (collected so far):** MNMGDatalog, INLJoin, and GPULog counts are done
+for TC (fe\_body, vsp, sf, usroads) and SG (fe\_body, loc-brightkite, fe\_sphere,
+ca\_hepth); CSVs are committed under `logs/ncu/{tc,sg}/<Dataset>_<Engine>.csv` on
+branch `feature/counters`. BJoin and cuDF are pending. If the CSVs go missing
+from the working tree, recover them from git:
+`git checkout feature/counters -- logs/ncu` (or `git show <commit>:<path> > <path>`).
 
 ## 0. Environment (JLSE interactive GPU node)
 
@@ -86,12 +93,32 @@ ncu --metrics sm__inst_executed.sum --target-processes all --csv \
     ./build/TC ./data/usroad/edge.facts 0
 ```
 
-Full sweep (resumable; `run_ncu_gpulog.sh` lives in the gdlog repo):
+Full sweep. `ncu` kernel-replay is slow (a single high-iteration TC run can take
+15--20 min), so an interactive node usually times out. **Use the batch job**
+`job_ncu_gpulog.sh` (in this repo) with a long wall time; it is resumable and
+skips any dataset whose CSV already has counter data:
 
 ```bash
-cd ~/gdlog
-OUT=~/MNMGDatalog/logs/ncu TC_MODE=0 bash run_ncu_gpulog.sh
+cd ~/MNMGDatalog
+qsub -q gpu_a100 -t 300 -n 1 job_ncu_gpulog.sh   # -t is MINUTES on JLSE Cobalt (300 = 5 h)
 ```
+
+The batch script runs the gdlog binaries in `$GDLOG_HOME` (default `~/gdlog`),
+sources the module system itself (batch shells do not define `module`), locates
+`ncu`, and writes to `$OUT/{tc,sg}` (default `~/MNMGDatalog/logs/ncu`). Set
+`TC_MODE` to match the EBM mode of the timing runs (default `0`).
+
+Check progress and outputs:
+
+```bash
+qstat -u $USER
+tail <jobid>.output          # per-dataset progress; first line should be "using ncu: ..."
+cat  <jobid>.error           # should be empty
+ls -la logs/ncu/tc/*_GPULog.csv logs/ncu/sg/*_GPULog.csv
+```
+
+(Interactive alternative, only for small datasets:
+`cd ~/gdlog && OUT=~/MNMGDatalog/logs/ncu TC_MODE=0 bash run_ncu_gpulog.sh`.)
 
 gdlog dataset folders: usroad, vsp_finan, SF.cedge, fe_body (TC);
 fe_body, loc-Brightkite, fe-sphere, CA-HepTH (SG). Input = `data/<folder>/edge.facts`.
