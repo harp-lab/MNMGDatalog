@@ -28,21 +28,29 @@ fi
 
 # --- activate conda + cudf env ---
 # JLSE uses a personal miniconda (from ~/.zshrc: `source ~/miniconda3/bin/activate`).
-# Batch shells don't source ~/.zshrc, so activate it explicitly here.
+# Batch shells don't source ~/.zshrc. Activating alone did not switch python in
+# the batch shell, so we ALSO prepend miniconda's bin and call its python via $PY.
 CONDA_BASE=${CONDA_BASE:-$HOME/miniconda3}
 CONDA_ENV=${CONDA_ENV:-}                    # optional: a specific env with cudf (blank = base)
 
 if [ -f "$CONDA_BASE/etc/profile.d/conda.sh" ]; then
   source "$CONDA_BASE/etc/profile.d/conda.sh"
-elif [ -f "$CONDA_BASE/bin/activate" ]; then
-  source "$CONDA_BASE/bin/activate"
+  conda activate "${CONDA_ENV:-base}" 2>/dev/null
 fi
-[ -n "$CONDA_ENV" ] && conda activate "$CONDA_ENV"
+
+# Resolve the exact python that has cudf, independent of `conda activate`.
+if [ -n "$CONDA_ENV" ] && [ -x "$CONDA_BASE/envs/$CONDA_ENV/bin/python" ]; then
+  PY="$CONDA_BASE/envs/$CONDA_ENV/bin/python"
+else
+  PY="$CONDA_BASE/bin/python"
+fi
+export PATH="$(dirname "$PY"):$PATH"
+export PY                                   # run_ncu_cudf.sh uses $PY
 
 echo "using ncu:    $(command -v ncu)"
-echo "using python: $(command -v python)"
-python -c "import cudf; print('cudf', cudf.__version__)" || {
-  echo "ERROR: cudf not importable in $CONDA_BASE (env='${CONDA_ENV:-base}').";
+echo "using python: $PY"
+"$PY" -c "import cudf; print('cudf', cudf.__version__)" || {
+  echo "ERROR: cudf not importable with $PY.";
   echo "Install once:  source ~/miniconda3/bin/activate && pip install --extra-index-url https://pypi.nvidia.com cudf-cu12";
   echo "Or set CONDA_ENV=<env-with-cudf> and resubmit."; exit 1; }
 
