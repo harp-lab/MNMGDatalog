@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""CPU-vs-GPU energy split figure (column-width, single row).
+"""CPU-vs-GPU energy split figure (column-width, two representative datasets).
 
 Renders CPU energy independently of GPU: for each engine, a stacked bar shows GPU
-energy (bottom) + CPU energy (top), from the aggregate per-run CSVs
-(logs/cpugpu/<tc|sg>/<Dataset>_<Engine>.csv). Two panels (TC | SG) side by side,
-engines labeled on the x-axis. cuDF omitted (off-scale/OOM); the point is the
-CPU vs GPU balance across the specialized engines.
+energy (bottom) + CPU energy (top), in kJ, from the aggregate per-run CSVs
+(logs/cpugpu/<tc|sg>/<Dataset>_<Engine>.csv). Two panels (1 TC + 1 SG). cuDF is
+far taller than the specialized engines, so the y-axis is clipped to the
+specialized range and cuDF's bar is capped with an arrow + its true total.
 """
 import csv
 import glob
@@ -20,8 +20,8 @@ import numpy as np
 ENGINES = ["GPULog", "MNMGDatalog", "cuDF", "BJoin", "INLJoin"]
 LABELS = {"GPULog": "GPULog", "MNMGDatalog": "MNMG", "cuDF": "cuDF",
           "BJoin": "BJoin", "INLJoin": "INLJoin"}
-# usroads (TC) shows CPU-dominance clearly; loc-brightkite (SG) for query variety
-PANELS = [("tc", "usroads", "TC (usroads)"), ("sg", "loc-brightkite", "SG (loc-brightkite)")]
+# one representative dataset per task; both have a cuDF run
+PANELS = [("tc", "fe_body", "TC (fe_body)"), ("sg", "fe_sphere", "SG (fe_sphere)")]
 GPU_C = "#a9d18e"   # green (GPU)
 CPU_C = "#bfbfbf"   # grey (CPU)
 
@@ -37,15 +37,26 @@ def load(task):
 
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "drawing/charts/energy_split.pdf"
-    # column-width and short: wider, low height to save vertical space
-    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.9))
+    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.95))
     x = np.arange(len(ENGINES))
     for ax, (task, ds, title) in zip(axes, PANELS):
         data = load(task)[ds]
-        gpu = [data.get(e, (0, 0))[0] / 1000.0 for e in ENGINES]   # kJ
-        cpu = [data.get(e, (0, 0))[1] / 1000.0 for e in ENGINES]
-        ax.bar(x, gpu, 0.62, color=GPU_C, edgecolor="black", linewidth=0.4, label="GPU")
-        ax.bar(x, cpu, 0.62, bottom=gpu, color=CPU_C, edgecolor="black", linewidth=0.4, label="CPU")
+        gpu = np.array([data.get(e, (0, 0))[0] / 1000.0 for e in ENGINES])  # kJ
+        cpu = np.array([data.get(e, (0, 0))[1] / 1000.0 for e in ENGINES])
+        tot = gpu + cpu
+        # clip y-axis to the specialized engines (exclude cuDF), leave headroom
+        spec_max = max(t for e, t in zip(ENGINES, tot) if e != "cuDF")
+        ymax = spec_max * 1.30
+        ax.bar(x, gpu, 0.68, color=GPU_C, edgecolor="black", linewidth=0.4, label="GPU")
+        ax.bar(x, cpu, 0.68, bottom=gpu, color=CPU_C, edgecolor="black", linewidth=0.4, label="CPU")
+        ax.set_ylim(0, ymax)
+        # annotate cuDF (clipped) with its true total
+        ci = ENGINES.index("cuDF")
+        if tot[ci] > ymax:
+            ax.annotate("", xy=(x[ci], ymax * 0.99), xytext=(x[ci], ymax * 0.72),
+                        arrowprops=dict(arrowstyle="-|>", color="black", lw=1.0))
+            ax.text(x[ci], ymax * 0.68, f"{tot[ci]:.1f}\u2009kJ",
+                    ha="center", va="top", fontsize=6, fontweight="bold")
         ax.set_xticks(x)
         ax.set_xticklabels([LABELS[e] for e in ENGINES], fontsize=5.5, rotation=30, ha="right")
         ax.margins(x=0.05)
