@@ -246,6 +246,38 @@ instructions/joule, plus LaTeX rows (auto-scaled to G/M/k-instr/J) for the paper
 The combine only needs the CSVs present under `logs/ncu/{tc,sg}/` named
 `<Dataset>_<Engine>.csv`; missing engines/datasets show `--`.
 
+## CPU + GPU energy (single-GPU, JLSE)
+
+`power_cpu_gpu.py` measures **both** CPU and GPU energy for one run:
+- **GPU energy**: integrate `nvidia-smi` `power.draw` at a fixed interval (as in `power.py`).
+- **CPU energy**: wrap the process in `perf stat -e power/energy-pkg/`, which reads
+  the CPU's **RAPL package-domain** energy counter.
+
+What the RAPL package domain covers (important for correct interpretation):
+- **Package = cores + uncore.** *Core* energy is the compute cores (ALUs/FPUs,
+  L1/L2, registers). *Uncore* is everything else on the socket: shared **L3
+  cache, memory controllers, Infinity Fabric/interconnect, PCIe/IO**. For
+  data-movement-bound Datalog, much of the CPU cost is uncore, so package is the
+  right, inclusive number.
+- **DRAM energy is NOT included.** Intel exposes a separate `power/energy-ram/`
+  domain; **AMD EPYC (our JLSE node) does not**, so DIMM energy is excluded.
+- It is **socket-wide** (not per-process); on a dedicated node this reflects the
+  node's CPU energy during the run.
+
+Caveats to state in the paper: AMD RAPL package energy is measured/estimated at
+the socket level and has known accuracy limits (like `nvidia-smi` for the GPU);
+we therefore emphasize the **CPU fraction of total energy** rather than absolute
+CPU joules. Check which RAPL domains a node exposes with `perf list | grep -i energy`.
+
+Collect the full single-GPU sweep (all 5 engines, TC+SG):
+```bash
+qsub -q gpu_a100 -t 300 -n 1 run_cpu_gpu_energy.sh
+python cpu_gpu_energy_tables.py logs/cpugpu/tc
+python cpu_gpu_energy_tables.py logs/cpugpu/sg
+```
+Note: JLSE is A100-PCIE, a *different* GPU/node than the Polaris A100-SXM used for
+the original energy tables, so JLSE energy is not directly comparable to Polaris.
+
 ## Notes / gotchas
 
 - `ncu` replay makes the profiled run slow (minutes for large iteration counts);
@@ -254,3 +286,6 @@ The combine only needs the CSVs present under `logs/ncu/{tc,sg}/` named
 - If a run shows `Input graph rows: 0`, the `edge.facts` path is empty/missing.
 - If `ERR_NVGPUCTRPERM` appears, the node blocks perf counters; request a node
   with counter access enabled.
+- `perf`/RAPL: batch shells default to system Python 2.7 — the scripts force
+  `~/miniconda3/bin/python`. If `power/energy-pkg/` is absent, the kernel/node
+  does not expose CPU RAPL.
