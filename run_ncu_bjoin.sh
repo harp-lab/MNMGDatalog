@@ -25,7 +25,7 @@ done_already() { [ -s "$1" ] && grep -q inst_executed "$1"; }
 
 echo "=== TC: BJoin ==="
 for d in "${!TC[@]}"; do
-  log="$OUT/tc/${d}_BJoin.csv"; f="./data/${TC[$d]}"
+  log="$OUT/tc/${d}_BJoin.csv"; f="../data/${TC[$d]}"
   done_already "$log" && { echo "  skip $log"; continue; }
   [ -f "$f" ] || { echo "  MISSING $f"; continue; }
   echo ">>> $(date +%T) TC $d"
@@ -34,7 +34,7 @@ done
 
 echo "=== SG: BJoin ==="
 for d in "${!SG[@]}"; do
-  log="$OUT/sg/${d}_BJoin.csv"; f="./data/${SG[$d]}"
+  log="$OUT/sg/${d}_BJoin.csv"; f="../data/${SG[$d]}"
   done_already "$log" && { echo "  skip $log"; continue; }
   [ -f "$f" ] || { echo "  MISSING $f"; continue; }
   echo ">>> $(date +%T) SG $d"
