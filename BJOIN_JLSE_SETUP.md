@@ -5,13 +5,15 @@ BJoin needs **oneTBB** and **RMM** (RAPIDS Memory Manager). It is **non-MPI**;
 Input is a tab-separated 2-column edge list (same format as gdlog `edge.facts`
 and the MNMG `.txt` graphs), so we reuse the same graphs. CUDA arch is A100 (80).
 
-Do everything in the **same CUDA env as the other engines**:
+Do everything in the **same CUDA env as the other engines**. JLSE's system gcc is
+7.5 (too old); load the gcc-12 module and use `gcc`/`g++` (not `gcc-12`):
 ```bash
 module use /soft/modulefiles
-module load cuda/12.9.1
-# a C++17 host compiler; gcc-12 as on Polaris. If not present as gcc-12,
-# use the system gcc (>= 11) and drop the CC/CXX overrides below.
+module load cuda/12.9.1 cmake gcc/12.2.0
+gcc --version    # should be 12.2.0
 ```
+Use the SAME gcc for oneTBB, RMM, and BJoin so their ABIs match, and keep
+`gcc/12.2.0` loaded when running the binaries (the counter batch job loads it).
 
 ## 0. Transfer the repo from Polaris (optional; you already have it locally)
 ```bash
@@ -27,7 +29,7 @@ git clone https://github.com/uxlfoundation/oneTBB
 cd oneTBB && git checkout v2022.1.0
 mkdir -p $HOME/.local
 mkdir build && cd build
-CC=gcc-12 CXX=g++-12 cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local/oneTBB_v2022.1.0 -DTBB_TEST=OFF ..
+CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local/oneTBB_v2022.1.0 -DTBB_TEST=OFF ..
 make -j && make install
 # TBB cmake dir -> $HOME/.local/oneTBB_v2022.1.0/lib64/cmake/TBB  (or lib/cmake/TBB)
 ```
@@ -37,7 +39,7 @@ make -j && make install
 cd ~
 git clone https://github.com/rapidsai/rmm
 cd rmm && git checkout v24.12.00
-CC=gcc-12 CXX=g++-12 ./build.sh librmm rmm
+CC=gcc CXX=g++ ./build.sh librmm rmm
 # install prefix -> ~/rmm/build/install
 ```
 

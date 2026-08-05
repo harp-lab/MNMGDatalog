@@ -20,6 +20,7 @@ if ! command -v module >/dev/null 2>&1; then
 fi
 module use /soft/modulefiles
 module load cuda/12.9.1
+module load gcc/12.2.0 2>/dev/null   # BJoin links libstdc++ 12 (built with gcc-12)
 if ! command -v ncu >/dev/null 2>&1; then
   NCU_BIN=$(find /soft -name ncu -type f 2>/dev/null | head -1)
   [ -n "$NCU_BIN" ] && export PATH="$(dirname "$NCU_BIN"):$PATH"
