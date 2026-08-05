@@ -11,12 +11,66 @@ combine them with the existing energy measurements to report
   `logs/power_tc.csv` / `logs/power_sg.csv`.
 - GPU used: **NVIDIA A100-PCIE-40GB** (JLSE). `ncu` 2025.2/2025.3.
 
-**Status (collected so far):** MNMGDatalog, INLJoin, and GPULog counts are done
-for TC (fe\_body, vsp, sf, usroads) and SG (fe\_body, loc-brightkite, fe\_sphere,
-ca\_hepth); CSVs are committed under `logs/ncu/{tc,sg}/<Dataset>_<Engine>.csv` on
-branch `feature/counters`. BJoin and cuDF are pending. If the CSVs go missing
-from the working tree, recover them from git:
-`git checkout feature/counters -- logs/ncu` (or `git show <commit>:<path> > <path>`).
+**Status: COMPLETE.** All five engines (MNMGDatalog, INLJoin, GPULog, BJoin, cuDF)
+have instruction counts for TC (fe\_body, vsp, sf, usroads) and SG (fe\_body,
+loc-brightkite, fe\_sphere, ca\_hepth). CSVs are committed under
+`logs/ncu/{tc,sg}/<Dataset>_<Engine>.csv` on branch `feature/counters`. cuDF has
+no entry for the two TC road networks (\textit{usroads}, \textit{vsp}) and SG
+\textit{fe\_body} because those runs ran out of memory / produced no output. If
+the CSVs go missing from the working tree, recover them with
+`git checkout feature/counters -- logs/ncu`.
+
+## Final results
+
+Regenerate any time with:
+```bash
+python instructions_per_joule.py logs/power_tc.csv logs/ncu/tc
+python instructions_per_joule.py logs/power_sg.csv logs/ncu/sg
+```
+
+### Instructions per joule (M-instructions/J; higher = more efficient)
+
+Transitive Closure (TC):
+
+| Dataset | GPULog | MNMGDatalog | cuDF | BJoin | INLJoin |
+| --- | --- | --- | --- | --- | --- |
+| fe_body | 283.2 | 208.6 | 147.5 | 290.3 | 197.7 |
+| sf | 257.1 | 194.8 | 142.0 | 99.6 | 191.9 |
+| usroads | 199.0 | 179.1 | -- | 407.1 | 162.5 |
+| vsp | 225.6 | 179.5 | -- | 408.5 | 172.9 |
+
+Same Generation (SG):
+
+| Dataset | GPULog | MNMGDatalog | cuDF | BJoin | INLJoin |
+| --- | --- | --- | --- | --- | --- |
+| ca_hepth | 274.8 | 321.2 | 136.0 | 210.2 | 350.2 |
+| fe_body | 368.6 | 286.3 | -- | 457.2 | 310.8 |
+| fe_sphere | 345.7 | 290.9 | 170.4 | 357.2 | 315.0 |
+| loc-brightkite | 320.8 | 405.3 | 174.7 | 312.2 | 420.3 |
+
+### Total GPU instructions (billions, `sm__inst_executed.sum`)
+
+Transitive Closure (TC):
+
+| Dataset | GPULog | MNMGDatalog | cuDF | BJoin | INLJoin |
+| --- | --- | --- | --- | --- | --- |
+| fe_body | 183.1 | 95.5 | 1262.3 | 174.2 | 96.5 |
+| sf | 99.4 | 57.2 | 858.0 | 99.3 | 57.6 |
+| usroads | 1934.7 | 1186.2 | -- | 1897.4 | 1193.7 |
+| vsp | 2413.1 | 1292.5 | -- | 2005.6 | 1293.4 |
+
+Same Generation (SG):
+
+| Dataset | GPULog | MNMGDatalog | cuDF | BJoin | INLJoin |
+| --- | --- | --- | --- | --- | --- |
+| ca_hepth | 137.6 | 60.1 | 131.0 | 135.1 | 59.7 |
+| fe_body | 697.0 | 328.9 | -- | 686.3 | 336.9 |
+| fe_sphere | 307.5 | 141.7 | 1115.7 | 299.6 | 145.0 |
+| loc-brightkite | 379.9 | 168.1 | 331.9 | 370.2 | 166.1 |
+
+Energy (Joules) used as the denominator comes from `logs/power_tc.csv` /
+`logs/power_sg.csv` (the original POWERLOG runs); only instruction counts are
+from Nsight. (cuDF counts were taken with RAPIDS cudf-cu12 26.06 on JLSE.)
 
 ## 0. Environment (JLSE interactive GPU node)
 
