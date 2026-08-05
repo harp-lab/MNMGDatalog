@@ -11,8 +11,24 @@
 #   - GPULog ~/gdlog/build/TC, BJoin ~/batch_joins/build/TC, cudf in miniconda
 set -u
 
+# Batch/interactive shells may not define `module`; source the init first.
+if ! command -v module >/dev/null 2>&1; then
+  for f in /etc/profile.d/modules.sh /etc/profile.d/lmod.sh \
+           /usr/share/lmod/lmod/init/bash /usr/share/Modules/init/bash; do
+    [ -f "$f" ] && source "$f" && break
+  done
+fi
 module use /soft/modulefiles
 module load cuda/12.9.1 nvhpc/nvhpc/25.11 gcc/12.2.0 2>/dev/null
+
+# BJoin needs the CUDA 12.9 runtime (libcudart.so.12) + TBB/RMM libs at load time.
+# Put cuda-12.9 FIRST so nvhpc's bundled CUDA 13 doesn't shadow it.
+CUDA129_LIB=$(ls -d /soft/compilers/cuda/cuda-12.9*/lib64 2>/dev/null | head -1)
+TBB_LIB=$(ls -d "$HOME/.local/oneTBB_v2022.1.0"/lib64 "$HOME/.local/oneTBB_v2022.1.0"/lib 2>/dev/null | head -1)
+export LD_LIBRARY_PATH="$CUDA129_LIB:$TBB_LIB:$HOME/miniconda3/lib:${LD_LIBRARY_PATH:-}"
+echo "CUDA129_LIB=$CUDA129_LIB  TBB_LIB=$TBB_LIB"
+
+command -v mpiexec >/dev/null 2>&1 && echo "mpiexec: $(command -v mpiexec)" || echo "WARN: mpiexec not found (MNMG/INLJoin will fail)"
 
 OUT=${OUT:-logs/cpugpu_dryrun}
 mkdir -p "$OUT"
