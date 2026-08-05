@@ -27,8 +27,10 @@ if ! command -v ncu >/dev/null 2>&1; then
 fi
 command -v ncu >/dev/null 2>&1 || { echo "ERROR: ncu not found"; exit 1; }
 
-# TBB/RMM runtime libs may be needed at load time:
-export LD_LIBRARY_PATH="$HOME/.local/oneTBB_v2022.1.0/lib64:$HOME/.local/oneTBB_v2022.1.0/lib:$HOME/rmm/build/install/lib:${LD_LIBRARY_PATH:-}"
+# TBB/RMM runtime libs may be needed at load time (librmm installs to the conda
+# prefix by default; oneTBB to ~/.local). Adjust RMM_PREFIX if you used another.
+RMM_PREFIX=${RMM_PREFIX:-$HOME/miniconda3}
+export LD_LIBRARY_PATH="$HOME/.local/oneTBB_v2022.1.0/lib64:$HOME/.local/oneTBB_v2022.1.0/lib:$RMM_PREFIX/lib:$RMM_PREFIX/lib64:${LD_LIBRARY_PATH:-}"
 
 echo "using ncu: $(command -v ncu)"; nvidia-smi -L
 

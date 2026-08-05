@@ -34,19 +34,27 @@ make -j && make install
 # TBB cmake dir -> $HOME/.local/oneTBB_v2022.1.0/lib64/cmake/TBB  (or lib/cmake/TBB)
 ```
 
-## 2. Build RMM v24.12.00 -> ~/rmm/build/install
+## 2. Build RMM v24.12.00 (C++ librmm only)
+BJoin only needs the **C++ librmm** (headers + cmake), not the python package.
+`./build.sh` installs into the active conda prefix by default.
 ```bash
 cd ~
 git clone https://github.com/rapidsai/rmm
 cd rmm && git checkout v24.12.00
-CC=gcc CXX=g++ ./build.sh librmm rmm
-# install prefix -> ~/rmm/build/install
+CC=gcc CXX=g++ ./build.sh librmm     # 'librmm' only; skip the 'rmm' python target
+# NOTE: the python `rmm` build (rapids_build_backend) may fail with Python 3.13 --
+# that is fine, BJoin does not use it. Confirm the C++ lib installed:
+ls "$(python -c 'import sys;print(sys.prefix)')/lib/cmake/rmm"   # rmm-config.cmake
 ```
+If you ran `./build.sh librmm rmm` and only the python step failed, librmm is
+already installed in the conda prefix (e.g. `~/miniconda3/lib/cmake/rmm`).
 
 ## 3. Point BJoin's CMakeLists at your TBB/RMM, then build TC + SG
-Edit `~/batch_joins/CMakeLists.txt` (lines ~4-7) to YOUR paths (replace `arsho`):
+Edit `~/batch_joins/CMakeLists.txt` (lines ~4-7). Point `CMAKE_PREFIX_PATH` at the
+prefix where librmm's cmake lives (the conda prefix if you used `build.sh`
+defaults), and `TBB_DIR` at your oneTBB cmake dir (check `lib64` vs `lib`):
 ```cmake
-set(CMAKE_PREFIX_PATH "$ENV{HOME}/rmm/build/install" ${CMAKE_PREFIX_PATH})
+set(CMAKE_PREFIX_PATH "$ENV{HOME}/miniconda3" ${CMAKE_PREFIX_PATH})
 set(TBB_DIR "$ENV{HOME}/.local/oneTBB_v2022.1.0/lib64/cmake/TBB")
 ```
 Then:
