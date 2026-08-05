@@ -55,7 +55,8 @@ CUDF_SG="loc-brightkite fe_sphere ca_hepth"
 
 profile_mpi()  { local o=$1 b=$2 f=$3; have "$o" && { echo "skip $o"; return; }; $PROF "$o" mpiexec -n 1 "$b" "$f" 0 1 1; }
 profile_gdlog(){ local o=$1 app=$2 f=$3 m=${4:-}; have "$o" && { echo "skip $o"; return; }; ( cd "$GDLOG" && "$PY" "$MNMG/power_cpu_gpu.py" "$o" "./build/$app" "$f" $m ); }
-profile_bjoin(){ local o=$1 app=$2 f=$3; have "$o" && { echo "skip $o"; return; }; ( cd "$BJOIN/build" && "$PY" "$MNMG/power_cpu_gpu.py" "$o" "./$app" "$f" 90 ); }
+BJOIN_MEM=${BJOIN_MEM:-90}   # % free GPU mem for BJoin; lower (e.g. 80) if async-alloc aborts on the 40GB PCIE card
+profile_bjoin(){ local o=$1 app=$2 f=$3; have "$o" && { echo "skip $o"; return; }; ( cd "$BJOIN/build" && "$PY" "$MNMG/power_cpu_gpu.py" "$o" "./$app" "$f" "$BJOIN_MEM" ); }
 profile_cudf() { local o=$1 prog=$2 f=$3; have "$o" && { echo "skip $o"; return; }; $PROF "$o" "$PY" "related/cudf_programs/$prog" "$f"; }
 
 echo "############ TC ############"
