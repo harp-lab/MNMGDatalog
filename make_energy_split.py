@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ENGINES = ["GPULog", "MNMGDatalog", "cuDF", "BJoin", "INLJoin"]
-LABELS = {"GPULog": "GPULog", "MNMGDatalog": "MNMG", "cuDF": "cuDF",
-          "BJoin": "BJoin", "INLJoin": "INLJoin"}
+LABELS = {"GPULog": "GLog", "MNMGDatalog": "MNMG", "cuDF": "cuDF",
+          "BJoin": "BJoin", "INLJoin": "INLJ"}
 # one representative dataset per task; both have a cuDF run
 PANELS = [("tc", "fe_body", "TC (fe_body)"), ("sg", "fe_sphere", "SG (fe_sphere)")]
 GPU_C = "#a9d18e"   # green (GPU)
@@ -37,7 +37,7 @@ def load(task):
 
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "drawing/charts/energy_split.pdf"
-    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.95))
+    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.6))
     x = np.arange(len(ENGINES))
     for ax, (task, ds, title) in zip(axes, PANELS):
         data = load(task)[ds]
@@ -53,13 +53,15 @@ def main():
         # annotate cuDF (clipped) with its true total
         ci = ENGINES.index("cuDF")
         if tot[ci] > ymax:
-            ax.annotate("", xy=(x[ci], ymax * 0.99), xytext=(x[ci], ymax * 0.72),
+            ax.annotate("", xy=(x[ci], ymax * 0.99), xytext=(x[ci], ymax * 0.78),
                         arrowprops=dict(arrowstyle="-|>", color="black", lw=1.0))
-            ax.text(x[ci], ymax * 0.68, f"{tot[ci]:.1f}\u2009kJ",
-                    ha="center", va="top", fontsize=6, fontweight="bold")
+            # show cuDF's true total and its GPU/CPU split (bar is clipped)
+            ax.text(x[ci], ymax * 0.74,
+                    f"{tot[ci]:.1f} kJ\n({gpu[ci]:.1f}/{cpu[ci]:.1f})",
+                    ha="center", va="top", fontsize=5.5, fontweight="bold")
         ax.set_xticks(x)
-        ax.set_xticklabels([LABELS[e] for e in ENGINES], fontsize=5.5, rotation=30, ha="right")
-        ax.margins(x=0.05)
+        ax.set_xticklabels([LABELS[e] for e in ENGINES], fontsize=6)
+        ax.margins(x=0.04)
         ax.set_title(title, fontsize=8)
         ax.tick_params(axis="y", labelsize=7)
         ax.grid(True, axis="y", linestyle="--", alpha=0.35)
