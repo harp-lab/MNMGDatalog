@@ -20,8 +20,8 @@ import numpy as np
 ENGINES = ["GPULog", "MNMGDatalog", "cuDF", "BJoin", "INLJoin"]
 LABELS = {"GPULog": "GPULog", "MNMGDatalog": "MNMG", "cuDF": "cuDF",
           "BJoin": "BJoin", "INLJoin": "INLJoin"}
-# one representative dataset per task
-PANELS = [("tc", "fe_body", "TC (fe_body)"), ("sg", "loc-brightkite", "SG (loc-brightkite)")]
+# usroads (TC) shows CPU-dominance clearly; loc-brightkite (SG) for query variety
+PANELS = [("tc", "usroads", "TC (usroads)"), ("sg", "loc-brightkite", "SG (loc-brightkite)")]
 GPU_C = "#a9d18e"   # green (GPU)
 CPU_C = "#bfbfbf"   # grey (CPU)
 
@@ -38,7 +38,7 @@ def load(task):
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "drawing/charts/energy_split.pdf"
     # column-width and short: wider, low height to save vertical space
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.0))
+    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.9))
     x = np.arange(len(ENGINES))
     for ax, (task, ds, title) in zip(axes, PANELS):
         data = load(task)[ds]
@@ -47,14 +47,14 @@ def main():
         ax.bar(x, gpu, 0.62, color=GPU_C, edgecolor="black", linewidth=0.4, label="GPU")
         ax.bar(x, cpu, 0.62, bottom=gpu, color=CPU_C, edgecolor="black", linewidth=0.4, label="CPU")
         ax.set_xticks(x)
-        ax.set_xticklabels([LABELS[e] for e in ENGINES], fontsize=9)
-        ax.margins(x=0.06)
-        ax.set_title(title, fontsize=11)
-        ax.tick_params(axis="y", labelsize=9)
+        ax.set_xticklabels([LABELS[e] for e in ENGINES], fontsize=5.5, rotation=30, ha="right")
+        ax.margins(x=0.05)
+        ax.set_title(title, fontsize=8)
+        ax.tick_params(axis="y", labelsize=7)
         ax.grid(True, axis="y", linestyle="--", alpha=0.35)
         ax.set_axisbelow(True)
-    axes[0].set_ylabel("Energy (kJ)", fontsize=10)
-    axes[0].legend(loc="upper right", fontsize=9, frameon=True, handlelength=1.2,
+    axes[0].set_ylabel("Energy (kJ)", fontsize=8)
+    axes[1].legend(loc="upper right", fontsize=6.5, frameon=True, handlelength=1.0,
                    borderpad=0.3, labelspacing=0.2)
     fig.tight_layout(pad=0.3, w_pad=0.6)
     fig.savefig(out, bbox_inches="tight", dpi=300)
