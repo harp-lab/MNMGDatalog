@@ -1003,6 +1003,7 @@ def plot_power_time_energy(df, output_file='power_time_energy_smooth.pdf', smoot
         zoom_dominates = bool(other_times) and zoom_data is not None and \
             zoom_data[2] > zoom_margin * max(other_times)
 
+        endpoints = []  # collect on-axis endpoints to de-collide their labels
         for engine in engines:
             data = _samples(engine, dataset)
             if data is None:
@@ -1014,8 +1015,31 @@ def plot_power_time_energy(df, output_file='power_time_energy_smooth.pdf', smoot
             if not (zoom_dominates and engine == zoom_engine):
                 ax1.scatter([total_time], [power_smoothed.iloc[-1]], color=color,
                             edgecolor='black', zorder=3, s=50)
-                ax1.text(total_time, power_smoothed.iloc[-1], f' {energy:.0f}J',
-                         fontsize=14, color=color, va='center', ha='left', fontweight='bold')
+                endpoints.append([total_time, float(power_smoothed.iloc[-1]),
+                                  energy, color])
+
+        # Anti-collision: when several engines finish at a similar time/power the
+        # ``NNNJ`` labels overlap. Nudge labels apart vertically (in data units)
+        # so each stays readable while a thin leader line ties it to its marker.
+        if endpoints:
+            y0, y1 = ax1.get_ylim()
+            yspan = (y1 - y0) if y1 > y0 else 1.0
+            xspan = ax1.get_xlim()[1] - ax1.get_xlim()[0] or 1.0
+            min_gap = 0.09 * yspan          # min vertical spacing between labels
+            x_near = 0.18 * xspan           # only de-collide labels near in x
+            # process left-to-right, then within a cluster space them out
+            endpoints.sort(key=lambda e: (e[0], e[1]))
+            label_y = [e[1] for e in endpoints]
+            for i in range(1, len(endpoints)):
+                if abs(endpoints[i][0] - endpoints[i - 1][0]) <= x_near and \
+                        (label_y[i] - label_y[i - 1]) < min_gap:
+                    label_y[i] = label_y[i - 1] + min_gap
+            for (tt, py, energy, color), ly in zip(endpoints, label_y):
+                if abs(ly - py) > 1e-6:  # shifted -> draw a short leader line
+                    ax1.plot([tt, tt], [py, ly], color=color, lw=0.8,
+                             alpha=0.7, zorder=2)
+                ax1.text(tt, ly, f' {energy:.0f}J', fontsize=14, color=color,
+                         va='center', ha='left', fontweight='bold', zorder=4)
 
         # Clip main axis to the common (fast-engine) region so engines self-compare.
         if zoom_dominates:
