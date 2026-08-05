@@ -46,4 +46,4 @@ venv/*
 build/*
 .venv/*
 __pycache__
-
+*.cobaltlog
