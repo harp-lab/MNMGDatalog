@@ -32,7 +32,9 @@ command -v mpiexec >/dev/null 2>&1 && echo "mpiexec: $(command -v mpiexec)" || e
 
 OUT=${OUT:-logs/cpugpu_dryrun}
 mkdir -p "$OUT"
-PROF="python power_cpu_gpu.py"
+export PATH="$HOME/miniconda3/bin:$PATH"     # ensure python3 (has cudf), not system py2
+PY=$HOME/miniconda3/bin/python
+PROF="$PY power_cpu_gpu.py"
 
 echo "=== perf sanity (CPU pkg energy readable?) ==="
 perf stat -e power/energy-pkg/ sleep 1 2>&1 | grep -i joule || { echo "perf energy NOT available"; exit 1; }
@@ -53,13 +55,13 @@ echo "=== INLJoin (TC, MPI) ==="
 $PROF "$MNMG/$OUT/fe_body_INLJoin.csv" mpiexec -n 1 ./tc_nl.out "$BIN" 0 1 1
 
 echo "=== GPULog (TC, non-MPI) ==="
-( cd "$GDLOG" && python "$MNMG/power_cpu_gpu.py" "$MNMG/$OUT/fe_body_GPULog.csv" ./build/TC ./data/fe_body/edge.facts 0 )
+( cd "$GDLOG" && "$PY" "$MNMG/power_cpu_gpu.py" "$MNMG/$OUT/fe_body_GPULog.csv" ./build/TC ./data/fe_body/edge.facts 0 )
 
 echo "=== BJoin (TC, non-MPI) ==="
-( cd "$BJOIN/build" && python "$MNMG/power_cpu_gpu.py" "$MNMG/$OUT/fe_body_BJoin.csv" ./TC ../data/fe_body.txt 90 )
+( cd "$BJOIN/build" && "$PY" "$MNMG/power_cpu_gpu.py" "$MNMG/$OUT/fe_body_BJoin.csv" ./TC ../data/fe_body.txt 90 )
 
 echo "=== cuDF (TC, python) ==="
-$PROF "$MNMG/$OUT/fe_body_cuDF.csv" python related/cudf_programs/tc.py "$CUDF_TXT"
+$PROF "$MNMG/$OUT/fe_body_cuDF.csv" "$PY" related/cudf_programs/tc.py "$CUDF_TXT"
 
 echo "=== SUMMARY ==="
 for f in "$OUT"/fe_body_*.csv; do echo "-- $f --"; cat "$f"; echo; done

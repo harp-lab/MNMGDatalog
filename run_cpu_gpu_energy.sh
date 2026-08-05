@@ -22,9 +22,15 @@ CUDA129_LIB=$(ls -d /soft/compilers/cuda/cuda-12.9*/lib64 2>/dev/null | head -1)
 TBB_LIB=$(ls -d "$HOME/.local/oneTBB_v2022.1.0"/lib64 "$HOME/.local/oneTBB_v2022.1.0"/lib 2>/dev/null | head -1)
 export LD_LIBRARY_PATH="$CUDA129_LIB:$TBB_LIB:$HOME/miniconda3/lib:${LD_LIBRARY_PATH:-}"
 
+# Batch shells don't source ~/.zshrc; put miniconda python3 (has cudf) on PATH.
+# Otherwise `python` = system Python 2.7 and everything fails.
+export PATH="$HOME/miniconda3/bin:$PATH"
+PY=$HOME/miniconda3/bin/python
+$PY --version
+
 cd "${PBS_O_WORKDIR:-$HOME/MNMGDatalog}"
 MNMG=$(pwd)
-PROF="python $MNMG/power_cpu_gpu.py"
+PROF="$PY $MNMG/power_cpu_gpu.py"
 GDLOG=$HOME/gdlog
 BJOIN=$HOME/batch_joins
 mkdir -p logs/cpugpu/tc logs/cpugpu/sg
@@ -48,9 +54,9 @@ CUDF_TC="fe_body sf"
 CUDF_SG="loc-brightkite fe_sphere ca_hepth"
 
 profile_mpi()  { local o=$1 b=$2 f=$3; have "$o" && { echo "skip $o"; return; }; $PROF "$o" mpiexec -n 1 "$b" "$f" 0 1 1; }
-profile_gdlog(){ local o=$1 app=$2 f=$3 m=${4:-}; have "$o" && { echo "skip $o"; return; }; ( cd "$GDLOG" && python "$MNMG/power_cpu_gpu.py" "$o" "./build/$app" "$f" $m ); }
-profile_bjoin(){ local o=$1 app=$2 f=$3; have "$o" && { echo "skip $o"; return; }; ( cd "$BJOIN/build" && python "$MNMG/power_cpu_gpu.py" "$o" "./$app" "$f" 90 ); }
-profile_cudf() { local o=$1 prog=$2 f=$3; have "$o" && { echo "skip $o"; return; }; $PROF "$o" python "related/cudf_programs/$prog" "$f"; }
+profile_gdlog(){ local o=$1 app=$2 f=$3 m=${4:-}; have "$o" && { echo "skip $o"; return; }; ( cd "$GDLOG" && "$PY" "$MNMG/power_cpu_gpu.py" "$o" "./build/$app" "$f" $m ); }
+profile_bjoin(){ local o=$1 app=$2 f=$3; have "$o" && { echo "skip $o"; return; }; ( cd "$BJOIN/build" && "$PY" "$MNMG/power_cpu_gpu.py" "$o" "./$app" "$f" 90 ); }
+profile_cudf() { local o=$1 prog=$2 f=$3; have "$o" && { echo "skip $o"; return; }; $PROF "$o" "$PY" "related/cudf_programs/$prog" "$f"; }
 
 echo "############ TC ############"
 for d in $TC_SETS; do

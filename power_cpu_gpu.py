@@ -22,7 +22,7 @@ import tempfile
 import time
 import os
 
-NS_IN_S = 1_000_000_000
+NS_IN_S = 1000000000
 
 
 def get_gpu_power():
