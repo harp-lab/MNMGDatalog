@@ -207,7 +207,7 @@ def plot_breakdown(datasets, rows, outpath, versions):
         for ax in (top, bot):
             ax.set_xlim(-0.6, len(vers) - 0.4)
             ax.grid(axis="y", ls=":", alpha=0.5)
-            ax.tick_params(labelsize=10)
+            ax.tick_params(labelsize=13)
 
         if broken:
             bot.set_ylim(0, low)
@@ -226,7 +226,7 @@ def plot_breakdown(datasets, rows, outpath, versions):
             top.plot([0, 1], [0, 0], transform=top.transAxes, **dxy)
             bot.plot([0, 1], [1, 1], transform=bot.transAxes, **dxy)
             top.annotate(f"{overall:.0f}", (0, overall), ha="center", va="bottom",
-                         fontsize=10, clip_on=False)
+                         fontsize=13, clip_on=False)
         else:
             top.axis("off")
             bot.set_ylim(0, overall * 1.18)
@@ -235,24 +235,24 @@ def plot_breakdown(datasets, rows, outpath, versions):
             if v == "reference" and broken:
                 continue
             bot.annotate(f"{tot:.1f}", (xi, tot), ha="center", va="bottom",
-                         fontsize=9)
+                         fontsize=12)
 
         # dataset title tight above the top slice
-        top.set_title(d, fontsize=12, pad=3)
+        top.set_title(d, fontsize=16, pad=3)
 
         # x-axis tags only on the bottom dataset row (identical across rows).
         bot.set_xticks(xs)
         if dr == drow - 1:
-            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=12)
+            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=16)
         else:
             bot.set_xticklabels([])
 
     # shared y-axis label, pulled close to the axes
-    fig.supylabel("total time (ms)", fontsize=20, x=0.015)
+    fig.supylabel("total time (ms)", fontsize=26, x=0.015)
     # legend just above the panels
     if legend_handles:
         fig.legend(*legend_handles, loc="lower center", ncol=len(PHASES),
-                   frameon=True, bbox_to_anchor=(0.5, 0.965))
+                   frameon=True, bbox_to_anchor=(0.5, 0.965), fontsize=16)
     _save(fig, outpath)
 
 
