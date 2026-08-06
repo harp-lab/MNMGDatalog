@@ -243,12 +243,12 @@ def plot_breakdown(datasets, rows, outpath, versions):
         # x-axis tags only on the bottom dataset row (identical across rows).
         bot.set_xticks(xs)
         if dr == drow - 1:
-            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=17)
+            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=12)
         else:
             bot.set_xticklabels([])
 
     # shared y-axis label, pulled close to the axes
-    fig.supylabel("total time (ms)", fontsize=13, x=0.015)
+    fig.supylabel("total time (ms)", fontsize=20, x=0.015)
     # legend just above the panels
     if legend_handles:
         fig.legend(*legend_handles, loc="lower center", ncol=len(PHASES),
