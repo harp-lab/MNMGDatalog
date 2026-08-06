@@ -168,16 +168,19 @@ def plot_breakdown(datasets, rows, outpath, versions):
     # versions), tight spacing to avoid whitespace.
     # Panel grid: default 3 columns (override with BD_NCOL) => a clean 2x3 for the
     # six datasets. Rendered as a full-width figure* in the paper.
-    FS = 18  # one uniform font size for every text element in this figure
+    # One uniform font size for every text element. The figure is placed at
+    # \columnwidth in the paper; sizing it near that physical width (below) keeps the
+    # on-page font close to the single-column streaming figure (fig 4).
+    FS = 13
     ncol_env = os.environ.get("BD_NCOL")
     dcol = int(ncol_env) if ncol_env else min(3, len(datasets))
     dcol = max(1, min(dcol, len(datasets)))
     drow = (len(datasets) + dcol - 1) // dcol
-    fig = plt.figure(figsize=(5.0 * dcol, 3.3 * drow))
-    # Leave room on the left for the (large) y-axis label + tick numbers, and at the
-    # top for the legend so neither overlaps the panels.
-    outer = fig.add_gridspec(drow, dcol, hspace=0.20, wspace=0.24,
-                             left=0.135, right=0.995, top=0.86, bottom=0.10)
+    fig = plt.figure(figsize=(3.4 * dcol, 2.4 * drow))
+    # Tight left margin (just enough for the y-label + tick numbers) so there is no
+    # left whitespace, and a top strip for the legend.
+    outer = fig.add_gridspec(drow, dcol, hspace=0.26, wspace=0.32,
+                             left=0.085, right=0.995, top=0.88, bottom=0.11)
 
     legend_handles = None
     for idx, d in enumerate(datasets):
@@ -250,12 +253,12 @@ def plot_breakdown(datasets, rows, outpath, versions):
         else:
             bot.set_xticklabels([])
 
-    # shared y-axis label, placed clear of the tick numbers (large left margin above)
-    fig.supylabel("total time (ms)", fontsize=FS, x=0.03)
+    # shared y-axis label, hugging the left tick numbers (no wasted whitespace)
+    fig.supylabel("total time (ms)", fontsize=FS, x=0.012)
     # legend above all panels, in the reserved top strip (does not overlap titles)
     if legend_handles:
         fig.legend(*legend_handles, loc="lower center", ncol=3,
-                   frameon=True, bbox_to_anchor=(0.5, 0.88), fontsize=FS)
+                   frameon=True, bbox_to_anchor=(0.5, 0.895), fontsize=FS)
     _save(fig, outpath)
 
 
