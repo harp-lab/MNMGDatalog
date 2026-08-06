@@ -168,13 +168,16 @@ def plot_breakdown(datasets, rows, outpath, versions):
     # versions), tight spacing to avoid whitespace.
     # Panel grid: default 3 columns (override with BD_NCOL) => a clean 2x3 for the
     # six datasets. Rendered as a full-width figure* in the paper.
+    FS = 18  # one uniform font size for every text element in this figure
     ncol_env = os.environ.get("BD_NCOL")
     dcol = int(ncol_env) if ncol_env else min(3, len(datasets))
     dcol = max(1, min(dcol, len(datasets)))
     drow = (len(datasets) + dcol - 1) // dcol
-    fig = plt.figure(figsize=(4.3 * dcol, 2.9 * drow))
-    outer = fig.add_gridspec(drow, dcol, hspace=0.16, wspace=0.16,
-                             left=0.075, right=0.995, top=0.95, bottom=0.11)
+    fig = plt.figure(figsize=(5.0 * dcol, 3.3 * drow))
+    # Leave room on the left for the (large) y-axis label + tick numbers, and at the
+    # top for the legend so neither overlaps the panels.
+    outer = fig.add_gridspec(drow, dcol, hspace=0.20, wspace=0.24,
+                             left=0.135, right=0.995, top=0.86, bottom=0.10)
 
     legend_handles = None
     for idx, d in enumerate(datasets):
@@ -207,7 +210,7 @@ def plot_breakdown(datasets, rows, outpath, versions):
         for ax in (top, bot):
             ax.set_xlim(-0.6, len(vers) - 0.4)
             ax.grid(axis="y", ls=":", alpha=0.5)
-            ax.tick_params(labelsize=13)
+            ax.tick_params(labelsize=FS)
 
         if broken:
             bot.set_ylim(0, low)
@@ -226,7 +229,7 @@ def plot_breakdown(datasets, rows, outpath, versions):
             top.plot([0, 1], [0, 0], transform=top.transAxes, **dxy)
             bot.plot([0, 1], [1, 1], transform=bot.transAxes, **dxy)
             top.annotate(f"{overall:.0f}", (0, overall), ha="center", va="bottom",
-                         fontsize=13, clip_on=False)
+                         fontsize=FS, clip_on=False)
         else:
             top.axis("off")
             bot.set_ylim(0, overall * 1.18)
@@ -235,24 +238,24 @@ def plot_breakdown(datasets, rows, outpath, versions):
             if v == "reference" and broken:
                 continue
             bot.annotate(f"{tot:.1f}", (xi, tot), ha="center", va="bottom",
-                         fontsize=12)
+                         fontsize=FS)
 
         # dataset title tight above the top slice
-        top.set_title(d, fontsize=16, pad=3)
+        top.set_title(d, fontsize=FS, pad=3)
 
         # x-axis tags only on the bottom dataset row (identical across rows).
         bot.set_xticks(xs)
         if dr == drow - 1:
-            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=16)
+            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=FS)
         else:
             bot.set_xticklabels([])
 
-    # shared y-axis label, pulled close to the axes
-    fig.supylabel("total time (ms)", fontsize=26, x=0.015)
-    # legend just above the panels
+    # shared y-axis label, placed clear of the tick numbers (large left margin above)
+    fig.supylabel("total time (ms)", fontsize=FS, x=0.03)
+    # legend above all panels, in the reserved top strip (does not overlap titles)
     if legend_handles:
-        fig.legend(*legend_handles, loc="lower center", ncol=len(PHASES),
-                   frameon=True, bbox_to_anchor=(0.5, 0.965), fontsize=16)
+        fig.legend(*legend_handles, loc="lower center", ncol=3,
+                   frameon=True, bbox_to_anchor=(0.5, 0.88), fontsize=FS)
     _save(fig, outpath)
 
 
