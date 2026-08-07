@@ -31,11 +31,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 plt.rcParams.update({
-    "font.size": 24,
-    "axes.labelsize": 24,
-    "xtick.labelsize": 20,
-    "ytick.labelsize": 20,
-    "legend.fontsize": 20,
+    "font.size": 29,
+    "axes.labelsize": 29,
+    "xtick.labelsize": 24,
+    "ytick.labelsize": 24,
+    "legend.fontsize": 24,
 })
 
 # Column order = draw order (left->right within each dataset group).
@@ -115,16 +115,16 @@ def _panel(ax, order, ours, gpulog, tag):
             if v > 0:
                 ax.annotate(f"{v:.0f}" if v >= 10 else f"{v:.1f}",
                             (b.get_x() + b.get_width() / 2, v),
-                            ha="center", va="bottom", fontsize=14, rotation=90)
+                            ha="center", va="bottom", fontsize=17, rotation=90)
     ax.set_yscale("log")
     ax.set_ylim(top=top * 4.0)   # headroom for the rotated value labels
     ax.set_xlim(-0.5, n - 0.5)
     ax.set_xticks(range(n))
-    ax.set_xticklabels(order, rotation=0, ha="center", fontsize=22)
+    ax.set_xticklabels(order, rotation=0, ha="center", fontsize=26)
     ax.set_ylabel("compute (ms, log)")
     ax.grid(axis="y", ls=":", alpha=0.5)
     # per-panel query tag in the top-left corner
-    ax.text(0.012, 0.93, tag, transform=ax.transAxes, fontsize=24,
+    ax.text(0.012, 0.93, tag, transform=ax.transAxes, fontsize=29,
             fontweight="bold", va="top",
             bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="0.7", alpha=0.9))
 
@@ -161,8 +161,8 @@ def main():
     # single shared legend above both panels
     handles, labels = ax_tc.get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=len(ENGINES),
-               frameon=True, bbox_to_anchor=(0.5, 0.985))
-    fig.tight_layout(pad=0.6, rect=(0, 0, 1, 0.97))
+               frameon=True, bbox_to_anchor=(0.5, 0.945))
+    fig.tight_layout(pad=0.6, rect=(0, 0, 1, 0.95))
     _save(fig, os.path.join(a.outdir, "compute.png"))
 
 
