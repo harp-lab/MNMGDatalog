@@ -158,15 +158,15 @@ def main():
     _panel(ax_tc, TC_ORDER, tc, tc_g, "TC")
     _panel(ax_sg, SG_ORDER, sg, sg_g, "SG")
 
-    # Make the panels span (almost) the full figure width, matching the full-width
-    # legend, with only enough left margin for the y-axis label + ticks.
+    # Panels span from the y-label margin to the right edge.
     fig.subplots_adjust(left=0.085, right=0.995, top=0.93, bottom=0.06, hspace=0.16)
 
-    # single shared legend across the full width, sitting just above the TC panel
+    # Compact legend (short color handles, tight spacing) so its width is close to
+    # the plot width; centered just above the TC panel.
     handles, labels = ax_tc.get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=len(ENGINES),
                frameon=True, bbox_to_anchor=(0.5, 0.935),
-               columnspacing=1.0, handletextpad=0.5)
+               columnspacing=0.8, handlelength=1.0, handletextpad=0.35)
     _save(fig, os.path.join(a.outdir, "compute.png"))
 
 
