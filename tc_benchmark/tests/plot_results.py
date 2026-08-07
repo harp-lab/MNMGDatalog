@@ -172,15 +172,16 @@ def plot_breakdown(datasets, rows, outpath, versions):
     # \columnwidth in the paper; sizing it near that physical width (below) keeps the
     # on-page font close to the single-column streaming figure (fig 4).
     FS = 13
+    AXFS = 16  # axis labels (x-axis version tags + y-axis label): ~20% larger than FS
     ncol_env = os.environ.get("BD_NCOL")
     dcol = int(ncol_env) if ncol_env else min(3, len(datasets))
     dcol = max(1, min(dcol, len(datasets)))
     drow = (len(datasets) + dcol - 1) // dcol
-    fig = plt.figure(figsize=(3.4 * dcol, 2.4 * drow))
+    fig = plt.figure(figsize=(4.4 * dcol, 2.4 * drow))
     # Tight left margin (just enough for the y-label + tick numbers) so there is no
     # left whitespace, and a top strip for the legend.
-    outer = fig.add_gridspec(drow, dcol, hspace=0.26, wspace=0.32,
-                             left=0.085, right=0.995, top=0.88, bottom=0.11)
+    outer = fig.add_gridspec(drow, dcol, hspace=0.26, wspace=0.42,
+                             left=0.09, right=0.995, top=0.90, bottom=0.11)
 
     legend_handles = None
     for idx, d in enumerate(datasets):
@@ -249,16 +250,17 @@ def plot_breakdown(datasets, rows, outpath, versions):
         # x-axis tags only on the bottom dataset row (identical across rows).
         bot.set_xticks(xs)
         if dr == drow - 1:
-            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=FS)
+            bot.set_xticklabels([SHORT[v] for v in vers], fontsize=AXFS)
         else:
             bot.set_xticklabels([])
 
-    # shared y-axis label, hugging the left tick numbers (no wasted whitespace)
-    fig.supylabel("total time (ms)", fontsize=FS, x=0.012)
-    # legend above all panels, in the reserved top strip (does not overlap titles)
+    # shared y-axis label (larger), placed clear of the left tick numbers
+    fig.supylabel("total time (ms)", fontsize=AXFS, x=0.018)
+    # single-line legend with compact color handles (like the compute figure)
     if legend_handles:
-        fig.legend(*legend_handles, loc="lower center", ncol=3,
-                   frameon=True, bbox_to_anchor=(0.5, 0.895), fontsize=FS)
+        fig.legend(*legend_handles, loc="lower center", ncol=len(PHASES),
+                   frameon=True, bbox_to_anchor=(0.5, 0.92), fontsize=FS,
+                   columnspacing=0.8, handlelength=1.0, handletextpad=0.35)
     _save(fig, outpath)
 
 
