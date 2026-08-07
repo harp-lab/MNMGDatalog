@@ -180,8 +180,8 @@ def plot_breakdown(datasets, rows, outpath, versions):
     fig = plt.figure(figsize=(4.4 * dcol, 2.4 * drow))
     # Tight left margin (just enough for the y-label + tick numbers) so there is no
     # left whitespace, and a top strip for the legend.
-    outer = fig.add_gridspec(drow, dcol, hspace=0.26, wspace=0.42,
-                             left=0.09, right=0.995, top=0.90, bottom=0.11)
+    outer = fig.add_gridspec(drow, dcol, hspace=0.18, wspace=0.24,
+                             left=0.075, right=0.997, top=0.90, bottom=0.11)
 
     legend_handles = None
     for idx, d in enumerate(datasets):
@@ -228,8 +228,8 @@ def plot_breakdown(datasets, rows, outpath, versions):
             bot.spines["top"].set_visible(False)
             top.tick_params(labelbottom=False, bottom=False)
             top.set_yticks([round(overall)])
-            dxy = dict(marker=[(-1, -0.5), (1, 0.5)], markersize=7,
-                       linestyle="none", color="k", mec="k", mew=1, clip_on=False)
+            dxy = dict(marker=[(-1, -0.5), (1, 0.5)], markersize=11,
+                       linestyle="none", color="k", mec="k", mew=2.2, clip_on=False)
             top.plot([0, 1], [0, 0], transform=top.transAxes, **dxy)
             bot.plot([0, 1], [1, 1], transform=bot.transAxes, **dxy)
             top.annotate(f"{overall:.0f}", (0, overall), ha="center", va="bottom",
@@ -255,7 +255,7 @@ def plot_breakdown(datasets, rows, outpath, versions):
             bot.set_xticklabels([])
 
     # shared y-axis label (larger), placed clear of the left tick numbers
-    fig.supylabel("total time (ms)", fontsize=AXFS, x=0.018)
+    fig.supylabel("total time (ms)", fontsize=AXFS, x=0.022)
     # single-line legend with compact color handles (like the compute figure)
     if legend_handles:
         fig.legend(*legend_handles, loc="lower center", ncol=len(PHASES),
