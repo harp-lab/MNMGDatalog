@@ -99,7 +99,8 @@ def draw_panel(ax, data, dataset, show_ylabel, row_ymax=None):
         all_t = other_times + ([zoom[2]] if zoom else [])
         right = math.ceil(max(all_t) * 1.05) if all_t else 1
     # add 22% right padding so endpoint "NNNJ" labels stay inside the axes
-    ax.set_xlim(0, right * 1.22)
+    xmax = right * 1.22
+    ax.set_xlim(0, xmax)
     # y headroom (28%) so de-collided labels never leave the box; use the
     # row-shared max when provided so both panels in a row align.
     top = (row_ymax if row_ymax else ymax_data) * 1.28
@@ -128,10 +129,19 @@ def draw_panel(ax, data, dataset, show_ylabel, row_ymax=None):
 
     if zoom_dom:
         zt, zp, ztt, ze = zoom
-        y_edge = float(zp.iloc[np.searchsorted(zt, right) - 1])
-        ax.annotate("", xy=(right, y_edge), xytext=(right * 0.90, y_edge),
-                    arrowprops=dict(arrowstyle="-|>", color=COLORS[ZOOM_ENGINE], lw=1.8))
+        # cuDF's power at the clip edge; arrow runs to the true right axis edge.
+        y_edge = float(zp.iloc[max(np.searchsorted(zt, right) - 1, 0)])
+        ax.annotate("", xy=(xmax, y_edge), xytext=(right, y_edge),
+                    arrowprops=dict(arrowstyle="-|>", color=COLORS[ZOOM_ENGINE], lw=1.8),
+                    annotation_clip=False)
         ax.text(0.5, 0.06, f"cuDF off-axis: {ztt:.0f}s, {ze:.0f}J",
+                transform=ax.transAxes, ha="center", va="bottom",
+                fontsize=12, color=COLORS[ZOOM_ENGINE], fontweight="bold",
+                bbox=dict(boxstyle="round,pad=0.2", fc="white",
+                          ec=COLORS[ZOOM_ENGINE], alpha=0.85))
+    elif ZOOM_ENGINE not in data:
+        # cuDF ran out of memory on this dataset: mark it explicitly.
+        ax.text(0.5, 0.06, "cuDF: out of memory",
                 transform=ax.transAxes, ha="center", va="bottom",
                 fontsize=12, color=COLORS[ZOOM_ENGINE], fontweight="bold",
                 bbox=dict(boxstyle="round,pad=0.2", fc="white",
@@ -146,7 +156,7 @@ def main():
     n = 4
     # taller panels; sharey='row' so the two panels in each row use one y-scale
     # and the right column drops its (duplicate) y tick labels.
-    fig, axes = plt.subplots(n, 2, figsize=(13.5, 3.0 * n), squeeze=False, sharey="row")
+    fig, axes = plt.subplots(n, 2, figsize=(15, 3.0 * n), squeeze=False, sharey="row")
 
     cols = (("tc", tc), ("sg", sg))
     for row_i in range(n):
@@ -171,8 +181,8 @@ def main():
                fontsize=15, frameon=True, bbox_to_anchor=(0.5, 1.005))
     fig.supxlabel("Total Time (Seconds)", fontsize=18, y=0.004)
     fig.supylabel("Power Draw (W)", fontsize=18, x=0.02)
-    fig.subplots_adjust(left=0.085, right=0.995, top=0.90, bottom=0.045,
-                        hspace=0.40, wspace=0.05)
+    fig.subplots_adjust(left=0.06, right=0.995, top=0.90, bottom=0.045,
+                        hspace=0.40, wspace=0.07)
     fig.savefig(out, bbox_inches="tight", dpi=300)
     print("wrote", out)
 
