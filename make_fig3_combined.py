@@ -156,7 +156,7 @@ def main():
     n = 4
     # taller panels; sharey='row' so the two panels in each row use one y-scale
     # and the right column drops its (duplicate) y tick labels.
-    fig, axes = plt.subplots(n, 2, figsize=(15, 3.0 * n), squeeze=False, sharey="row")
+    fig, axes = plt.subplots(n, 2, figsize=(18, 3.0 * n), squeeze=False, sharey="row")
 
     cols = (("tc", tc), ("sg", sg))
     for row_i in range(n):
@@ -179,10 +179,10 @@ def main():
     handles = [mlines.Line2D([], [], color=COLORS[e], lw=4, label=LEGEND[e]) for e in ENGINES]
     fig.legend(handles=handles, loc="upper center", ncol=len(ENGINES),
                fontsize=15, frameon=True, bbox_to_anchor=(0.5, 1.005))
-    fig.supxlabel("Total Time (Seconds)", fontsize=18, y=0.004)
-    fig.supylabel("Power Draw (W)", fontsize=18, x=0.02)
-    fig.subplots_adjust(left=0.06, right=0.995, top=0.90, bottom=0.045,
-                        hspace=0.40, wspace=0.07)
+    fig.supxlabel("Total Time (Seconds)", fontsize=18, y=0.012)
+    fig.supylabel("Power Draw (W)", fontsize=18, x=0.008)
+    fig.subplots_adjust(left=0.055, right=0.995, top=0.90, bottom=0.075,
+                        hspace=0.40, wspace=0.06)
     fig.savefig(out, bbox_inches="tight", dpi=300)
     print("wrote", out)
 
