@@ -60,9 +60,18 @@ def samples(rec):
     return t, ps, rec["t"], rec["E"]
 
 
-def draw_panel(ax, data, dataset, show_ylabel):
-    ax.set_title(dataset, fontsize=15, pad=4, fontweight="bold")
-    ax.tick_params(axis="both", labelsize=12)
+def panel_ymax(data):
+    m = 0
+    for eng in ENGINES:
+        d = samples(data.get(eng))
+        if d is not None:
+            m = max(m, float(d[1].max()))
+    return m
+
+
+def draw_panel(ax, data, dataset, show_ylabel, row_ymax=None):
+    ax.set_title(dataset, fontsize=17, pad=3, fontweight="bold")
+    ax.tick_params(axis="both", labelsize=14)
 
     other_times = [data[e]["t"] for e in ENGINES
                    if e != ZOOM_ENGINE and e in data and data[e]["t"] > 0]
@@ -91,25 +100,30 @@ def draw_panel(ax, data, dataset, show_ylabel):
         right = math.ceil(max(all_t) * 1.05) if all_t else 1
     # add 22% right padding so endpoint "NNNJ" labels stay inside the axes
     ax.set_xlim(0, right * 1.22)
-    # y headroom (25%) so de-collided labels never leave the box
-    ax.set_ylim(0, ymax_data * 1.28 if ymax_data else 1)
+    # y headroom (28%) so de-collided labels never leave the box; use the
+    # row-shared max when provided so both panels in a row align.
+    top = (row_ymax if row_ymax else ymax_data) * 1.28
+    ax.set_ylim(0, top if top else 1)
 
     # de-collide energy labels vertically, keep inside ylim
     if endpoints:
         y0, y1 = ax.get_ylim()
         yspan = y1 - y0
-        min_gap = 0.11 * yspan
-        x_near = 0.28 * (ax.get_xlim()[1] - ax.get_xlim()[0])
+        min_gap = 0.13 * yspan
+        x_near = 0.32 * (ax.get_xlim()[1] - ax.get_xlim()[0])
         endpoints.sort(key=lambda e: (e[0], e[1]))
         ly = [e[1] for e in endpoints]
         for i in range(1, len(endpoints)):
             if abs(endpoints[i][0] - endpoints[i - 1][0]) <= x_near and (ly[i] - ly[i - 1]) < min_gap:
                 ly[i] = ly[i - 1] + min_gap
+        # if the whole stack exceeds the top, shift it down so nothing clips
+        overflow = max(ly) - (y1 - 0.05 * yspan)
+        if overflow > 0:
+            ly = [y - overflow for y in ly]
         for (tt, py, E, c), yy in zip(endpoints, ly):
-            yy = min(yy, y1 - 0.04 * yspan)  # clamp inside top
             if abs(yy - py) > 1e-6:
-                ax.plot([tt, tt], [py, yy], color=c, lw=0.8, alpha=0.7, zorder=2)
-            ax.text(tt + 0.01 * right, yy, f"{E:.0f}J", fontsize=11, color=c,
+                ax.plot([tt, tt], [py, yy], color=c, lw=0.9, alpha=0.75, zorder=2)
+            ax.text(tt + 0.012 * right, yy, f"{E:.0f}J", fontsize=13, color=c,
                     va="center", ha="left", fontweight="bold", zorder=4)
 
     if zoom_dom:
@@ -117,40 +131,48 @@ def draw_panel(ax, data, dataset, show_ylabel):
         y_edge = float(zp.iloc[np.searchsorted(zt, right) - 1])
         ax.annotate("", xy=(right, y_edge), xytext=(right * 0.90, y_edge),
                     arrowprops=dict(arrowstyle="-|>", color=COLORS[ZOOM_ENGINE], lw=1.8))
-        ax.text(0.5, 0.05, f"cuDF off-axis: {ztt:.0f}s, {ze:.0f}J",
+        ax.text(0.5, 0.06, f"cuDF off-axis: {ztt:.0f}s, {ze:.0f}J",
                 transform=ax.transAxes, ha="center", va="bottom",
-                fontsize=10, color=COLORS[ZOOM_ENGINE], fontweight="bold",
+                fontsize=12, color=COLORS[ZOOM_ENGINE], fontweight="bold",
                 bbox=dict(boxstyle="round,pad=0.2", fc="white",
                           ec=COLORS[ZOOM_ENGINE], alpha=0.85))
 
     ax.grid(True, linestyle="--", alpha=0.4)
-    if show_ylabel:
-        ax.set_ylabel("Power (W)", fontsize=12)
 
 
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "drawing/charts/power_traces.pdf"
     tc, sg = load("tc"), load("sg")
     n = 4
-    # +50% taller panels: 2.1 -> ~3.2 in per row
-    fig, axes = plt.subplots(n, 2, figsize=(12, 3.2 * n), squeeze=False)
+    # taller panels; sharey='row' so the two panels in each row use one y-scale
+    # and the right column drops its (duplicate) y tick labels.
+    fig, axes = plt.subplots(n, 2, figsize=(12, 3.0 * n), squeeze=False, sharey="row")
 
-    for col, (task, rows) in enumerate((("tc", tc), ("sg", sg))):
-        title = "Transitive Closure (TC)" if task == "tc" else "Same Generation (SG)"
-        for row_i, ds in enumerate(ORDER[task]):
-            ax = axes[row_i][col]
+    cols = (("tc", tc), ("sg", sg))
+    for row_i in range(n):
+        # shared y-max across the two panels in this row
+        rymax = 0
+        for (task, rows) in cols:
+            ds = ORDER[task][row_i]
             if ds in rows:
-                draw_panel(ax, rows[ds], ds, show_ylabel=(col == 0))
+                rymax = max(rymax, panel_ymax(rows[ds]))
+        for col, (task, rows) in enumerate(cols):
+            ax = axes[row_i][col]
+            ds = ORDER[task][row_i]
+            if ds in rows:
+                draw_panel(ax, rows[ds], ds, show_ylabel=(col == 0), row_ymax=rymax)
             if row_i == 0:
-                ax.annotate(title, xy=(0.5, 1.30), xycoords="axes fraction",
-                            ha="center", va="bottom", fontsize=17, fontweight="bold")
+                title = "Transitive Closure (TC)" if task == "tc" else "Same Generation (SG)"
+                ax.annotate(title, xy=(0.5, 1.06), xycoords="axes fraction",
+                            ha="center", va="bottom", fontsize=18, fontweight="bold")
 
     handles = [mlines.Line2D([], [], color=COLORS[e], lw=4, label=LEGEND[e]) for e in ENGINES]
     fig.legend(handles=handles, loc="upper center", ncol=len(ENGINES),
-               fontsize=14, frameon=True, bbox_to_anchor=(0.5, 1.03))
-    fig.supxlabel("Total Time (Seconds)", fontsize=16, y=0.005)
-    fig.subplots_adjust(left=0.07, right=0.99, top=0.90, bottom=0.05,
-                        hspace=0.45, wspace=0.16)
+               fontsize=15, frameon=True, bbox_to_anchor=(0.5, 1.02))
+    fig.supxlabel("Total Time (Seconds)", fontsize=18, y=0.004)
+    fig.supylabel("Power Draw (W)", fontsize=18, x=0.005)
+    fig.subplots_adjust(left=0.075, right=0.995, top=0.92, bottom=0.045,
+                        hspace=0.38, wspace=0.05)
     fig.savefig(out, bbox_inches="tight", dpi=300)
     print("wrote", out)
 
