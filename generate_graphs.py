@@ -968,7 +968,7 @@ def plot_power_time_energy(df, output_file='power_time_energy_smooth.pdf', smoot
     cmap = plt.get_cmap('tab10')
     engine_colors = {engine: cmap(i % 10) for i, engine in enumerate(engines)}
 
-    fig, axes = plt.subplots(len(datasets), 1, figsize=(12, 2.6 * len(datasets)))
+    fig, axes = plt.subplots(len(datasets), 1, figsize=(12, 3.3 * len(datasets)))
     if len(datasets) == 1:
         axes = [axes]
 
@@ -1069,7 +1069,11 @@ def plot_power_time_energy(df, output_file='power_time_energy_smooth.pdf', smoot
                 mlines.Line2D([], [], color=engine_colors[engine], linewidth=4, label=engine)
                 for engine in engines
             ]
-            ax1.legend(handles=handles, loc='upper left', fontsize=17, frameon=True)
+            # Place the legend above the top panel so it never covers the traces.
+            ax1.legend(handles=handles, loc='lower center',
+                       bbox_to_anchor=(0.5, 1.16), ncol=len(engines),
+                       fontsize=15, frameon=True, columnspacing=1.2,
+                       handlelength=1.6, borderaxespad=0.0)
         else:
             if ax1.get_legend():
                 ax1.get_legend().remove()
@@ -1083,7 +1087,7 @@ def plot_power_time_energy(df, output_file='power_time_energy_smooth.pdf', smoot
         fig.supylabel("Power Draw (W)", fontsize=20, x=0.01)
     # Reduce space between subplots and labels
     # fig.subplots_adjust(left=0.08, right=0.98, top=0.98, bottom=0.07, hspace=0.12)
-    fig.subplots_adjust(left=0.08, right=0.98, top=1, bottom=0.07, hspace=0.35)
+    fig.subplots_adjust(left=0.08, right=0.98, top=0.95, bottom=0.07, hspace=0.35)
 
     plt.savefig(output_file, bbox_inches='tight', dpi=300)
     plt.close()
