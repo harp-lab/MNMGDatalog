@@ -146,7 +146,7 @@ def main():
     n = 4
     # taller panels; sharey='row' so the two panels in each row use one y-scale
     # and the right column drops its (duplicate) y tick labels.
-    fig, axes = plt.subplots(n, 2, figsize=(12, 3.0 * n), squeeze=False, sharey="row")
+    fig, axes = plt.subplots(n, 2, figsize=(13.5, 3.0 * n), squeeze=False, sharey="row")
 
     cols = (("tc", tc), ("sg", sg))
     for row_i in range(n):
@@ -163,16 +163,16 @@ def main():
                 draw_panel(ax, rows[ds], ds, show_ylabel=(col == 0), row_ymax=rymax)
             if row_i == 0:
                 title = "Transitive Closure (TC)" if task == "tc" else "Same Generation (SG)"
-                ax.annotate(title, xy=(0.5, 1.06), xycoords="axes fraction",
+                ax.annotate(title, xy=(0.5, 1.16), xycoords="axes fraction",
                             ha="center", va="bottom", fontsize=18, fontweight="bold")
 
     handles = [mlines.Line2D([], [], color=COLORS[e], lw=4, label=LEGEND[e]) for e in ENGINES]
     fig.legend(handles=handles, loc="upper center", ncol=len(ENGINES),
-               fontsize=15, frameon=True, bbox_to_anchor=(0.5, 1.02))
+               fontsize=15, frameon=True, bbox_to_anchor=(0.5, 1.005))
     fig.supxlabel("Total Time (Seconds)", fontsize=18, y=0.004)
-    fig.supylabel("Power Draw (W)", fontsize=18, x=0.005)
-    fig.subplots_adjust(left=0.075, right=0.995, top=0.92, bottom=0.045,
-                        hspace=0.38, wspace=0.05)
+    fig.supylabel("Power Draw (W)", fontsize=18, x=0.02)
+    fig.subplots_adjust(left=0.085, right=0.995, top=0.90, bottom=0.045,
+                        hspace=0.40, wspace=0.05)
     fig.savefig(out, bbox_inches="tight", dpi=300)
     print("wrote", out)
 
